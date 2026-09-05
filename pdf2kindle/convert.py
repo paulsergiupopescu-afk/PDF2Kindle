@@ -25,6 +25,7 @@ class ConvertOptions:
     ocr_lang: str = "eng"
     dpi: int = 300
     profile: str = "academic"  # "academic" | "general"
+    keep_print_nav: bool = False  # keep the printed Contents/Index chapters
 
 
 @dataclass
@@ -80,6 +81,7 @@ def convert_pdf(
         author=opts.author,
         language=opts.language,
         profile=opts.profile,
+        keep_print_nav=opts.keep_print_nav,
     )
 
     report("Writing EPUB", 0.9)

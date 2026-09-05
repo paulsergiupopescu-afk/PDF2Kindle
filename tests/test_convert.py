@@ -246,3 +246,79 @@ def test_endnote_section_not_duplicated_in_body(endnotes_epub):
         body = _read(z, "chap_000.xhtml")
     main = body[: body.find("<section")]
     assert "Bertrand Russell" not in main
+
+
+# --------------------------------------------------------------------------- #
+# Typography, false-positive markers, packaging
+# --------------------------------------------------------------------------- #
+
+
+def test_typography_normalization():
+    from pdf2kindle.text import normalize
+
+    # Doubled single quotes standing in for double quotes.
+    assert normalize("‘‘Legal Positivism’’") == "“Legal Positivism”"
+    # Ligature glyphs break Kindle search and dictionary lookup.
+    assert normalize("beneﬁt aﬃrmed ﬂow") == "benefit affirmed flow"
+    # A fraction split into numerator / fraction slash / denominator.
+    assert normalize("Positivism: 51⁄2 Myths") == "Positivism: 5½ Myths"
+    assert normalize("pp. 199–227") == "pp. 199–227"  # en dash untouched
+
+
+def _line(parts):
+    """parts: (text, size, origin_y, superscript)"""
+    from pdf2kindle.model import Line, Span
+
+    spans = [
+        Span(text=t, font="f", size=s, flags=1 if sup else 0, color=0,
+             bbox=(0, 0, 1, 1), origin=(0, y))
+        for t, s, y, sup in parts
+    ]
+    return Line(spans=spans, bbox=(0, 0, 1, 1))
+
+
+def test_fraction_numerator_is_not_a_note_marker():
+    """"5 1/2" must not turn its digits into footnote links."""
+    from pdf2kindle.footnotes import find_markers
+
+    ln = _line([("Positivism:", 9.5, 403.5, False), ("5", 9.5, 403.5, False),
+                ("1", 6.7, 399.3, True), ("⁄", 9.5, 403.5, False),
+                ("2", 6.7, 405.1, False)])
+    assert find_markers(ln, body_size=10.5) == []
+
+
+def test_real_superscript_is_still_a_marker():
+    from pdf2kindle.footnotes import find_markers
+
+    ln = _line([("authority.", 10.5, 200.7, False), ("7", 7.0, 197.1, True),
+                (" One might", 10.5, 200.7, False)])
+    assert [lbl for _, lbl in find_markers(ln, body_size=10.5)] == ["7"]
+
+
+def test_superscript_detection_is_line_relative():
+    """A section set smaller than body text must not read as all-superscript."""
+    from pdf2kindle.footnotes import find_markers
+
+    ln = _line([("found in Gardner, page", 9.5, 403.5, False), ("46", 9.5, 403.5, False)])
+    assert find_markers(ln, body_size=10.5) == []
+
+
+def test_no_bogus_page_list_in_nav(bookish_epub):
+    """ebooklib lists every epub:type+id element as a page; ours are footnotes."""
+    with zipfile.ZipFile(bookish_epub) as z:
+        nav = z.read("EPUB/nav.xhtml").decode()
+    assert "page-list" not in nav
+
+
+def test_epub_zip_is_well_formed(bookish_epub):
+    with zipfile.ZipFile(bookish_epub) as z:
+        assert z.namelist()[0] == "mimetype"
+        assert z.getinfo("mimetype").compress_type == zipfile.ZIP_STORED
+
+
+def test_audit_reports_clean(bookish_epub):
+    from pdf2kindle.audit import audit_epub
+
+    report = audit_epub(bookish_epub)
+    assert report.ok, report.as_dict()
+    assert report.notes == 3 and not report.dead_links

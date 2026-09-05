@@ -34,7 +34,19 @@ def _add_convert(sub: argparse._SubParsersAction) -> None:
     )
     p.add_argument("--ocr-lang", default="eng", help="Tesseract language(s), e.g. 'eng' or 'eng+fra'")
     p.add_argument("--dpi", type=int, default=300, help="Render DPI for OCR (default: 300)")
+    p.add_argument(
+        "--keep-print-nav",
+        action="store_true",
+        help="keep the book's printed Contents and Index chapters (dropped by "
+        "default: their page numbers are meaningless once text reflows)",
+    )
     p.add_argument("-q", "--quiet", action="store_true", help="Suppress progress output")
+
+
+def _add_audit(sub: argparse._SubParsersAction) -> None:
+    p = sub.add_parser("audit", help="Report quality signals for a produced EPUB")
+    p.add_argument("epub", help="Path to the .epub to inspect")
+    p.add_argument("--json", action="store_true", help="Emit the report as JSON")
 
 
 def _add_serve(sub: argparse._SubParsersAction) -> None:
@@ -48,9 +60,19 @@ def main(argv=None) -> int:
     parser.add_argument("--version", action="version", version=f"pdf2kindle {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
     _add_convert(sub)
+    _add_audit(sub)
     _add_serve(sub)
 
     args = parser.parse_args(argv)
+
+    if args.command == "audit":
+        import json as _json
+
+        from .audit import audit_epub, format_audit
+
+        report = audit_epub(args.epub)
+        print(_json.dumps(report.as_dict(), indent=2) if args.json else format_audit(report))
+        return 0 if report.ok else 1
 
     if args.command == "serve":
         from .server import run
@@ -82,6 +104,7 @@ def main(argv=None) -> int:
         ocr_lang=args.ocr_lang,
         dpi=args.dpi,
         profile=args.profile,
+        keep_print_nav=args.keep_print_nav,
     )
     try:
         result = convert_pdf(input_path, output_path, opts, progress=progress)
@@ -101,6 +124,14 @@ def main(argv=None) -> int:
     )
     for w in result.warnings:
         print(f"  warning: {w}")
+
+    # Audit what we just wrote, so silent failures surface here rather than on
+    # the reader's device.
+    from .audit import audit_epub, format_audit
+
+    report = audit_epub(result.output_path)
+    print("\nQuality report:")
+    print(format_audit(report))
     return 0
 
 

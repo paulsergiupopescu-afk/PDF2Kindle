@@ -13,10 +13,12 @@ label parser does not require whitespace after the number.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 from .model import Line, Span
+from .text import normalize
 
 # A label is 1-3 digits *not* followed by another digit (so "1972" is not a
 # label), or a footnote symbol. Trailing "." / ")" and the space are optional.
@@ -34,22 +36,44 @@ class NoteBody:
 # Reference markers
 # --------------------------------------------------------------------------- #
 
-def _baseline(line: Line, body_size: float) -> float:
-    """Baseline of the line's main text (largest run of near-body-size spans)."""
-    cands = [s for s in line.spans if s.text.strip() and s.size >= body_size - 0.6]
-    if not cands:
-        cands = [s for s in line.spans if s.text.strip()]
-    if not cands:
-        return line.y1
-    return max(s.origin[1] for s in cands)
+def _line_metrics(line: Line) -> Tuple[float, float]:
+    """(dominant size, baseline) of a line's main text.
+
+    Measured against the line itself, not the document body size: a note or
+    bibliography section may be set several points smaller than body text, and
+    comparing its spans to the document size would make every one of them look
+    like a superscript. The baseline is the *most common* origin among
+    dominant-size spans -- taking the maximum lets a fraction's subscript drag
+    the baseline below the real one.
+    """
+    real = [s for s in line.spans if s.text.strip()]
+    if not real:
+        return 0.0, line.y1
+    dom = max(real, key=lambda s: len(s.text)).size
+    at_dom = [s for s in real if abs(s.size - dom) <= 0.3]
+    if not at_dom:
+        return dom, line.y1
+    origins = Counter(round(s.origin[1], 1) for s in at_dom)
+    return dom, origins.most_common(1)[0][0]
 
 
-def _is_raised(span: Span, line: Line, body_size: float) -> bool:
-    """Smaller type sitting above the line's baseline → a superscript."""
-    if span.size > body_size - 0.5:
+def _is_raised(span: Span, line: Line) -> bool:
+    """Smaller type sitting above the line's own baseline → a superscript."""
+    dom, base = _line_metrics(line)
+    if dom <= 0 or span.size > dom - 0.5:
         return False
-    base = _baseline(line, body_size)
-    return span.origin[1] <= base - body_size * 0.12
+    return span.origin[1] <= base - dom * 0.12
+
+
+def _in_fraction(line: Line, idx: int) -> bool:
+    """Is this raised digit the numerator of a fraction (5 1/2), not a marker?"""
+    nxt = next((s.text.strip() for s in line.spans[idx + 1:] if s.text.strip()), "")
+    if nxt[:1] in ("\u2044", "/"):
+        return True
+    prev = "".join(s.text for s in line.spans[:idx]).rstrip()
+    # A marker follows a word or punctuation; a digit butted against another
+    # digit is part of a number, an exponent or a fraction.
+    return prev[-1:].isdigit()
 
 
 def find_markers(line: Line, body_size: float = 0.0) -> List[Tuple[int, str]]:
@@ -63,9 +87,11 @@ def find_markers(line: Line, body_size: float = 0.0) -> List[Tuple[int, str]]:
         is_symbol = t in ("*", "†", "‡", "§", "¶")
         if not (has_digit or is_symbol):
             continue
-        raised = span.superscript or (body_size > 0 and _is_raised(span, line, body_size))
-        if raised:
-            markers.append((idx, _norm_label(t)))
+        if not (span.superscript or _is_raised(span, line)):
+            continue
+        if has_digit and _in_fraction(line, idx):
+            continue
+        markers.append((idx, _norm_label(t)))
     return markers
 
 
@@ -82,7 +108,8 @@ def _label_from_spans(line: Line, body_size: float) -> Optional[Tuple[str, str]]
     t = first.text.strip()
     if not t[:1].isdigit() and t[:1] not in "*†‡§¶":
         return None
-    small = body_size > 0 and first.size <= body_size - 0.5
+    dom, _ = _line_metrics(line)
+    small = dom > 0 and first.size <= dom - 0.5
     if not (first.superscript or small):
         return None
     if not _MARKER_TEXT.match(t):
@@ -118,7 +145,9 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
     def flush() -> None:
         nonlocal cur_label, cur_parts
         if cur_label is not None:
-            notes.append(NoteBody(label=cur_label, text=_dehyphenate_join(cur_parts).strip()))
+            notes.append(
+                NoteBody(label=cur_label, text=normalize(_dehyphenate_join(cur_parts).strip()))
+            )
         cur_label, cur_parts = None, []
 
     for line in note_lines:

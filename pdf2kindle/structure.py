@@ -17,6 +17,7 @@ from typing import Dict, List, Optional, Tuple
 
 from .analyze import Analyzed, PageContent
 from .footnotes import find_markers, parse_page_notes
+from .text import normalize
 from .model import (
     Chapter,
     Document,
@@ -48,6 +49,9 @@ _REFS_HEAD_RE = re.compile(
     re.IGNORECASE,
 )
 _NOTE_ENTRY_RE = re.compile(r"^\s*(\d{1,3})[\.\)]?\s+(.*)$", re.DOTALL)
+# A printed contents list and an index are page-number machinery for paper.
+# Reflowed, their numbers point nowhere and the reader has a real nav TOC.
+_PRINT_NAV_RE = re.compile(r"^\s*(contents|table\s+of\s+contents|index)\s*$", re.IGNORECASE)
 _MIN_IMAGE_PX = 80
 
 
@@ -93,6 +97,9 @@ def _paragraph_runs(lines: List[Line], note_prefix: str, body_size: float = 0.0)
     if runs:
         runs[0].text = runs[0].text.lstrip()
         runs[-1].text = runs[-1].text.rstrip()
+    for r in runs:
+        if r.noteref is None:
+            r.text = normalize(r.text)
     return [r for r in runs if r.text != "" or r.noteref]
 
 
@@ -205,6 +212,14 @@ def _is_blockquote(lines: List[Line], body_left: float, body_size: float, page_w
 # Flow building
 # --------------------------------------------------------------------------- #
 
+def _covers_page(im: ImageBlock, page: PageContent) -> bool:
+    area = page.width * page.height
+    if area <= 0:
+        return False
+    x0, y0, x1, y1 = im.bbox
+    return abs((x1 - x0) * (y1 - y0)) / area > 0.5
+
+
 def _select_images(page_images: List[ImageBlock]) -> List[ImageBlock]:
     return [im for im in page_images if im.width >= _MIN_IMAGE_PX and im.height >= _MIN_IMAGE_PX]
 
@@ -252,6 +267,8 @@ def _build_flow(
             flat.append((page.number, Element(kind=kind, runs=runs)))
 
         for im in _select_images(page_images.get(page.number, [])):
+            if page.number == 0 and _covers_page(im, page):
+                continue  # full-page art on page 1 is the cover, already used
             flat.append((page.number, Element(kind=ElementKind.IMAGE, image=im)))
 
     return flat, notes_by_page
@@ -266,6 +283,38 @@ def _join_runs(prev: Element, sep: str) -> None:
         prev.runs[-1].text = prev.runs[-1].text.rstrip() + sep
     elif sep:
         prev.runs.append(InlineRun(text=sep))
+
+
+_BARE_NUM_HEAD_RE = re.compile(r"^\s*\d+(?:\.\d+){0,3}\.?\s*$")
+
+
+def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Element]]:
+    """Rejoin a heading that print split across lines.
+
+    Books set section numbers on their own line ("1.2" above "Basic
+    Austinianism") and wrap long titles. Each fragment would otherwise become
+    its own heading -- and its own meaningless entry in the table of contents.
+    Only fragments on the same page are joined, so a real heading is never
+    merged into the chapter before it.
+    """
+    out: List[Tuple[int, Element]] = []
+    for page_no, el in flat:
+        if (
+            out
+            and el.kind == ElementKind.HEADING
+            and out[-1][1].kind == ElementKind.HEADING
+            and out[-1][0] == page_no
+        ):
+            prev = out[-1][1]
+            ptxt, cur = prev.text.strip(), el.text.strip()
+            numbered = bool(_BARE_NUM_HEAD_RE.match(ptxt))
+            continues = prev.level == el.level and not ptxt.endswith((".", "?", "!", ":", ";"))
+            if numbered or continues:
+                prev.runs = [InlineRun(text=f"{ptxt} {cur}")]
+                prev.level = min(prev.level or 9, el.level or 9)
+                continue
+        out.append((page_no, el))
+    return out
 
 
 def _merge_across_pages(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Element]]:
@@ -540,15 +589,20 @@ def build_document(
     author: str = "",
     language: str = "en",
     profile: str = "academic",
+    keep_print_nav: bool = False,
 ) -> Document:
     academic = profile == "academic"
     flat, notes_by_page = _build_flow(analyzed, page_images, academic)
+    flat = _merge_split_headings(flat)
     flat = _merge_across_pages(flat)
 
     toc = meta.get("_toc") or []
     chapters = _split_by_toc(flat, notes_by_page, toc) if toc else None
     if not chapters:
         chapters = _split_by_headings(flat, notes_by_page)
+
+    if not keep_print_nav:
+        chapters = [c for c in chapters if not _PRINT_NAV_RE.match(c.title.strip())] or chapters
 
     for i, ch in enumerate(chapters):
         if academic:

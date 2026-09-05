@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import os
+import re
+import shutil
 import uuid
+import zipfile
 from typing import Dict
 
 from ebooklib import epub
@@ -99,4 +103,40 @@ def build_epub(doc: Document, out_path: str) -> str:
     book.spine = ["nav"] + epub_chapters
 
     epub.write_epub(out_path, book, {})
+    _strip_page_list(out_path)
     return out_path
+
+
+_PAGE_LIST_RE = re.compile(
+    rb'\s*<nav[^>]*epub:type="page-list".*?</nav>', re.DOTALL
+)
+
+
+def _strip_page_list(path: str) -> None:
+    """Remove the bogus page-list ebooklib synthesises in nav.xhtml.
+
+    ebooklib treats every element carrying both ``epub:type`` and ``id`` as a
+    page break -- which is exactly the shape of our footnote anchors, so all of
+    them are listed as "pages". Real page numbers do not survive reflow anyway,
+    so the whole page-list is dropped.
+    """
+    with zipfile.ZipFile(path) as z:
+        names = z.namelist()
+        if "EPUB/nav.xhtml" not in names:
+            return
+        data = {n: z.read(n) for n in names}
+    nav = data["EPUB/nav.xhtml"]
+    stripped = _PAGE_LIST_RE.sub(b"", nav)
+    if stripped == nav:
+        return
+    data["EPUB/nav.xhtml"] = stripped
+
+    tmp = path + ".tmp"
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as z:
+        # The mimetype entry must come first and be stored uncompressed.
+        if "mimetype" in data:
+            z.writestr(zipfile.ZipInfo("mimetype"), data["mimetype"], zipfile.ZIP_STORED)
+        for n in names:
+            if n != "mimetype":
+                z.writestr(n, data[n])
+    shutil.move(tmp, path)

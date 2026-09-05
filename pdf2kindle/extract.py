@@ -19,6 +19,8 @@ log = logging.getLogger("pdf2kindle.extract")
 
 # A page with fewer real text characters than this is treated as image-only.
 _MIN_TEXT_CHARS = 12
+# OCR yielding less than this is discarded as cover art / decoration.
+_MIN_OCR_CHARS = 25
 
 
 def _line_from_dict(ld: dict) -> Optional[Line]:
@@ -136,7 +138,10 @@ def extract(
         if needs_ocr:
             log.info("OCR page %d/%d", i + 1, doc.page_count)
             ocr_page = ocr_mod.ocr_page(page, number=i, lang=ocr_lang, dpi=dpi)
-            if ocr_page is not None and _char_count(ocr_page) > 0:
+            # A handful of characters off an image-only page is cover art or
+            # decoration, not prose; OCR of display type is unreliable and the
+            # fragment would land in the text as noise.
+            if ocr_page is not None and _char_count(ocr_page) >= _MIN_OCR_CHARS:
                 # Preserve any embedded figures that aren't the full-page scan.
                 ocr_page.images = [
                     im for im in p.images

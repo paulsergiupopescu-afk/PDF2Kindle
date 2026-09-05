@@ -51,6 +51,12 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
   `noteref`/`footnote` pairs so Kindle shows them as tappable pop-ups (with
   back-links) instead of stranding them mid-text.
 - **Images** — embeds figures and illustrations inline at their reading position.
+- **Typography repair** — folds ligature glyphs (`ﬁ`→`fi`) so Kindle search and
+  dictionary lookup work, converts `` ``quoted'' `` to real curly quotes, and
+  rebuilds split fractions (`51⁄2` → `5½`).
+- **Self-audit** — every conversion ends with a quality report (linked notes,
+  dead links, stylesheet, cover, stray page furniture); run it any time with
+  `pdf2kindle audit book.epub`.
 - **Scanned PDFs** — when a page is image-only, it falls back to **OCR**
   (Tesseract) so scanned books still become searchable, reflowable text.
 
