@@ -121,6 +121,9 @@ def _render_runs(runs: List[InlineRun]) -> str:
             )
             continue
         text = escape(r.text)
+        if r.sup:
+            out.append(f"<sup>{text}</sup>")
+            continue
         if r.bold and r.italic:
             text = f"<strong><em>{text}</em></strong>"
         elif r.bold:

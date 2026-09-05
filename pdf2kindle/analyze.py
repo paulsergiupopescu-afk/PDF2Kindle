@@ -1,9 +1,9 @@
 """Layout analysis: turn raw extracted geometry into clean, ordered text.
 
 Responsibilities:
-  * estimate the dominant body-text font size (used everywhere downstream),
+  * estimate the dominant body-text font size and left margin,
   * order lines into human reading order, including simple 2-column handling,
-  * detect and strip repeating running heads / footers / page numbers,
+  * detect and strip page furniture (running heads, folios, footers),
   * split each page into body lines and a trailing footnote zone.
 """
 
@@ -13,12 +13,20 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from statistics import median
-from typing import List
+from typing import List, Optional
 
 from .model import Line, Page
 
-_NOTE_START = re.compile(r"^\s*(?:[\*†‡§]|\(?\d{1,3}\)?[.\)]?)\s")
-_DIGITS_ONLY = re.compile(r"^[\dIVXLCivxlc\s\.\-–—]+$")
+_NOTE_START = re.compile(r"^\s*(?:[\*†‡§¶]|\(?\d{1,3}\)?[.\)]?)(?:\s|$)")
+_DIGITS_ONLY = re.compile(r"^[\dIVXLCivxlc\s\.\-–—\[\]]+$")
+
+# How far into the page counts as the header/footer band.
+_TOP_BAND = 0.14
+_BOT_BAND = 0.86
+# A margin line repeating at least this many times anywhere is furniture.
+_REPEAT_MIN = 3
+# At most this many lines are peeled off each end of a page.
+_MAX_STRIP = 3
 
 
 @dataclass
@@ -35,20 +43,21 @@ class PageContent:
 class Analyzed:
     body_size: float
     line_height: float
-    body_left: float = 0.0  # dominant left text margin (points)
+    body_left: float = 0.0
     pages: List[PageContent] = field(default_factory=list)
 
 
+# --------------------------------------------------------------------------- #
+# Document-wide statistics
+# --------------------------------------------------------------------------- #
+
 def _dominant_body_size(pages: List[Page]) -> float:
-    """Most common span size, weighted by number of characters."""
     counter: Counter = Counter()
     for p in pages:
         for line in p.lines:
             for s in line.spans:
                 counter[s.size] += len(s.text.strip())
-    if not counter:
-        return 11.0
-    return counter.most_common(1)[0][0]
+    return counter.most_common(1)[0][0] if counter else 11.0
 
 
 def _median_line_height(pages: List[Page]) -> float:
@@ -57,137 +66,188 @@ def _median_line_height(pages: List[Page]) -> float:
 
 
 def _dominant_left(pages: List[Page], body_size: float) -> float:
-    """Most common left edge of body-size lines — the body text margin."""
     counter: Counter = Counter()
     for p in pages:
         for line in p.lines:
             if abs(line.dominant_size - body_size) <= 0.6 and line.text.strip():
                 counter[round(line.x0)] += 1
-    if not counter:
-        return 0.0
-    return float(counter.most_common(1)[0][0])
+    return float(counter.most_common(1)[0][0]) if counter else 0.0
 
 
 def _normalize_running(text: str) -> str:
-    """Collapse a header/footer candidate so page-varying digits don't defeat matching."""
+    """Collapse digits so page-varying folios still match across pages."""
     t = re.sub(r"\d+", "#", text.strip().lower())
-    t = re.sub(r"\s+", " ", t)
-    return t
+    return re.sub(r"\s+", " ", t)
 
 
-def _detect_running_heads(pages: List[Page]) -> set:
-    """Find normalized header/footer strings that repeat across many pages."""
-    top_counter: Counter = Counter()
-    bot_counter: Counter = Counter()
-    n = len(pages)
+def _margin_repeats(pages: List[Page]) -> Counter:
+    """Count normalized text appearing in the top/bottom bands across the book."""
+    counter: Counter = Counter()
     for p in pages:
-        if not p.lines:
+        if not p.lines or p.height <= 0:
             continue
-        top_zone = p.height * 0.08
-        bot_zone = p.height * 0.92
+        top, bot = p.height * _TOP_BAND, p.height * _BOT_BAND
         for line in p.lines:
             txt = line.text.strip()
-            if not txt:
-                continue
-            if line.y1 <= top_zone:
-                top_counter[_normalize_running(txt)] += 1
-            elif line.y0 >= bot_zone:
-                bot_counter[_normalize_running(txt)] += 1
-    threshold = max(2, int(n * 0.25))
-    running = set()
-    for norm, count in list(top_counter.items()) + list(bot_counter.items()):
-        if count >= threshold and norm:
-            running.add(norm)
-    return running
+            if txt and (line.y1 <= top or line.y0 >= bot):
+                counter[_normalize_running(txt)] += 1
+    return counter
 
+
+# --------------------------------------------------------------------------- #
+# Page furniture
+# --------------------------------------------------------------------------- #
+
+def _is_furniture(
+    line: Line,
+    neighbour: Optional[Line],
+    *,
+    at_top: bool,
+    height: float,
+    body_size: float,
+    line_height: float,
+    repeats: Counter,
+) -> bool:
+    """Is this margin line a running head / folio rather than real content?"""
+    txt = line.text.strip()
+    if not txt:
+        return True
+
+    in_band = line.y1 <= height * _TOP_BAND if at_top else line.y0 >= height * _BOT_BAND
+    if not in_band:
+        return False
+
+    # Never strip something set larger than body text — that's a real heading.
+    if line.dominant_size > body_size + 0.3:
+        return False
+
+    # A bare folio ("12", "xiv", "[3]").
+    if _DIGITS_ONLY.match(txt) and len(txt) <= 12:
+        return True
+
+    # Repeats elsewhere in the margins → running head/foot. This catches
+    # per-chapter heads ("Introduction") that a whole-book ratio would miss.
+    if repeats.get(_normalize_running(txt), 0) >= _REPEAT_MIN:
+        return True
+
+    # Otherwise: short, and set off from the text block by a clear gap.
+    if neighbour is not None and len(txt.split()) <= 10:
+        gap = (neighbour.y0 - line.y1) if at_top else (line.y0 - neighbour.y1)
+        if gap >= line_height * 1.4:
+            return True
+    return False
+
+
+def _strip_furniture(
+    lines: List[Line], height: float, body_size: float, line_height: float, repeats: Counter
+) -> List[Line]:
+    kept = sorted(lines, key=lambda ln: ln.y0)
+    for _ in range(_MAX_STRIP):
+        if len(kept) < 2:
+            break
+        if _is_furniture(kept[0], kept[1], at_top=True, height=height, body_size=body_size,
+                         line_height=line_height, repeats=repeats):
+            kept = kept[1:]
+        else:
+            break
+    for _ in range(_MAX_STRIP):
+        if len(kept) < 2:
+            break
+        if _is_furniture(kept[-1], kept[-2], at_top=False, height=height, body_size=body_size,
+                         line_height=line_height, repeats=repeats):
+            kept = kept[:-1]
+        else:
+            break
+    return kept
+
+
+# --------------------------------------------------------------------------- #
+# Reading order
+# --------------------------------------------------------------------------- #
 
 def _order_lines(lines: List[Line], width: float) -> List[Line]:
-    """Reading order, with a conservative 2-column detector."""
     if len(lines) < 6:
         return sorted(lines, key=lambda ln: (round(ln.y0, 1), ln.x0))
-
     mid = width / 2.0
     left = [ln for ln in lines if ln.x1 <= mid + width * 0.03]
     right = [ln for ln in lines if ln.x0 >= mid - width * 0.03]
     crossing = [ln for ln in lines if ln not in left and ln not in right]
-
-    # Treat as two columns only when the split is clean and balanced.
     if (
-        len(left) >= 4
-        and len(right) >= 4
+        len(left) >= 4 and len(right) >= 4
         and len(crossing) <= 0.15 * len(lines)
         and 0.4 <= len(left) / (len(left) + len(right)) <= 0.6
     ):
-        left_sorted = sorted(left, key=lambda ln: (round(ln.y0, 1), ln.x0))
-        right_sorted = sorted(right, key=lambda ln: (round(ln.y0, 1), ln.x0))
-        return left_sorted + right_sorted
-
+        return (sorted(left, key=lambda ln: (round(ln.y0, 1), ln.x0))
+                + sorted(right, key=lambda ln: (round(ln.y0, 1), ln.x0)))
     return sorted(lines, key=lambda ln: (round(ln.y0, 1), ln.x0))
 
 
-def _split_body_notes(lines: List[Line], body_size: float, height: float) -> tuple[List[Line], List[Line]]:
-    """Peel a trailing small-font footnote block off the bottom of the page."""
+# --------------------------------------------------------------------------- #
+# Footnote zone
+# --------------------------------------------------------------------------- #
+
+def _starts_with_marker(line: Line, body_size: float) -> bool:
+    if _NOTE_START.match(line.text):
+        return True
+    first = next((s for s in line.spans if s.text.strip()), None)
+    if first is None:
+        return False
+    # A raised/smaller leading number is a note label even without a space.
+    return (
+        (first.superscript or first.size <= body_size - 1.0)
+        and first.text.strip()[:1].isdigit()
+    )
+
+
+def _split_body_notes(
+    lines: List[Line], body_size: float, height: float, line_height: float
+) -> tuple[List[Line], List[Line]]:
+    """Peel a trailing smaller-type footnote block off the bottom of the page."""
     if not lines:
         return [], []
     ordered = sorted(lines, key=lambda ln: ln.y0)
-    note_start = height * 0.55  # notes only live in the lower part of the page
 
-    # Walk up from the bottom collecting consecutive smaller-than-body lines.
     notes: List[Line] = []
     i = len(ordered) - 1
     while i >= 0:
         ln = ordered[i]
-        if ln.dominant_size <= body_size - 0.6 and ln.y0 >= note_start:
+        if ln.dominant_size <= body_size - 0.3 and ln.y0 >= height * 0.45:
             notes.append(ln)
             i -= 1
         else:
             break
     notes.reverse()
-
     if not notes:
         return ordered, []
 
-    # Only accept as footnotes if the block actually opens with a note marker.
-    if not _NOTE_START.match(notes[0].text):
+    # The block must actually open with a note label. A gap alone is not
+    # enough: captions and other small type also sit under the text block,
+    # and swallowing them here would delete them from the book.
+    if not _starts_with_marker(notes[0], body_size):
         return ordered, []
+    return ordered[: len(ordered) - len(notes)], notes
 
-    body = ordered[: len(ordered) - len(notes)]
-    return body, notes
 
+# --------------------------------------------------------------------------- #
+# Entry point
+# --------------------------------------------------------------------------- #
 
 def analyze(pages: List[Page]) -> Analyzed:
     body_size = _dominant_body_size(pages)
     line_height = _median_line_height(pages)
     body_left = _dominant_left(pages, body_size)
-    running = _detect_running_heads(pages)
+    repeats = _margin_repeats(pages)
 
     out = Analyzed(body_size=body_size, line_height=line_height, body_left=body_left)
     for p in pages:
-        top_zone = p.height * 0.08
-        bot_zone = p.height * 0.92
-        kept: List[Line] = []
-        for line in p.lines:
-            txt = line.text.strip()
-            if not txt:
-                continue
-            in_margin = line.y1 <= top_zone or line.y0 >= bot_zone
-            if in_margin:
-                if _normalize_running(txt) in running:
-                    continue  # running head/foot
-                if _DIGITS_ONLY.match(txt) and len(txt) <= 8:
-                    continue  # bare page number
-            kept.append(line)
-
+        lines = [ln for ln in p.lines if ln.text.strip()]
+        kept = _strip_furniture(lines, p.height, body_size, line_height, repeats)
         ordered = _order_lines(kept, p.width)
-        body_lines, note_lines = _split_body_notes(ordered, body_size, p.height)
+        body_lines, note_lines = _split_body_notes(ordered, body_size, p.height, line_height)
         out.pages.append(
             PageContent(
-                number=p.number,
-                width=p.width,
-                height=p.height,
-                ocr=p.ocr,
-                body_lines=body_lines,
-                note_lines=note_lines,
+                number=p.number, width=p.width, height=p.height, ocr=p.ocr,
+                body_lines=body_lines, note_lines=note_lines,
             )
         )
     return out

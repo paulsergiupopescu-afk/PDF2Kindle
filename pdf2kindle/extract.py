@@ -84,6 +84,23 @@ def _image_coverage(page: Page) -> float:
     return best / page_area if page_area else 0.0
 
 
+def _render_cover(doc) -> Optional[dict]:
+    """Rasterize page 1 so every book gets a cover, even without an embedded image."""
+    if doc.page_count == 0:
+        return None
+    try:
+        pix = doc[0].get_pixmap(matrix=pymupdf.Matrix(2.0, 2.0), alpha=False)
+        for ext in ("jpeg", "png"):
+            try:
+                return {"data": pix.tobytes(ext), "ext": "jpg" if ext == "jpeg" else "png",
+                        "width": pix.width, "height": pix.height}
+            except Exception:
+                continue
+    except Exception as exc:  # pragma: no cover
+        log.debug("cover render failed: %s", exc)
+    return None
+
+
 def extract(
     path: str,
     *,
@@ -98,6 +115,7 @@ def extract(
     meta = dict(doc.metadata or {})
     meta["_toc"] = doc.get_toc(simple=True) or []
     meta["_page_count"] = doc.page_count
+    meta["_cover_render"] = _render_cover(doc)
 
     ocr_available = ocr_mod.is_available() if ocr_mode != "never" else False
     if ocr_mode == "force" and not ocr_available:

@@ -28,3 +28,6 @@ web/*.tsbuildinfo
 
 # Generated test fixture (rebuilt by the test suite)
 tests/academic.pdf
+
+# Generated test fixtures
+tests/bookish.pdf

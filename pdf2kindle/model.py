@@ -124,6 +124,8 @@ class InlineRun:
     text: str
     bold: bool = False
     italic: bool = False
+    # Render as a superscript with no link (an orphaned note marker).
+    sup: bool = False
     # If set, this run is a footnote reference marker with the given note id.
     noteref: Optional[str] = None
 

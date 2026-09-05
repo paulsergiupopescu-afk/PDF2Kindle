@@ -58,7 +58,8 @@ _MIN_IMAGE_PX = 80
 def _append_text(runs: List[InlineRun], text: str, bold: bool, italic: bool) -> None:
     if not text:
         return
-    if runs and runs[-1].noteref is None and runs[-1].bold == bold and runs[-1].italic == italic:
+    if (runs and runs[-1].noteref is None and not runs[-1].sup
+            and runs[-1].bold == bold and runs[-1].italic == italic):
         runs[-1].text += text
     else:
         runs.append(InlineRun(text=text, bold=bold, italic=italic))
@@ -68,11 +69,11 @@ def _tail_text(runs: List[InlineRun]) -> str:
     return runs[-1].text if runs else ""
 
 
-def _paragraph_runs(lines: List[Line], note_prefix: str) -> List[InlineRun]:
+def _paragraph_runs(lines: List[Line], note_prefix: str, body_size: float = 0.0) -> List[InlineRun]:
     """Build inline runs for a paragraph spanning *lines*, linking note markers."""
     runs: List[InlineRun] = []
     for li, line in enumerate(lines):
-        markers = {idx: label for idx, label in find_markers(line)}
+        markers = {idx: label for idx, label in find_markers(line, body_size)}
 
         if li > 0 and runs:
             tail = _tail_text(runs).rstrip()
@@ -219,7 +220,7 @@ def _build_flow(
     for page in analyzed.pages:
         note_prefix = f"n{page.number}-"
 
-        page_notes = parse_page_notes(page.note_lines)
+        page_notes = parse_page_notes(page.note_lines, analyzed.body_size)
         if page_notes:
             notes_by_page[page.number] = [
                 Element(
@@ -234,11 +235,11 @@ def _build_flow(
         for group in _group_paragraphs(page, analyzed.body_size, analyzed.line_height):
             level = _is_heading(group[0], analyzed.body_size) if len(group) == 1 else None
             if level:
-                runs = _paragraph_runs(group, note_prefix)
+                runs = _paragraph_runs(group, note_prefix, analyzed.body_size)
                 flat.append((page.number, Element(kind=ElementKind.HEADING, runs=runs, level=level)))
                 continue
 
-            runs = _paragraph_runs(group, note_prefix)
+            runs = _paragraph_runs(group, note_prefix, analyzed.body_size)
             if not runs:
                 continue
 
@@ -254,6 +255,54 @@ def _build_flow(
             flat.append((page.number, Element(kind=ElementKind.IMAGE, image=im)))
 
     return flat, notes_by_page
+
+
+_SENT_END = (".", "!", "?", '"', "\u201d", "\u2019", "'", ")", ":", ";", "\u2014")
+
+
+def _join_runs(prev: Element, sep: str) -> None:
+    """Append a separator to a paragraph without corrupting a trailing marker."""
+    if prev.runs and prev.runs[-1].noteref is None and not prev.runs[-1].sup:
+        prev.runs[-1].text = prev.runs[-1].text.rstrip() + sep
+    elif sep:
+        prev.runs.append(InlineRun(text=sep))
+
+
+def _merge_across_pages(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Element]]:
+    """Rejoin a paragraph that continues onto the next page.
+
+    Page furniture used to interrupt these; now that it is stripped, a sentence
+    broken by a page turn should read as one paragraph again.
+    """
+    out: List[Tuple[int, Element]] = []
+    for page_no, el in flat:
+        if out and el.kind == ElementKind.PARAGRAPH and out[-1][1].kind == ElementKind.PARAGRAPH \
+                and page_no != out[-1][0]:
+            prev = out[-1][1]
+            ptxt, ctxt = prev.text.rstrip(), el.text.lstrip()
+            if ptxt and ctxt and not ptxt.endswith(_SENT_END):
+                if ptxt.endswith("-") and ctxt[:1].islower():
+                    if prev.runs[-1].noteref is None and not prev.runs[-1].sup:
+                        prev.runs[-1].text = prev.runs[-1].text.rstrip()[:-1]
+                    prev.runs.extend(el.runs)
+                    continue
+                if ctxt[:1].islower():
+                    _join_runs(prev, " ")
+                    prev.runs.extend(el.runs)
+                    continue
+        out.append((page_no, el))
+    return out
+
+
+def _drop_dead_noterefs(chapter: Chapter) -> None:
+    """Never ship a note link that points nowhere: downgrade it to a plain
+    superscript so the reference is still visible but not broken."""
+    ids = {f.note_id for f in chapter.footnotes if f.note_id}
+    for el in chapter.elements:
+        for run in el.runs:
+            if run.noteref and run.noteref not in ids:
+                run.noteref = None
+                run.sup = True
 
 
 # --------------------------------------------------------------------------- #
@@ -292,39 +341,64 @@ def _split_by_toc(flat, notes_by_page, toc) -> Optional[List[Chapter]]:
     return chapters or None
 
 
+def _attach_notes_by_range(
+    chapters: List[Chapter], starts: List[int], notes_by_page: Dict[int, List[Element]]
+) -> None:
+    """Attach each page's notes to the chapter whose page range covers it.
+
+    Ranges rather than the exact pages an element came from: merging a
+    paragraph across a page turn removes the only element carrying the later
+    page, and its notes would otherwise be dropped.
+    """
+    last = max(notes_by_page) if notes_by_page else 0
+    for i, ch in enumerate(chapters):
+        start = starts[i]
+        end = starts[i + 1] if i + 1 < len(starts) else last + 1
+        for pno, notes in notes_by_page.items():
+            if start <= pno < end:
+                ch.footnotes.extend(notes)
+
+
 def _split_by_headings(flat, notes_by_page) -> List[Chapter]:
     heading_levels = [el.level for _, el in flat if el.kind == ElementKind.HEADING]
     split_level = min(heading_levels) if heading_levels else None
 
-    chapters: List[Chapter] = []
+    built: List[Tuple[int, Chapter]] = []
     cur = Chapter(title="")
-    cur_pages: set = set()
-
-    def close():
-        if cur.elements:
-            for pno in sorted(cur_pages):
-                cur.footnotes.extend(notes_by_page.get(pno, []))
-            if not cur.title:
-                cur.title = f"Chapter {len(chapters) + 1}"
-            chapters.append(cur)
+    cur_start: Optional[int] = None
 
     for page_no, el in flat:
-        if split_level is not None and el.kind == ElementKind.HEADING and el.level == split_level and cur.elements:
-            close()
+        is_break = (
+            split_level is not None
+            and el.kind == ElementKind.HEADING
+            and el.level == split_level
+            and cur.elements
+        )
+        if is_break:
+            built.append((cur_start or 0, cur))
             cur = Chapter(title=el.text.strip())
-            cur_pages = {page_no}
+            cur_start = page_no
             cur.elements.append(el)
             continue
+        if cur_start is None:
+            cur_start = page_no
         if not cur.title and el.kind == ElementKind.HEADING and el.level == split_level:
             cur.title = el.text.strip()
         cur.elements.append(el)
-        cur_pages.add(page_no)
-    close()
+    if cur.elements:
+        built.append((cur_start or 0, cur))
 
-    if not chapters:
-        chapters = [Chapter(title="Book", elements=[el for _, el in flat])]
-        for notes in notes_by_page.values():
-            chapters[0].footnotes.extend(notes)
+    if not built:
+        built = [(0, Chapter(title="Book", elements=[el for _, el in flat]))]
+
+    chapters = []
+    starts = []
+    for i, (start, ch) in enumerate(built):
+        if not ch.title:
+            ch.title = f"Chapter {i + 1}"
+        chapters.append(ch)
+        starts.append(start)
+    _attach_notes_by_range(chapters, starts, notes_by_page)
     return chapters
 
 
@@ -432,6 +506,7 @@ def build_document(
 ) -> Document:
     academic = profile == "academic"
     flat, notes_by_page = _build_flow(analyzed, page_images, academic)
+    flat = _merge_across_pages(flat)
 
     toc = meta.get("_toc") or []
     chapters = _split_by_toc(flat, notes_by_page, toc) if toc else None
@@ -444,15 +519,23 @@ def build_document(
             _style_references(ch)
             _assign_nav(ch, i)
         ch.footnotes = [f for f in ch.footnotes if f.text.strip()]
+        _drop_dead_noterefs(ch)
 
     doc = Document(chapters=chapters, language=language)
     doc.title = title or (meta.get("title") or "").strip() or _guess_title(chapters)
     doc.author = author or (meta.get("author") or "").strip()
 
-    for im in page_images.get(0, []):
-        if im.width >= 200 and im.height >= 200:
-            doc.cover = im
-            break
+    # Cover: a render of page 1 is the most faithful and always available;
+    # fall back to a large embedded image only if rendering failed.
+    cr = meta.get("_cover_render")
+    if cr:
+        doc.cover = ImageBlock(data=cr["data"], ext=cr["ext"], bbox=(0.0, 0.0, 0.0, 0.0),
+                               width=cr["width"], height=cr["height"])
+    else:
+        for im in page_images.get(0, []):
+            if im.width >= 200 and im.height >= 200:
+                doc.cover = im
+                break
 
     return doc
 

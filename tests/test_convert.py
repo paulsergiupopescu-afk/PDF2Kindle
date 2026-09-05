@@ -1,5 +1,6 @@
 """End-to-end tests for the conversion pipeline."""
 import os
+import re
 import zipfile
 
 import pytest
@@ -8,6 +9,7 @@ from lxml import etree
 from pdf2kindle import ConvertOptions, convert_pdf
 from tests.make_sample import main as make_sample
 from tests.make_academic import main as make_academic
+from tests.make_bookish import main as make_bookish
 
 HERE = os.path.dirname(__file__)
 
@@ -16,6 +18,13 @@ HERE = os.path.dirname(__file__)
 def sample_pdf(tmp_path_factory):
     out = tmp_path_factory.mktemp("data") / "sample.pdf"
     make_sample(str(out))
+    return str(out)
+
+
+@pytest.fixture(scope="module")
+def bookish_pdf(tmp_path_factory):
+    out = tmp_path_factory.mktemp("data") / "bookish.pdf"
+    make_bookish(str(out))
     return str(out)
 
 
@@ -126,3 +135,66 @@ def test_general_profile_skips_academic_markup(academic_pdf, tmp_path):
         body = _read(z, "chap_000.xhtml")
     assert 'class="reference"' not in body
     assert 'class="caption"' not in body
+
+
+# --------------------------------------------------------------------------- #
+# Regressions from a real monograph conversion
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture(scope="module")
+def bookish_epub(bookish_pdf, tmp_path_factory):
+    out = tmp_path_factory.mktemp("out") / "bookish.epub"
+    convert_pdf(bookish_pdf, str(out), ConvertOptions(ocr="never"))
+    return str(out)
+
+
+def test_stylesheet_is_linked_in_every_chapter(bookish_epub):
+    """ebooklib regenerates <head>; the CSS link must survive or nothing is
+    justified in the reader."""
+    with zipfile.ZipFile(bookish_epub) as z:
+        assert "EPUB/style.css" in z.namelist()
+        for n in z.namelist():
+            if n.startswith("EPUB/chap_") and n.endswith(".xhtml"):
+                assert "style.css" in z.read(n).decode(), f"{n} has no stylesheet link"
+
+
+def test_cover_is_present(bookish_epub):
+    with zipfile.ZipFile(bookish_epub) as z:
+        assert any("cover" in n.lower() for n in z.namelist())
+        assert "cover-image" in z.read("EPUB/content.opf").decode()
+
+
+def test_page_furniture_is_stripped(bookish_epub):
+    """Running heads and folios must not leak into the text."""
+    with zipfile.ZipFile(bookish_epub) as z:
+        body = _read(z, "chap_000.xhtml")
+    assert not re.search(r"<p[^>]*>\s*Introduction\s*</p>", body)
+    assert not re.search(r"<p[^>]*>\s*1[012]\s*</p>", body)
+
+
+def test_no_dead_footnote_links(bookish_epub):
+    """Every noteref must resolve to a real note in the same file."""
+    with zipfile.ZipFile(bookish_epub) as z:
+        for n in z.namelist():
+            if not (n.startswith("EPUB/chap_") and n.endswith(".xhtml")):
+                continue
+            c = z.read(n).decode()
+            refs = set(re.findall(r'epub:type="noteref"[^>]*href="#([^"]+)"', c))
+            notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', c))
+            assert not (refs - notes), f"{n}: dead note links {refs - notes}"
+
+
+def test_all_footnotes_are_captured(bookish_epub):
+    with zipfile.ZipFile(bookish_epub) as z:
+        body = _read(z, "chap_000.xhtml")
+    assert len(re.findall(r'epub:type="footnote"', body)) == 3
+
+
+def test_paragraph_merged_across_page_break(bookish_epub):
+    """A sentence broken by a page turn must read as one paragraph."""
+    with zipfile.ZipFile(bookish_epub) as z:
+        body = _read(z, "chap_000.xhtml")
+    text = re.sub(r"<[^>]+>", "", body)
+    assert "perhaps, be made democratically" in text
+    assert "evasions that we now turn" in text
