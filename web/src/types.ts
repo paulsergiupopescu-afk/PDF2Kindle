@@ -16,6 +16,7 @@ export interface ConvertOptions {
   title: string;
   author: string;
   lang: string;
+  profile: "academic" | "general";
   ocr: "auto" | "force" | "never";
   ocr_lang: string;
 }

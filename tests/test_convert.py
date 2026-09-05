@@ -7,6 +7,7 @@ from lxml import etree
 
 from pdf2kindle import ConvertOptions, convert_pdf
 from tests.make_sample import main as make_sample
+from tests.make_academic import main as make_academic
 
 HERE = os.path.dirname(__file__)
 
@@ -15,6 +16,13 @@ HERE = os.path.dirname(__file__)
 def sample_pdf(tmp_path_factory):
     out = tmp_path_factory.mktemp("data") / "sample.pdf"
     make_sample(str(out))
+    return str(out)
+
+
+@pytest.fixture(scope="module")
+def academic_pdf(tmp_path_factory):
+    out = tmp_path_factory.mktemp("data") / "academic.pdf"
+    make_academic(str(out))
     return str(out)
 
 
@@ -79,3 +87,42 @@ def test_override_metadata(sample_pdf, tmp_path):
     )
     assert result.title == "Custom"
     assert result.author == "Me"
+
+
+# --------------------------------------------------------------------------- #
+# Academic profile
+# --------------------------------------------------------------------------- #
+
+
+def test_academic_features(academic_pdf, tmp_path):
+    out = tmp_path / "aca.epub"
+    convert_pdf(academic_pdf, str(out), ConvertOptions(profile="academic", ocr="never"))
+    with zipfile.ZipFile(out) as z:
+        body = _read(z, "chap_000.xhtml")
+        nav = _read(z, "nav.xhtml")
+    assert "<h1" in body and "<h2" in body           # multi-level headings
+    assert "<blockquote>" in body                     # block quote detected
+    assert 'class="caption"' in body                  # figure caption
+    assert 'class="reference"' in body                # bibliography entries
+    # Endnotes extracted from the "Notes" section and linked as pop-ups:
+    assert 'epub:type="noteref"' in body and 'epub:type="footnote"' in body
+    assert 'id="en0-1"' in body and 'href="#en0-1"' in body
+    # Nested table of contents with sub-section links:
+    assert 'href="chap_000.xhtml#sec-0-' in nav
+
+
+def test_academic_nested_toc_has_subsections(academic_pdf, tmp_path):
+    out = tmp_path / "aca.epub"
+    convert_pdf(academic_pdf, str(out), ConvertOptions(profile="academic", ocr="never"))
+    with zipfile.ZipFile(out) as z:
+        nav = _read(z, "nav.xhtml")
+    assert "Data" in nav and "Results" in nav
+
+
+def test_general_profile_skips_academic_markup(academic_pdf, tmp_path):
+    out = tmp_path / "gen.epub"
+    convert_pdf(academic_pdf, str(out), ConvertOptions(profile="general", ocr="never"))
+    with zipfile.ZipFile(out) as z:
+        body = _read(z, "chap_000.xhtml")
+    assert 'class="reference"' not in body
+    assert 'class="caption"' not in body

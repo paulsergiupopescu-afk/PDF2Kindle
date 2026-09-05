@@ -19,6 +19,14 @@ def _add_convert(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--author", default="", help="Override author")
     p.add_argument("--lang", default="en", help="Language code (default: en)")
     p.add_argument(
+        "--profile",
+        choices=["academic", "general"],
+        default="academic",
+        help="Conversion profile: academic (default) adds numbered sections, "
+        "nested TOC, block quotes, captions, endnote linking and reference "
+        "hanging indents; general is lighter",
+    )
+    p.add_argument(
         "--ocr",
         choices=["auto", "force", "never"],
         default="auto",
@@ -73,6 +81,7 @@ def main(argv=None) -> int:
         ocr=args.ocr,
         ocr_lang=args.ocr_lang,
         dpi=args.dpi,
+        profile=args.profile,
     )
     try:
         result = convert_pdf(input_path, output_path, opts, progress=progress)

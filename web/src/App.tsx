@@ -9,6 +9,7 @@ const DEFAULT_OPTS: ConvertOptions = {
   title: "",
   author: "",
   lang: "en",
+  profile: "academic",
   ocr: "auto",
   ocr_lang: "eng",
 };
@@ -48,6 +49,7 @@ export default function App() {
     form.append("title", opts.title);
     form.append("author", opts.author);
     form.append("lang", opts.lang);
+    form.append("profile", opts.profile);
     form.append("ocr", opts.ocr);
     form.append("ocr_lang", opts.ocr_lang);
 
@@ -126,6 +128,28 @@ export default function App() {
                     disabled={busy}
                     onChange={(e) => set("author", e.target.value)}
                   />
+                </label>
+              </div>
+              <div className="row">
+                <label className="wide">
+                  Book type
+                  <select
+                    value={opts.profile}
+                    disabled={busy}
+                    onChange={(e) =>
+                      set("profile", e.target.value as ConvertOptions["profile"])
+                    }
+                  >
+                    <option value="academic">
+                      Academic — sections, endnotes, citations
+                    </option>
+                    <option value="general">General — prose / fiction</option>
+                  </select>
+                  <span className="sub">
+                    {opts.profile === "academic"
+                      ? "Numbered sections, nested TOC, block quotes, figure/table captions, endnote pop-ups, hanging-indent references."
+                      : "Lighter reconstruction tuned for continuous prose."}
+                  </span>
                 </label>
               </div>
               <div className="row">

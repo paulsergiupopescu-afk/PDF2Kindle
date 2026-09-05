@@ -43,6 +43,7 @@ async def api_convert(
     lang: str = Form("en"),
     ocr: str = Form("auto"),
     ocr_lang: str = Form("eng"),
+    profile: str = Form("academic"),
 ) -> JSONResponse:
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a .pdf file.")
@@ -57,7 +58,9 @@ async def api_convert(
     data = await file.read()
     in_path.write_bytes(data)
 
-    opts = ConvertOptions(title=title, author=author, language=lang, ocr=ocr, ocr_lang=ocr_lang)
+    opts = ConvertOptions(
+        title=title, author=author, language=lang, ocr=ocr, ocr_lang=ocr_lang, profile=profile
+    )
     try:
         result = convert_pdf(str(in_path), str(out_path), opts)
     except Exception as exc:  # pragma: no cover

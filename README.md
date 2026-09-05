@@ -9,6 +9,32 @@ Most "PDF → EPUB" tools either wrap each page in a fixed-layout image or dump 
 wall of unstructured text. `pdf2kindle` does the harder thing: it analyses the
 PDF's typography and geometry to *reconstruct* the book.
 
+## Optimized for academic books
+
+Scholarly PDFs have structure that trips up generic converters. The default
+**`academic` profile** handles it:
+
+- **Multi-level numbered sections** (`2`, `2.1`, `2.1.3`, roman numerals) are
+  detected and turned into a proper heading hierarchy.
+- **Nested table of contents** — every sub-section becomes a child entry in the
+  EPUB nav, so you can jump straight to §2.1 from the Kindle TOC.
+- **Endnotes**, not just page-foot footnotes — a chapter-ending *Notes* section
+  is parsed, its entries linked back to their in-text superscript markers, and
+  re-emitted as Kindle **pop-up notes** with back-links.
+- **Block quotes** (evenly-indented extracts) are set as real `<blockquote>`s.
+- **Figure & table captions** ("Figure 2.1 …", "Table 3 …") are detected and
+  styled.
+- **Bibliographies** under a *References* / *Works Cited* / *Bibliography*
+  heading get **hanging-indent** formatting so each entry is scannable.
+
+Use `--profile general` (CLI) or the **Book type** menu (web app) for prose and
+fiction, which uses a lighter reconstruction.
+
+```bash
+pdf2kindle convert thesis.pdf -o thesis.epub            # academic by default
+pdf2kindle convert novel.pdf  -o novel.epub --profile general
+```
+
 ## What it does
 
 - **Reading-order & paragraph reconstruction** — merges the PDF's fragmented

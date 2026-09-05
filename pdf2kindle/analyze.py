@@ -35,6 +35,7 @@ class PageContent:
 class Analyzed:
     body_size: float
     line_height: float
+    body_left: float = 0.0  # dominant left text margin (points)
     pages: List[PageContent] = field(default_factory=list)
 
 
@@ -53,6 +54,18 @@ def _dominant_body_size(pages: List[Page]) -> float:
 def _median_line_height(pages: List[Page]) -> float:
     heights = [line.height for p in pages for line in p.lines if line.height > 0]
     return median(heights) if heights else 12.0
+
+
+def _dominant_left(pages: List[Page], body_size: float) -> float:
+    """Most common left edge of body-size lines — the body text margin."""
+    counter: Counter = Counter()
+    for p in pages:
+        for line in p.lines:
+            if abs(line.dominant_size - body_size) <= 0.6 and line.text.strip():
+                counter[round(line.x0)] += 1
+    if not counter:
+        return 0.0
+    return float(counter.most_common(1)[0][0])
 
 
 def _normalize_running(text: str) -> str:
@@ -145,9 +158,10 @@ def _split_body_notes(lines: List[Line], body_size: float, height: float) -> tup
 def analyze(pages: List[Page]) -> Analyzed:
     body_size = _dominant_body_size(pages)
     line_height = _median_line_height(pages)
+    body_left = _dominant_left(pages, body_size)
     running = _detect_running_heads(pages)
 
-    out = Analyzed(body_size=body_size, line_height=line_height)
+    out = Analyzed(body_size=body_size, line_height=line_height, body_left=body_left)
     for p in pages:
         top_zone = p.height * 0.08
         bot_zone = p.height * 0.92

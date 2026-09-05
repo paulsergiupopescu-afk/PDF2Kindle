@@ -112,6 +112,8 @@ class ElementKind(str, Enum):
     PARAGRAPH = "paragraph"
     BLOCKQUOTE = "blockquote"
     IMAGE = "image"
+    CAPTION = "caption"  # figure/table caption ("Figure 1.2 …")
+    REFERENCE = "reference"  # bibliography entry (hanging indent)
     FOOTNOTE = "footnote"  # a collected note body (rendered at chapter end)
 
 
@@ -131,6 +133,7 @@ class Element:
     kind: ElementKind
     runs: List[InlineRun] = field(default_factory=list)
     level: int = 0  # heading level (1..6)
+    anchor: str = ""  # id for intra-chapter navigation (headings)
     # image payload
     image: Optional[ImageBlock] = None
     # footnote payload
@@ -143,10 +146,20 @@ class Element:
 
 
 @dataclass
+class SubHead:
+    """A sub-chapter heading, for building a nested table of contents."""
+
+    anchor: str
+    title: str
+    level: int
+
+
+@dataclass
 class Chapter:
     title: str
     elements: List[Element] = field(default_factory=list)
     footnotes: List[Element] = field(default_factory=list)
+    subheads: List[SubHead] = field(default_factory=list)
 
 
 @dataclass

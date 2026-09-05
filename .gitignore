@@ -25,3 +25,6 @@ outputs/
 
 # TS build info
 web/*.tsbuildinfo
+
+# Generated test fixture (rebuilt by the test suite)
+tests/academic.pdf

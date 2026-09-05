@@ -64,21 +64,33 @@ def build_epub(doc: Document, out_path: str) -> str:
         return href_map.get(id(el), "")
 
     epub_chapters = []
+    toc = []
     for i, chapter in enumerate(doc.chapters):
+        fname = f"chap_{i:03d}.xhtml"
         item = epub.EpubHtml(
             title=chapter.title or f"Chapter {i + 1}",
-            file_name=f"chap_{i:03d}.xhtml",
+            file_name=fname,
             lang=doc.language or "en",
         )
         item.content = render_chapter(chapter, image_href_for, doc.language or "en").encode("utf-8")
         book.add_item(item)
         epub_chapters.append(item)
 
+        # Nested table of contents: sub-headings become child links.
+        if chapter.subheads:
+            children = [
+                epub.Link(f"{fname}#{sh.anchor}", sh.title, f"{fname}-{sh.anchor}")
+                for sh in chapter.subheads
+            ]
+            toc.append((item, children))
+        else:
+            toc.append(item)
+
     if doc.cover is not None:
         ext = doc.cover.ext or "jpg"
         book.set_cover(f"cover.{ext}", doc.cover.data, create_page=False)
 
-    book.toc = tuple(epub_chapters)
+    book.toc = tuple(toc)
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
     book.spine = ["nav"] + epub_chapters

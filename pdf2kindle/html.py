@@ -47,8 +47,30 @@ p.noindent, h1 + p, h2 + p, h3 + p, h4 + p, blockquote p:first-child {
 }
 
 blockquote {
-  margin: 0.8em 1.4em;
-  font-size: 0.95em;
+  margin: 0.9em 1.6em;
+  font-size: 0.94em;
+  text-indent: 0;
+  color: #222;
+}
+blockquote p { text-indent: 0; }
+
+p.caption {
+  text-indent: 0;
+  text-align: center;
+  font-size: 0.85em;
+  font-style: italic;
+  margin: 0.4em 0 1em 0;
+  color: #333;
+}
+
+/* Bibliography / references: hanging indent so each entry is scannable. */
+p.reference {
+  text-indent: -1.4em;
+  margin-left: 1.4em;
+  text-align: left;
+  margin-bottom: 0.35em;
+  -webkit-hyphens: none;
+  hyphens: none;
 }
 
 div.image {
@@ -114,7 +136,8 @@ def _render_element(el: Element, image_href_for: Callable[[Element], str], prev_
         lvl = min(max(el.level, 1), 4)
         # Headings carry their own weight from CSS; drop inline emphasis.
         text = escape("".join(r.text for r in el.runs)).strip()
-        return f"<h{lvl}>{text}</h{lvl}>\n"
+        idattr = f" id={quoteattr(el.anchor)}" if el.anchor else ""
+        return f"<h{lvl}{idattr}>{text}</h{lvl}>\n"
     if el.kind == ElementKind.IMAGE:
         href = image_href_for(el)
         if not href:
@@ -122,6 +145,10 @@ def _render_element(el: Element, image_href_for: Callable[[Element], str], prev_
         return f'<div class="image"><img src={quoteattr(href)} alt="figure"/></div>\n'
     if el.kind == ElementKind.BLOCKQUOTE:
         return f"<blockquote><p>{_render_runs(el.runs)}</p></blockquote>\n"
+    if el.kind == ElementKind.CAPTION:
+        return f'<p class="caption">{_render_runs(el.runs)}</p>\n'
+    if el.kind == ElementKind.REFERENCE:
+        return f'<p class="reference">{_render_runs(el.runs)}</p>\n'
     # paragraph
     cls = ' class="noindent"' if prev_heading else ""
     return f"<p{cls}>{_render_runs(el.runs)}</p>\n"

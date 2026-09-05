@@ -24,6 +24,7 @@ class ConvertOptions:
     ocr: str = "auto"  # "auto" | "force" | "never"
     ocr_lang: str = "eng"
     dpi: int = 300
+    profile: str = "academic"  # "academic" | "general"
 
 
 @dataclass
@@ -78,6 +79,7 @@ def convert_pdf(
         title=opts.title,
         author=opts.author,
         language=opts.language,
+        profile=opts.profile,
     )
 
     report("Writing EPUB", 0.9)
