@@ -1,0 +1,14 @@
+# Core conversion engine
+pymupdf>=1.24
+ebooklib>=0.18
+beautifulsoup4>=4.12
+lxml>=4.9
+Pillow>=10.0
+
+# Optional: OCR for scanned/image-only PDFs (also needs the `tesseract` binary)
+pytesseract>=0.3.10
+
+# Optional: local web app
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9

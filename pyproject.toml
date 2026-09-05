@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf2kindle"
+version = "0.1.0"
+description = "Convert PDFs into clean, reflowable Kindle-ready EPUBs with chapters, justified text, and pop-up footnotes."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "pdf2kindle contributors" }]
+keywords = ["pdf", "epub", "kindle", "ebook", "converter", "ocr"]
+dependencies = [
+    "pymupdf>=1.24",
+    "ebooklib>=0.18",
+    "beautifulsoup4>=4.12",
+    "lxml>=4.9",
+    "Pillow>=10.0",
+]
+
+[project.optional-dependencies]
+ocr = ["pytesseract>=0.3.10"]
+server = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "python-multipart>=0.0.9"]
+all = [
+    "pytesseract>=0.3.10",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+pdf2kindle = "pdf2kindle.cli:main"
+
+[tool.setuptools]
+packages = ["pdf2kindle"]
+
+[tool.setuptools.package-data]
+pdf2kindle = ["assets/*.css"]

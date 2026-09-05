@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+/build/
+/dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Node / frontend
+web/node_modules/
+web/.vite/
+
+# Runtime / output
+*.epub
+uploads/
+outputs/
+.DS_Store
+
+# Keep the prebuilt frontend bundle
+!web/dist/
+
+# TS build info
+web/*.tsbuildinfo
