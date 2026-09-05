@@ -10,6 +10,7 @@ from pdf2kindle import ConvertOptions, convert_pdf
 from tests.make_sample import main as make_sample
 from tests.make_academic import main as make_academic
 from tests.make_bookish import main as make_bookish
+from tests.make_endnotes import main as make_endnotes
 
 HERE = os.path.dirname(__file__)
 
@@ -113,9 +114,12 @@ def test_academic_features(academic_pdf, tmp_path):
     assert "<blockquote>" in body                     # block quote detected
     assert 'class="caption"' in body                  # figure caption
     assert 'class="reference"' in body                # bibliography entries
-    # Endnotes extracted from the "Notes" section and linked as pop-ups:
+    # Endnotes extracted from the "Notes" section and linked as pop-ups,
+    # with every marker resolving to a real note:
     assert 'epub:type="noteref"' in body and 'epub:type="footnote"' in body
-    assert 'id="en0-1"' in body and 'href="#en0-1"' in body
+    refs = set(re.findall(r'epub:type="noteref"[^>]*href="#([^"]+)"', body))
+    notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', body))
+    assert refs and not (refs - notes)
     # Nested table of contents with sub-section links:
     assert 'href="chap_000.xhtml#sec-0-' in nav
 
@@ -198,3 +202,47 @@ def test_paragraph_merged_across_page_break(bookish_epub):
     text = re.sub(r"<[^>]+>", "", body)
     assert "perhaps, be made democratically" in text
     assert "evasions that we now turn" in text
+
+
+# --------------------------------------------------------------------------- #
+# Chapter-end endnotes (hanging indent, continuous numbering, multi-page)
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture(scope="module")
+def endnotes_epub(tmp_path_factory):
+    src = tmp_path_factory.mktemp("data") / "endnotes.pdf"
+    make_endnotes(str(src))
+    out = tmp_path_factory.mktemp("out") / "endnotes.epub"
+    convert_pdf(str(src), str(out), ConvertOptions(ocr="never"))
+    return str(out)
+
+
+def test_endnotes_all_linked(endnotes_epub):
+    """Markers numbered through the chapter must bind to notes gathered at its
+    end, including notes that spill onto a second page."""
+    with zipfile.ZipFile(endnotes_epub) as z:
+        body = _read(z, "chap_000.xhtml")
+    refs = set(re.findall(r'epub:type="noteref"[^>]*href="#([^"]+)"', body))
+    notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', body))
+    assert len(notes) == 10, f"expected 10 endnotes, got {len(notes)}"
+    assert len(refs) == 10
+    assert not (refs - notes)
+
+
+def test_endnote_continuation_lines_are_joined(endnotes_epub):
+    """A hanging-indent continuation belongs to the note above it, and a word
+    split across the line break is rejoined."""
+    with zipfile.ZipFile(endnotes_epub) as z:
+        body = _read(z, "chap_000.xhtml")
+    text = re.sub(r"<[^>]+>", "", body)
+    assert "Human Knowledge: Its Scope and Limits" in text  # de-hyphenated
+    assert "originally published 1832" in text              # continuation kept
+
+
+def test_endnote_section_not_duplicated_in_body(endnotes_epub):
+    """The printed Notes list is replaced by pop-up notes, not shown twice."""
+    with zipfile.ZipFile(endnotes_epub) as z:
+        body = _read(z, "chap_000.xhtml")
+    main = body[: body.find("<section")]
+    assert "Bertrand Russell" not in main

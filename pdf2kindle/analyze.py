@@ -18,6 +18,7 @@ from typing import List, Optional
 from .model import Line, Page
 
 _NOTE_START = re.compile(r"^\s*(?:[\*†‡§¶]|\(?\d{1,3}\)?[.\)]?)(?:\s|$)")
+_ENDNOTE_HEAD = re.compile(r"^\s*(notes|endnotes|notes to chapter\s*\d*)\s*$", re.IGNORECASE)
 _DIGITS_ONLY = re.compile(r"^[\dIVXLCivxlc\s\.\-–—\[\]]+$")
 
 # How far into the page counts as the header/footer band.
@@ -211,7 +212,7 @@ def _split_body_notes(
     i = len(ordered) - 1
     while i >= 0:
         ln = ordered[i]
-        if ln.dominant_size <= body_size - 0.3 and ln.y0 >= height * 0.45:
+        if ln.dominant_size <= body_size - 0.3 and ln.y0 >= height * 0.35:
             notes.append(ln)
             i -= 1
         else:
@@ -225,7 +226,43 @@ def _split_body_notes(
     # and swallowing them here would delete them from the book.
     if not _starts_with_marker(notes[0], body_size):
         return ordered, []
-    return ordered[: len(ordered) - len(notes)], notes
+
+    body = ordered[: len(ordered) - len(notes)]
+    # A real footnote zone sits *under* body text. A page that is small type
+    # all the way up is a dedicated endnote/reference page, which belongs to
+    # the endnote handler — peeling it here would split it in half.
+    if sum(1 for ln in body if ln.dominant_size >= body_size - 0.3) < 2:
+        return ordered, []
+    return body, notes
+
+
+def _mark_endnote_sections(contents: List[PageContent], body_size: float) -> None:
+    """Move chapter-end "Notes" sections out of the body and into note lines.
+
+    Endnotes are set as a hanging-indent list, which paragraph grouping cannot
+    reconstruct (a label line looks like a continuation of the indented line
+    above it). Capturing them here, as lines, lets the note parser pair labels
+    with their bodies directly. A section runs from the "Notes" heading until a
+    heading-sized line -- normally the start of the next chapter.
+    """
+    in_notes = False
+    for pc in contents:
+        if in_notes and pc.body_lines:
+            cut = len(pc.body_lines)
+            for i, ln in enumerate(pc.body_lines):
+                if ln.dominant_size > body_size + 0.5:
+                    cut, in_notes = i, False
+                    break
+            pc.note_lines = pc.body_lines[:cut] + pc.note_lines
+            pc.body_lines = pc.body_lines[cut:]
+        if not pc.body_lines:
+            continue
+        for i, ln in enumerate(pc.body_lines):
+            if _ENDNOTE_HEAD.match(ln.text.strip()) and ln.dominant_size >= body_size:
+                pc.note_lines = pc.body_lines[i + 1:] + pc.note_lines
+                pc.body_lines = pc.body_lines[:i]  # drop the heading itself
+                in_notes = True
+                break
 
 
 # --------------------------------------------------------------------------- #
@@ -250,4 +287,5 @@ def analyze(pages: List[Page]) -> Analyzed:
                 body_lines=body_lines, note_lines=note_lines,
             )
         )
+    _mark_endnote_sections(out.pages, body_size)
     return out

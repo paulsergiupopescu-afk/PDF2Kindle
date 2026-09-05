@@ -92,7 +92,24 @@ def _label_from_spans(line: Line, body_size: float) -> Optional[Tuple[str, str]]
 
 
 def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[NoteBody]:
-    """Group footnote-zone lines into individual notes keyed by label."""
+    """Group footnote-zone lines into individual notes keyed by label.
+
+    Note lists are usually set with a hanging indent: the label sits at the
+    block's left edge and continuation lines are indented. Where that shape is
+    present the geometry decides what opens a note, which is far more reliable
+    than the numbering (and works on a continuation page, where the first label
+    is not 1). Otherwise we fall back to requiring the count to advance.
+    """
+    if not note_lines:
+        return []
+    xs = [ln.x0 for ln in note_lines]
+    lo, hi = min(xs), max(xs)
+    # Label lines and continuation lines form two indent clusters; split them
+    # at the midpoint. A fixed tolerance off the left edge does not work,
+    # because wider labels hang further left ("10" starts left of "1").
+    hanging = (hi - lo) >= 6.0
+    label_max_x = lo + (hi - lo) * 0.5
+
     notes: List[NoteBody] = []
     cur_label: Optional[str] = None
     cur_parts: List[str] = []
@@ -112,7 +129,10 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
         if split is None:
             m = _LABEL_RE.match(txt)
             split = (_norm_label(m.group(1)), m.group(2)) if m else None
-        if split is not None and _starts_note(split[0], last_num):
+        opens = False
+        if split is not None:
+            opens = (line.x0 <= label_max_x) if hanging else _starts_note(split[0], last_num)
+        if opens:
             flush()
             cur_label, cur_parts = split[0], [split[1]]
             if cur_label.isdigit():
@@ -129,8 +149,10 @@ def _starts_note(label: str, last_num: Optional[int]) -> bool:
     if not label.isdigit():
         return True  # symbols (*, †) always start a note
     if last_num is None:
-        return True
-    return int(label) > last_num
+        return True  # first label of a block (may be a continuation page)
+    # Must advance the count, and only by a little: a page reference that
+    # happens to start a line ("324. 27 Aquinas...") is not note 324.
+    return last_num < int(label) <= last_num + 3
 
 
 def _norm_label(label: str) -> str:

@@ -294,15 +294,47 @@ def _merge_across_pages(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Elem
     return out
 
 
-def _drop_dead_noterefs(chapter: Chapter) -> None:
-    """Never ship a note link that points nowhere: downgrade it to a plain
-    superscript so the reference is still visible but not broken."""
-    ids = {f.note_id for f in chapter.footnotes if f.note_id}
+def _resolve_notes(chapter: Chapter) -> None:
+    """Bind every reference marker to its note, then guarantee no dead links.
+
+    Markers are first created with a page-scoped id, which is right for
+    footnotes printed at the foot of the page they are cited on. Endnotes are
+    different: they are gathered at the end of the chapter and numbered
+    continuously, so a marker on one page refers to a note many pages later.
+    When a label is unambiguous within the chapter we therefore match on the
+    label alone; a marker that still resolves to nothing is downgraded to a
+    plain superscript rather than shipped as a broken link.
+    """
+    by_id = {f.note_id: f for f in chapter.footnotes if f.note_id}
+    by_label: Dict[str, Element] = {}
+    ambiguous: set = set()
+    for f in chapter.footnotes:
+        label = (f.note_label or "").strip()
+        if not label:
+            continue
+        if label in by_label:
+            ambiguous.add(label)
+        else:
+            by_label[label] = f
+
     for el in chapter.elements:
         for run in el.runs:
-            if run.noteref and run.noteref not in ids:
+            if not run.noteref:
+                continue
+            if run.noteref in by_id:
+                continue  # already points at a note on the citing page
+            label = run.text.strip()
+            target = by_label.get(label)
+            if target is not None and label not in ambiguous:
+                run.noteref = target.note_id
+            else:
                 run.noteref = None
                 run.sup = True
+
+    # Present the notes in reading order rather than page-discovery order.
+    chapter.footnotes.sort(
+        key=lambda f: int(f.note_label) if (f.note_label or "").isdigit() else 10 ** 9
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -439,7 +471,12 @@ def _extract_endnotes(chapter: Chapter, idx: int) -> None:
             order.append(note)
             cur = note
         elif cur is not None:
-            cur.runs.append(InlineRun(text=" " + el.text.strip()))
+            tail = cur.runs[-1].text.rstrip() if cur.runs else ""
+            piece = el.text.strip()
+            if tail.endswith("-") and piece[:1].islower():
+                cur.runs[-1].text = tail[:-1] + piece  # word split across lines
+            else:
+                cur.runs.append(InlineRun(text=" " + piece))
         else:
             break
         consumed_to += 1
@@ -519,7 +556,7 @@ def build_document(
             _style_references(ch)
             _assign_nav(ch, i)
         ch.footnotes = [f for f in ch.footnotes if f.text.strip()]
-        _drop_dead_noterefs(ch)
+        _resolve_notes(ch)
 
     doc = Document(chapters=chapters, language=language)
     doc.title = title or (meta.get("title") or "").strip() or _guess_title(chapters)
