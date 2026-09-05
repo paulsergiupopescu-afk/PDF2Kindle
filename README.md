@@ -104,13 +104,15 @@ A prebuilt `web/dist` is committed, so `pdf2kindle serve` works without Node.
 ```
 pdf2kindle/
   extract.py     PDF → structured spans/lines/blocks (PyMuPDF)
+  text.py        typography repair (ligatures, quotes, fractions)
   analyze.py     reading order, body-font detection, header/footer stripping,
                  line → paragraph reconstruction, de-hyphenation
   structure.py   heading detection + chapter splitting (outline or font clusters)
-  footnotes.py   superscript marker ↔ page-foot note detection and linking
+  footnotes.py   marker ↔ note detection and pairing (footnotes and endnotes)
   ocr.py         Tesseract fallback for image-only pages
   html.py        semantic, Kindle-tuned XHTML + CSS generation
   epub.py        EPUB3 assembly (ebooklib): nav, ncx, metadata, cover
+  audit.py       quality report over a produced EPUB
   convert.py     orchestrator
   cli.py         command line
   server.py      FastAPI app + static frontend
@@ -122,8 +124,9 @@ web/             TypeScript + React (Vite) drag-and-drop UI
 Perfect conversion of an arbitrary PDF is not possible — PDFs describe *ink on a
 page*, not document structure. `pdf2kindle` reconstructs structure heuristically
 and does very well on prose-heavy books; heavily designed layouts (magazines,
-textbooks with sidebars, dense tables) are best-effort. See `--help` for tuning
-knobs.
+textbooks with sidebars, dense tables) are best-effort — **tables in particular
+are flattened to lines**. Run `pdf2kindle audit` on the result: it reports what
+it could not resolve rather than leaving you to find it on the device.
 
 ## License
 
