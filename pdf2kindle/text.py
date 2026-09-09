@@ -8,6 +8,10 @@ break the reader's search and dictionary lookup:
 * Doubled single quotes used as double quotes (``like this''), a convention
   from Computer Modern-era typesetting.
 * Fractions split into numerator, fraction slash and denominator.
+* Runs of two or more plain spaces. Justified typesetting sometimes bakes
+  extra space characters into the text stream to widen a line; the print
+  page looks right, but the extracted text carries the padding as literal
+  repeated spaces -- "KEITH  HITCHINS", "the  pursuit  of  education".
 """
 
 from __future__ import annotations
@@ -29,6 +33,11 @@ _VULGAR = {
 # whole number ("51⁄2" is five and a half).
 _FRACTION_RE = re.compile(r"(\d)⁄(\d)(?!\d)")
 
+# Two or more plain spaces (never a legitimate typographic device -- unlike a
+# non-breaking space or an em-space, which are distinct characters this
+# leaves untouched).
+_MULTISPACE_RE = re.compile(r"  +")
+
 
 def _fractions(text: str) -> str:
     def repl(m: re.Match) -> str:
@@ -48,4 +57,6 @@ def normalize(text: str) -> str:
     text = text.replace("``", "“").replace("''", "”")
     if "⁄" in text:
         text = _fractions(text)
+    if "  " in text:
+        text = _MULTISPACE_RE.sub(" ", text)
     return text

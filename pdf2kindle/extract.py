@@ -8,6 +8,7 @@ image-only (a scan) and therefore needs OCR. All interpretation happens later.
 from __future__ import annotations
 
 import logging
+import unicodedata
 from typing import List, Optional
 
 import pymupdf
@@ -21,6 +22,27 @@ log = logging.getLogger("pdf2kindle.extract")
 _MIN_TEXT_CHARS = 12
 # OCR yielding less than this is discarded as cover art / decoration.
 _MIN_OCR_CHARS = 25
+# A line whose characters are more than this fraction raw control codes is
+# not text at all -- see _is_garbled().
+_GARBLE_THRESHOLD = 0.04
+
+
+def _is_garbled(text: str) -> bool:
+    """Detect text produced by a broken font encoding, not real prose.
+
+    Some PDFs (library/"downloaded from" copies especially) embed a footer or
+    watermark in a subsetted font whose ToUnicode CMap is missing or wrong.
+    PyMuPDF still extracts *something* for it, but the codepoints are raw
+    control characters rather than the glyphs actually drawn -- unmistakable
+    from ordinary text, which a professionally typeset PDF never contains.
+    Filtering this out at the source keeps it from polluting body text,
+    heading detection, and the running-head/margin statistics that later
+    stages compute over every line on every page.
+    """
+    if not text:
+        return False
+    bad = sum(1 for c in text if unicodedata.category(c) == "Cc" and c not in "\t\n\r")
+    return bad / len(text) > _GARBLE_THRESHOLD
 
 
 def _line_from_dict(ld: dict) -> Optional[Line]:
@@ -41,6 +63,9 @@ def _line_from_dict(ld: dict) -> Optional[Line]:
             )
         )
     if not spans:
+        return None
+    text = "".join(s.text for s in spans)
+    if _is_garbled(text):
         return None
     return Line(spans=spans, bbox=tuple(ld.get("bbox", (0, 0, 0, 0))))  # type: ignore[arg-type]
 
@@ -86,6 +111,61 @@ def _image_coverage(page: Page) -> float:
     return best / page_area if page_area else 0.0
 
 
+def _column_count(lines: List[Line], tol: float = 5.0) -> int:
+    """Count distinct left-edge x-positions, merging ones within *tol* points.
+
+    A tabular layout (a List of Illustrations, a Contents page) has just a
+    handful of these -- one per column -- no matter how many rows it has.
+    Place-name labels scattered across a map fall at dozens of distinct
+    positions, since each sits wherever its city or region actually is.
+    """
+    xs = sorted(ln.x0 for ln in lines)
+    groups = 0
+    last: Optional[float] = None
+    for x in xs:
+        if last is None or x - last > tol:
+            groups += 1
+        last = x
+    return groups
+
+
+def _looks_like_map(lines: List[Line]) -> bool:
+    """Detect a page that is really a vector map/diagram, not prose.
+
+    A map's borders, coastlines and rivers are vector paths PyMuPDF's text
+    extractor never sees at all; what it *does* see is the scatter of short
+    text labels drawn on top (place names, a scale bar's "0 50 100 km", a
+    legend's single letters). Each label lands as its own "paragraph" by the
+    normal reading-order logic, littering the chapter with garbage lines like
+    "I", "C", "50". The signature is unmistakable versus real prose: many
+    lines, each only a word or two, none of them building a sentence.
+
+    A tabular front-matter list (Contents, List of Illustrations) shares the
+    short-fragment signature -- "List of maps", "xii" are just as terse as a
+    map label -- so it is *not* enough on its own. What separates them is
+    column structure: a table's fragments fall into a handful of x-positions
+    (its columns); a map's are scattered across dozens.
+    """
+    if len(lines) < 10:
+        return False
+    words = [len(ln.text.split()) for ln in lines]
+    avg_words = sum(words) / len(lines)
+    lens = sorted(len(ln.text.strip()) for ln in lines)
+    median_len = lens[len(lens) // 2]
+    return avg_words < 2.5 and median_len < 25 and _column_count(lines) > 10
+
+
+def _rasterize_page(page: "pymupdf.Page") -> ImageBlock:
+    """Render a full page to a PNG, for a map/diagram whose vector content
+    (borders, rivers, roads) has no text/image representation to extract."""
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(2.2, 2.2), alpha=False)
+    return ImageBlock(
+        data=pix.tobytes("png"), ext="png",
+        bbox=(0.0, 0.0, float(page.rect.width), float(page.rect.height)),
+        width=pix.width, height=pix.height,
+    )
+
+
 def _render_cover(doc) -> Optional[dict]:
     """Rasterize page 1 so every book gets a cover, even without an embedded image."""
     if doc.page_count == 0:
@@ -127,6 +207,18 @@ def extract(
     for i in range(doc.page_count):
         page = doc[i]
         p = _extract_text_page(page, i)
+
+        if _looks_like_map(p.lines):
+            # Vector line art has nothing for the text/image extractor to
+            # find; keep the page as one picture instead of scattering its
+            # labels through the surrounding chapter as bogus paragraphs.
+            log.info("Rendering page %d/%d as a map/diagram image", i + 1, doc.page_count)
+            p.lines = []
+            p.images = [_rasterize_page(page)]
+            pages.append(p)
+            if progress:
+                progress(i + 1, doc.page_count)
+            continue
 
         needs_ocr = False
         if ocr_mode == "force":

@@ -16,6 +16,7 @@ import re
 from typing import Dict, List, Optional, Tuple
 
 from .analyze import Analyzed, PageContent
+from .extract import _column_count
 from .footnotes import find_markers, parse_page_notes
 from .text import normalize
 from .model import (
@@ -52,6 +53,22 @@ _NOTE_ENTRY_RE = re.compile(r"^\s*(\d{1,3})[\.\)]?\s+(.*)$", re.DOTALL)
 # A printed contents list and an index are page-number machinery for paper.
 # Reflowed, their numbers point nowhere and the reader has a real nav TOC.
 _PRINT_NAV_RE = re.compile(r"^\s*(contents|table\s+of\s+contents|index)\s*$", re.IGNORECASE)
+# A "List of Illustrations" / "Maps" / "Tables" section is a caption ...... page#
+# tabular layout that print alone can lay out; reflowed, the page numbers are
+# meaningless and the caption/number pairing often garbles across lines. Drop
+# it like Contents/Index, but as a *sub-section* -- these are headings inside
+# the front matter, not their own top-level chapter, when the PDF has no
+# outline to split on.
+_FRONT_LIST_RE = re.compile(
+    r"^\s*list\s+of\s+(illustrations|maps|tables|figures|plates|abbreviations)\s*$"
+    r"|^\s*(illustrations|maps|tables|figures|plates)\s*$",
+    re.IGNORECASE,
+)
+# A copyright line: "© Keith Hitchins 2014". Reliable across most books when
+# the PDF itself carries no /Author metadata.
+_COPYRIGHT_RE = re.compile(
+    r"©\s*([A-Z][\w.''\-]+(?:\s+[A-Z][\w.''\-]+){0,4})\s*,?\s*(?:19|20)\d{2}"
+)
 _MIN_IMAGE_PX = 80
 
 
@@ -224,15 +241,54 @@ def _select_images(page_images: List[ImageBlock]) -> List[ImageBlock]:
     return [im for im in page_images if im.width >= _MIN_IMAGE_PX and im.height >= _MIN_IMAGE_PX]
 
 
+# Keywords that confirm a page is a front-matter list, on top of its shape
+# (see _is_headless_toc_page) -- required so a short-lined poem or epigraph
+# in the front matter, which can share the low word-per-line signature,
+# isn't mistaken for one.
+_TOC_KEYWORDS_RE = re.compile(
+    r"list\s+of\s+(illustrations|maps|tables|figures|plates)|further\s+reading"
+    r"|acknowledgments|\bcontents\b",
+    re.IGNORECASE,
+)
+# Front matter is reliably within a book's first pages; bounding the search
+# keeps this from ever matching a table deep in the real text.
+_TOC_PAGE_LIMIT = 25
+
+
+def _is_headless_toc_page(page: PageContent) -> bool:
+    """A Contents/TOC page whose own heading was stripped as a running head
+    or folio before reaching here, leaving just its row-and-page-number body.
+
+    Its shape is the same "many short fragments" signature as a map -- reused
+    from extract.py's column-count test -- confirmed by keyword content so a
+    short-lined poem or epigraph in the front matter isn't swept up too.
+    """
+    if page.number >= _TOC_PAGE_LIMIT or len(page.body_lines) < 10:
+        return False
+    words = [len(ln.text.split()) for ln in page.body_lines]
+    avg_words = sum(words) / len(page.body_lines)
+    lens = sorted(len(ln.text.strip()) for ln in page.body_lines)
+    median_len = lens[len(lens) // 2]
+    if not (avg_words < 3.5 and median_len < 30):
+        return False
+    if not (2 <= _column_count(page.body_lines) <= 12):
+        return False
+    combined = " ".join(ln.text for ln in page.body_lines)
+    return bool(_TOC_KEYWORDS_RE.search(combined))
+
+
 def _build_flow(
     analyzed: Analyzed,
     page_images: Dict[int, List[ImageBlock]],
     academic: bool,
+    keep_print_nav: bool = False,
 ) -> Tuple[List[Tuple[int, Element]], Dict[int, List[Element]]]:
     flat: List[Tuple[int, Element]] = []
     notes_by_page: Dict[int, List[Element]] = {}
 
     for page in analyzed.pages:
+        if not keep_print_nav and _is_headless_toc_page(page):
+            continue
         note_prefix = f"n{page.number}-"
 
         page_notes = parse_page_notes(page.note_lines, analyzed.body_size)
@@ -308,7 +364,14 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
             prev = out[-1][1]
             ptxt, cur = prev.text.strip(), el.text.strip()
             numbered = bool(_BARE_NUM_HEAD_RE.match(ptxt))
-            continues = prev.level == el.level and not ptxt.endswith((".", "?", "!", ":", ";"))
+            # Not level-gated: a bare-number merge lowers prev.level to the
+            # chapter level (1) so it still splits chapters correctly, which
+            # would otherwise block merging a *third* wrapped line (originally
+            # level 2) into it on the very next iteration. Two headings
+            # sitting back-to-back on the same page with nothing between them
+            # are themselves already strong evidence of one wrapped title;
+            # unterminated punctuation is the tell for where it still runs on.
+            continues = not ptxt.endswith((".", "?", "!", ":", ";")) and len(ptxt) < 160
             if numbered or continues:
                 prev.runs = [InlineRun(text=f"{ptxt} {cur}")]
                 prev.level = min(prev.level or 9, el.level or 9)
@@ -592,7 +655,7 @@ def build_document(
     keep_print_nav: bool = False,
 ) -> Document:
     academic = profile == "academic"
-    flat, notes_by_page = _build_flow(analyzed, page_images, academic)
+    flat, notes_by_page = _build_flow(analyzed, page_images, academic, keep_print_nav)
     flat = _merge_split_headings(flat)
     flat = _merge_across_pages(flat)
 
@@ -605,6 +668,8 @@ def build_document(
         chapters = [c for c in chapters if not _PRINT_NAV_RE.match(c.title.strip())] or chapters
 
     for i, ch in enumerate(chapters):
+        if not keep_print_nav:
+            _drop_front_matter_lists(ch)
         if academic:
             _extract_endnotes(ch, i)
             _style_references(ch)
@@ -614,7 +679,7 @@ def build_document(
 
     doc = Document(chapters=chapters, language=language)
     doc.title = title or (meta.get("title") or "").strip() or _guess_title(chapters)
-    doc.author = author or (meta.get("author") or "").strip()
+    doc.author = author or (meta.get("author") or "").strip() or _guess_author(chapters)
 
     # Cover: a render of page 1 is the most faithful and always available;
     # fall back to a large embedded image only if rendering failed.
@@ -631,9 +696,45 @@ def build_document(
     return doc
 
 
+def _drop_front_matter_lists(chapter: Chapter) -> None:
+    """Remove a "List of Illustrations/Maps/Tables" block from a chapter.
+
+    Unlike Contents/Index, these are frequently *sub*-headings inside a larger
+    front-matter chapter (no PDF outline means front matter never gets split
+    out on its own), so they are dropped at element level: from the matching
+    heading up to -- but not including -- the next heading at the same level
+    or shallower.
+    """
+    els = chapter.elements
+    out: List[Element] = []
+    skip_level: Optional[int] = None
+    for el in els:
+        if el.kind == ElementKind.HEADING:
+            if skip_level is not None and el.level <= skip_level:
+                skip_level = None
+            if skip_level is None and _FRONT_LIST_RE.match(el.text.strip()):
+                skip_level = el.level
+                continue
+        if skip_level is not None:
+            continue
+        out.append(el)
+    chapter.elements = out
+
+
 def _guess_title(chapters: List[Chapter]) -> str:
     for ch in chapters:
         for el in ch.elements:
             if el.kind == ElementKind.HEADING:
                 return el.text.strip()[:120]
     return "Untitled"
+
+
+def _guess_author(chapters: List[Chapter]) -> str:
+    """Fall back to a "© Name YYYY" copyright line when the PDF has no
+    /Author metadata -- reliable on the colophon page of most books."""
+    for ch in chapters[:2]:
+        for el in ch.elements[:60]:
+            m = _COPYRIGHT_RE.search(el.text)
+            if m:
+                return m.group(1).strip()
+    return ""

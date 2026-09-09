@@ -322,3 +322,119 @@ def test_audit_reports_clean(bookish_epub):
     report = audit_epub(bookish_epub)
     assert report.ok, report.as_dict()
     assert report.notes == 3 and not report.dead_links
+
+
+# --------------------------------------------------------------------------- #
+# Broken-font watermarks, map pages, headless front matter, whitespace
+# --------------------------------------------------------------------------- #
+
+
+def test_garbled_footer_text_is_filtered():
+    """A footer/watermark drawn with a broken ToUnicode CMap decodes to raw
+    control characters, not real glyphs; it must never reach body text."""
+    from pdf2kindle.extract import _is_garbled
+
+    assert _is_garbled(":DD$C\x0e\x04\x04\x19#\x1e #B9\x04\x06\x05 \x06\x05\x06")
+    assert not _is_garbled("Cambridge University Press has no responsibility")
+    assert not _is_garbled("")
+
+
+def _lines_from_texts(specs):
+    """specs: list of (text, x0). One word-per-line, at a fixed y-step."""
+    from pdf2kindle.model import Line, Span
+
+    out = []
+    for i, (text, x0) in enumerate(specs):
+        y = 100.0 + i * 12.0
+        out.append(Line(
+            spans=[Span(text=text, font="f", size=10.0, flags=0, color=0,
+                        bbox=(x0, y, x0 + 40, y + 10), origin=(x0, y + 8))],
+            bbox=(x0, y, x0 + 40, y + 10),
+        ))
+    return out
+
+
+def test_map_page_detected_by_scatter_not_shape_alone():
+    """A map's place-name labels scatter across many x-positions; a two-column
+    table's fragments cluster into just a couple. Word-shortness alone must
+    not be enough, or a Contents page reads as a map."""
+    from pdf2kindle.extract import _looks_like_map
+
+    # Two-column list: labels at x=110, page numbers at x=470 -- a table.
+    table = _lines_from_texts(
+        [("Introduction", 110), ("1", 470), ("Beginnings", 110), ("6", 470)] * 4
+    )
+    assert not _looks_like_map(table)
+
+    # Scattered place-name labels at many distinct x-positions -- a map.
+    import random
+    random.seed(0)
+    scattered = _lines_from_texts([(w, x) for w, x in zip(
+        ["Napoca", "Apulum", "Dacia", "I", "C", "A", "50", "100", "km",
+         "Tapae", "Sarmizegetusa", "Danube", "0", "150", "200"] * 2,
+        [110, 240, 305, 400, 430, 460, 130, 180, 220, 270, 340, 390, 100, 160, 210] * 2,
+    )])
+    assert _looks_like_map(scattered)
+
+
+def test_headless_toc_page_dropped(tmp_path):
+    """A Contents page whose own heading was stripped upstream still gets
+    dropped, via its table shape plus keyword confirmation."""
+    from pdf2kindle.analyze import PageContent
+    from pdf2kindle.structure import _is_headless_toc_page
+
+    lines = _lines_from_texts([
+        ("List", 110), ("of", 150), ("maps", 180), ("xii", 470),
+        ("Acknowledgments", 110), ("xiii", 470), ("Introduction", 110),
+        ("1", 470), ("Beginnings", 110), ("6", 470), ("Further", 110),
+        ("reading", 160), ("311", 470), ("Index", 110), ("315", 470),
+    ])
+    pc = PageContent(number=2, width=595, height=842, ocr=False, body_lines=lines)
+    assert _is_headless_toc_page(pc)
+
+    # A short-lined epigraph/poem must NOT be swept up: single column, and no
+    # front-matter keyword.
+    poem = _lines_from_texts([(w, 110) for w in
+        ["Roses", "are", "red", "violets", "are", "blue", "a", "short",
+         "poem", "here", "for", "you"]])
+    pc2 = PageContent(number=3, width=595, height=842, ocr=False, body_lines=poem)
+    assert not _is_headless_toc_page(pc2)
+
+
+def test_multispace_collapsed():
+    """Justified typesetting can bake padding spaces into the text stream."""
+    from pdf2kindle.text import normalize
+
+    assert normalize("KEITH  HITCHINS   University of Illinois") == (
+        "KEITH HITCHINS University of Illinois"
+    )
+
+
+def test_author_guessed_from_copyright_line():
+    from pdf2kindle.model import Chapter, Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _guess_author
+
+    ch = Chapter(title="Front Matter", elements=[
+        Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="© Keith Hitchins 2014")]),
+    ])
+    assert _guess_author([ch]) == "Keith Hitchins"
+    assert _guess_author([Chapter(title="Empty")]) == ""
+
+
+def test_wrapped_chapter_title_merges_across_three_fragments():
+    """A bare chapter number, then a title wrapped over two lines, must merge
+    into one heading -- even though the first merge changes the running
+    level, which must not block merging the third fragment."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _merge_split_headings
+
+    flat = [
+        (30, Element(kind=ElementKind.HEADING, level=1, runs=[InlineRun(text="2")])),
+        (30, Element(kind=ElementKind.HEADING, level=2,
+                     runs=[InlineRun(text="Between East and West, fourteenth")])),
+        (30, Element(kind=ElementKind.HEADING, level=2,
+                     runs=[InlineRun(text="century to 1774")])),
+    ]
+    merged = _merge_split_headings(flat)
+    assert len(merged) == 1
+    assert merged[0][1].text == "2 Between East and West, fourteenth century to 1774"
