@@ -38,18 +38,26 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
 ## What it does
 
 - **Reading-order & paragraph reconstruction** — merges the PDF's fragmented
-  lines back into real paragraphs, de-hyphenates words split across lines, and
-  handles simple multi-column layouts.
+  lines back into real paragraphs, de-hyphenates words split across lines,
+  rejoins a line PDF extraction split into word-fragments over extreme
+  justified spacing, and handles simple multi-column layouts.
 - **Chapter organization** — uses the PDF's own bookmarks/outline when present,
-  otherwise detects headings from font-size clustering, and splits the book into
-  one navigable chapter per section with a full EPUB3 + NCX table of contents.
+  otherwise detects headings from font-size clustering — including a heading
+  wrapped over two or three lines, and one numbered without a space after its
+  dot ("1.Literature overview") — and splits the book into one navigable
+  chapter per section with a full EPUB3 + NCX table of contents. A printed
+  Contents page's dot-leader rows ("Introduction .......... 4") are never
+  mistaken for real headings, however boldly Word styled them.
 - **Typographic nuance** — preserves **bold** / *italic* runs, small-caps and
   superscripts, block quotes, and headings; body text is **justified** with
   automatic hyphenation, tuned for Kindle's renderer.
 - **Footnote management** — detects superscript reference markers and the
   matching notes at the foot of the page, then re-links them as EPUB3
   `noteref`/`footnote` pairs so Kindle shows them as tappable pop-ups (with
-  back-links) instead of stranding them mid-text.
+  back-links) instead of stranding them mid-text. A block quote or epigraph
+  set at the same small size as footnotes, sitting just above them, is
+  recognized and kept in the body rather than taking the real footnotes down
+  with it.
 - **Images** — embeds figures and illustrations inline at their reading position.
 - **Maps and diagrams** — a page that is really vector art (a map's borders,
   rivers, a chart's lines) has nothing for a text/image extractor to find but

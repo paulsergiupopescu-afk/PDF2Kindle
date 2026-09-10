@@ -221,13 +221,18 @@ def _split_body_notes(
     if not notes:
         return ordered, []
 
-    # The block must actually open with a note label. A gap alone is not
-    # enough: captions and other small type also sit under the text block,
-    # and swallowing them here would delete them from the book.
-    if not _starts_with_marker(notes[0], body_size):
+    # The block must open with a note label -- but body content set at
+    # footnote size (a block quote, an epigraph) can sit directly above the
+    # real footnotes and get swept into the same candidate run, pushing a
+    # non-marker line to the top. Trim down to the first line that actually
+    # opens a note, rather than discarding the whole run (and the genuine
+    # footnotes still in it) over a false start above it.
+    start = next((i for i, ln in enumerate(notes) if _starts_with_marker(ln, body_size)), None)
+    if start is None:
         return ordered, []
+    demoted, notes = notes[:start], notes[start:]
 
-    body = ordered[: len(ordered) - len(notes)]
+    body = ordered[: len(ordered) - len(notes) - len(demoted)] + demoted
     # A real footnote zone sits *under* body text. A page that is small type
     # all the way up is a dedicated endnote/reference page, which belongs to
     # the endnote handler — peeling it here would split it in half.

@@ -30,14 +30,26 @@ from .model import (
     SubHead,
 )
 
+# Named top-level divisions. Matched against the line's first word only, so a
+# plural ("Conclusions") and its singular both hit without listing each one --
+# the alternative, an exhaustive word list, silently misses whichever term a
+# given book happens to use and inconsistently demotes it (see _is_heading).
 _CHAPTER_RE = re.compile(
-    r"^\s*(chapter|part|book|section|prologue|epilogue|introduction|preface|"
-    r"appendix|conclusion|foreword|afterword)\b",
+    r"^\s*(chapters?|parts?|books?|sections?|prologue|epilogue|introduction|"
+    r"preface|appendix(?:es|ices)?|conclusions?|foreword|afterword|abstract|"
+    r"summary|bibliography|references|acknowledge?ments?|glossary|index)\b",
     re.IGNORECASE,
 )
 # "1", "1.2", "1.2.3", "IV.", "A." style leading section numbers.
-_NUM_HEAD_RE = re.compile(r"^\s*(\d+(?:\.\d+){0,3})\.?\s+\S")
+# The space after the number is not required: a Word-styled heading numbered
+# "1.Literature overview" (dot, no space) is exactly as common as "1. Literature
+# overview" (dot, space) or "1 Literature overview" (space, no dot).
+_NUM_HEAD_RE = re.compile(r"^\s*(\d+(?:\.\d+){0,3})\.?\s*\S")
 _ROMAN_HEAD_RE = re.compile(r"^\s*([IVXLC]{1,6})\.\s+\S")
+# A dot leader ("...................") or a run of ellipsis characters, as
+# used by a printed Contents/Index/List-of-Tables entry to connect a title to
+# its page number.
+_DOT_LEADER_RE = re.compile(r"\.{4,}|…{2,}")
 _CAPTION_RE = re.compile(
     r"^\s*(figure|fig\.?|table|tbl\.?|plate|chart|diagram|scheme|equation|eq\.?|"
     r"listing|algorithm|map|graph|exhibit|box)\s*\.?\s*\d",
@@ -61,7 +73,7 @@ _PRINT_NAV_RE = re.compile(r"^\s*(contents|table\s+of\s+contents|index)\s*$", re
 # outline to split on.
 _FRONT_LIST_RE = re.compile(
     r"^\s*list\s+of\s+(illustrations|maps|tables|figures|plates|abbreviations)\s*$"
-    r"|^\s*(illustrations|maps|tables|figures|plates)\s*$",
+    r"|^\s*(illustrations|maps|tables|figures|plates|contents|table\s+of\s+contents)\s*$",
     re.IGNORECASE,
 )
 # A copyright line: "© Keith Hitchins 2014". Reliable across most books when
@@ -131,6 +143,12 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
     words = text.split()
     if not text or len(words) > 16:
         return None
+    # A dot-leader or ellipsis run ("Introduction .......... 4") is a printed
+    # Contents/Index entry, never a real heading -- regardless of its bold
+    # weight or leading section number, both of which a Word-styled ToC entry
+    # otherwise satisfies just as well as an actual section title.
+    if _DOT_LEADER_RE.search(text):
+        return None
 
     ratio = size / body_size if body_size else 1.0
     bold = all(s.bold for s in line.spans if s.text.strip())
@@ -161,6 +179,37 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
     if text.isupper() and 1 < len(words) <= 8 and ratio >= 1.0:
         return 3
     return None
+
+
+def _is_wrapped_heading(group: List[Line], body_size: float) -> Optional[int]:
+    """Return a heading level for a *multi-line* group that is really one
+    heading wrapped across lines -- a title set large enough to need two or
+    three lines never gets a chance at `_is_heading`, which only runs on
+    single-line groups, so on its own it is silently kept as a paragraph.
+
+    Judged purely by font size and shortness, deliberately not reusing
+    `_is_heading`'s numbered-section/bold/chapter-name rules: those exist to
+    catch a heading set at or near body size, which is exactly the size a
+    genuine multi-line paragraph is also set at, and applying them here would
+    misclassify ordinary wrapped prose as a heading constantly.
+    """
+    if len(group) > 4:
+        return None  # a heading essentially never wraps further than this
+    sizes = [ln.dominant_size for ln in group]
+    if max(sizes) - min(sizes) > 0.6:
+        return None  # not one uniformly-styled heading
+    size = sizes[0]
+    ratio = size / body_size if body_size else 1.0
+    if ratio < 1.18:
+        return None
+    total_words = sum(len(ln.text.split()) for ln in group)
+    if total_words > 20:
+        return None
+    if ratio >= 1.8:
+        return 1
+    if ratio >= 1.4:
+        return 2
+    return 3
 
 
 # --------------------------------------------------------------------------- #
@@ -304,10 +353,16 @@ def _build_flow(
             ]
 
         for group in _group_paragraphs(page, analyzed.body_size, analyzed.line_height):
-            level = _is_heading(group[0], analyzed.body_size) if len(group) == 1 else None
+            if len(group) == 1:
+                level = _is_heading(group[0], analyzed.body_size)
+                size = group[0].dominant_size if level else 0.0
+            else:
+                level = _is_wrapped_heading(group, analyzed.body_size)
+                size = group[0].dominant_size if level else 0.0
             if level:
                 runs = _paragraph_runs(group, note_prefix, analyzed.body_size)
-                flat.append((page.number, Element(kind=ElementKind.HEADING, runs=runs, level=level)))
+                flat.append((page.number, Element(kind=ElementKind.HEADING, runs=runs,
+                                                  level=level, size=size)))
                 continue
 
             runs = _paragraph_runs(group, note_prefix, analyzed.body_size)
@@ -364,17 +419,36 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
             prev = out[-1][1]
             ptxt, cur = prev.text.strip(), el.text.strip()
             numbered = bool(_BARE_NUM_HEAD_RE.match(ptxt))
-            # Not level-gated: a bare-number merge lowers prev.level to the
-            # chapter level (1) so it still splits chapters correctly, which
-            # would otherwise block merging a *third* wrapped line (originally
-            # level 2) into it on the very next iteration. Two headings
-            # sitting back-to-back on the same page with nothing between them
-            # are themselves already strong evidence of one wrapped title;
-            # unterminated punctuation is the tell for where it still runs on.
-            continues = not ptxt.endswith((".", "?", "!", ":", ";")) and len(ptxt) < 160
+            # A genuine multi-line wrap keeps the same font size throughout;
+            # a title page stacks several *different* short heading-like
+            # lines (field of study, title, thesis type, supervisor) that
+            # merely happen to lack terminal punctuation each -- without a
+            # size match, those would all glue into one nonsense heading.
+            same_size = prev.size <= 0 or el.size <= 0 or abs(prev.size - el.size) <= 1.0
+            # A book can style every numbered depth at one identical size --
+            # "1.Literature overview" and its own "1.1. Hegemony..." both at
+            # 20pt here -- so same_size alone cannot rule out the next line
+            # being a *new*, independently-numbered heading rather than a
+            # continuation of this one's wrapped text. "numbered" already
+            # covers the one case where a bare number legitimately precedes
+            # its title.
+            new_numbered_section = bool(_NUM_HEAD_RE.match(cur)) and not numbered
+            continues = (
+                same_size
+                and not new_numbered_section
+                and not ptxt.endswith((".", "?", "!", ":", ";"))
+                and len(ptxt) < 160
+            )
             if numbered or continues:
                 prev.runs = [InlineRun(text=f"{ptxt} {cur}")]
                 prev.level = min(prev.level or 9, el.level or 9)
+                # Adopt the just-merged fragment's size as the new basis for
+                # comparison: after a bare-number merge ("2" then a normal-
+                # size title), prev.size must track the *title's* size, or a
+                # third wrapped fragment (also at the title's size) would be
+                # compared against the number's size instead and rejected.
+                if el.size > 0:
+                    prev.size = el.size
                 continue
         out.append((page_no, el))
     return out
@@ -539,7 +613,10 @@ def _split_by_headings(flat, notes_by_page) -> List[Chapter]:
     starts = []
     for i, (start, ch) in enumerate(built):
         if not ch.title:
-            ch.title = f"Chapter {i + 1}"
+            # An untitled *first* chunk is whatever comes before the book's
+            # first real heading -- title-page and colophon content, not a
+            # numbered chapter of its own.
+            ch.title = "Front Matter" if i == 0 else f"Chapter {i + 1}"
         chapters.append(ch)
         starts.append(start)
     _attach_notes_by_range(chapters, starts, notes_by_page)
@@ -722,11 +799,22 @@ def _drop_front_matter_lists(chapter: Chapter) -> None:
 
 
 def _guess_title(chapters: List[Chapter]) -> str:
-    for ch in chapters:
-        for el in ch.elements:
-            if el.kind == ElementKind.HEADING:
-                return el.text.strip()[:120]
-    return "Untitled"
+    """Prefer the *largest*-set heading near the start of the book.
+
+    A title page routinely carries several heading-shaped lines around the
+    actual title -- an author name, "Field of Study: ...", "Master's
+    Thesis" -- any of which could come first in reading order. The title
+    itself is reliably the most prominent (largest) of them, not simply
+    whichever heading is encountered first.
+    """
+    candidates = [
+        el for ch in chapters[:2] for el in ch.elements
+        if el.kind == ElementKind.HEADING and el.text.strip()
+    ]
+    if not candidates:
+        return "Untitled"
+    best = max(candidates, key=lambda e: e.size) if any(c.size > 0 for c in candidates) else candidates[0]
+    return best.text.strip()[:120]
 
 
 def _guess_author(chapters: List[Chapter]) -> str:

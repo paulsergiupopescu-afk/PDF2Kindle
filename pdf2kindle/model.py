@@ -135,6 +135,7 @@ class Element:
     kind: ElementKind
     runs: List[InlineRun] = field(default_factory=list)
     level: int = 0  # heading level (1..6)
+    size: float = 0.0  # source font size, for headings -- see _merge_split_headings
     anchor: str = ""  # id for intra-chapter navigation (headings)
     # image payload
     image: Optional[ImageBlock] = None

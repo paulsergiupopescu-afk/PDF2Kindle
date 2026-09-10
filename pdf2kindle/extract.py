@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import unicodedata
+from dataclasses import replace
 from typing import List, Optional
 
 import pymupdf
@@ -88,11 +89,53 @@ def _extract_text_page(page: "pymupdf.Page", number: int) -> Page:
                     )
                 )
             continue
+        block_lines: List[Line] = []
         for ld in block.get("lines", []):
             line = _line_from_dict(ld)
             if line is not None:
-                out.lines.append(line)
+                block_lines.append(line)
+        out.lines.extend(_merge_same_row_lines(block_lines))
     return out
+
+
+def _merge_same_row_lines(lines: List[Line]) -> List[Line]:
+    """Recombine fragments PyMuPDF split off from one visual line.
+
+    Extreme word-spacing -- a short line stretched to fill a fully-justified
+    paragraph's last line, common in Word output -- can push gaps between
+    words wide enough that PyMuPDF's line clustering reports each run of
+    words as its own "line", all sharing the identical y-position. Left
+    alone, each fragment becomes its own paragraph, breaking a normal
+    sentence into "word1" / "word2" / "word3" one-word paragraphs.
+    """
+    if len(lines) < 2:
+        return lines
+    groups: List[List[Line]] = []
+    for ln in lines:
+        if groups and abs(groups[-1][0].y0 - ln.y0) <= 1.5:
+            groups[-1].append(ln)
+        else:
+            groups.append([ln])
+
+    merged: List[Line] = []
+    for group in groups:
+        if len(group) == 1:
+            merged.append(group[0])
+            continue
+        group.sort(key=lambda ln: ln.x0)
+        spans: List[Span] = []
+        for i, ln in enumerate(group):
+            frag_spans = list(ln.spans)
+            if i > 0 and frag_spans and spans:
+                if not spans[-1].text.endswith((" ", "\t")) and not frag_spans[0].text.startswith((" ", "\t")):
+                    spans[-1] = replace(spans[-1], text=spans[-1].text + " ")
+            spans.extend(frag_spans)
+        x0 = min(ln.x0 for ln in group)
+        y0 = min(ln.y0 for ln in group)
+        x1 = max(ln.x1 for ln in group)
+        y1 = max(ln.y1 for ln in group)
+        merged.append(Line(spans=spans, bbox=(x0, y0, x1, y1)))
+    return merged
 
 
 def _char_count(page: Page) -> int:
@@ -145,7 +188,15 @@ def _looks_like_map(lines: List[Line]) -> bool:
     map label -- so it is *not* enough on its own. What separates them is
     column structure: a table's fragments fall into a handful of x-positions
     (its columns); a map's are scattered across dozens.
+
+    A centered title page shares it too, in a different way: Word happily
+    emits a blank paragraph as a "line" containing just a run of spaces, and
+    a title page is mostly blank spacer lines around a few short centered
+    ones. Left uncounted, those blanks drag the word-per-line average toward
+    zero and inflate the line count past the threshold on their own -- so
+    they must be excluded before the shape is judged at all.
     """
+    lines = [ln for ln in lines if ln.text.strip()]
     if len(lines) < 10:
         return False
     words = [len(ln.text.split()) for ln in lines]

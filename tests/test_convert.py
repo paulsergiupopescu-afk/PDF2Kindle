@@ -110,10 +110,18 @@ def test_academic_features(academic_pdf, tmp_path):
     with zipfile.ZipFile(out) as z:
         body = _read(z, "chap_000.xhtml")
         nav = _read(z, "nav.xhtml")
+        # References is a named top-level division like any other (see
+        # _CHAPTER_RE) and may land in its own chapter rather than staying a
+        # sub-heading, so check across every chapter rather than assuming it
+        # stays in chap_000.
+        all_bodies = "".join(
+            z.read(n).decode() for n in z.namelist()
+            if n.startswith("EPUB/chap_") and n.endswith(".xhtml")
+        )
     assert "<h1" in body and "<h2" in body           # multi-level headings
     assert "<blockquote>" in body                     # block quote detected
     assert 'class="caption"' in body                  # figure caption
-    assert 'class="reference"' in body                # bibliography entries
+    assert 'class="reference"' in all_bodies           # bibliography entries
     # Endnotes extracted from the "Notes" section and linked as pop-ups,
     # with every marker resolving to a real note:
     assert 'epub:type="noteref"' in body and 'epub:type="footnote"' in body
@@ -438,3 +446,135 @@ def test_wrapped_chapter_title_merges_across_three_fragments():
     merged = _merge_split_headings(flat)
     assert len(merged) == 1
     assert merged[0][1].text == "2 Between East and West, fourteenth century to 1774"
+
+
+# --------------------------------------------------------------------------- #
+# A Word-generated thesis: dot-leader ToC, multi-line title, footnote zones
+# masked by same-size body text, and justified-line word-splitting
+# --------------------------------------------------------------------------- #
+
+
+def test_dot_leader_toc_entry_is_not_a_heading():
+    """"Introduction .......... 4" is a printed Contents/Index row -- never a
+    real heading, regardless of bold weight or a leading section number."""
+    from pdf2kindle.model import Line, Span
+    from pdf2kindle.structure import _is_heading
+
+    ln = Line(
+        spans=[Span(text="1.Literature overview " + "." * 40, font="f", size=12.0,
+                    flags=1 << 4, color=0, bbox=(0, 0, 1, 1), origin=(0, 8))],
+        bbox=(0, 0, 1, 1),
+    )
+    assert _is_heading(ln, body_size=12.0) is None
+
+
+def test_numbered_heading_without_space_after_dot():
+    """"1.Literature overview" (no space after the dot) is as common as
+    "1. Literature overview" in Word-generated numbering."""
+    from pdf2kindle.model import Line, Span
+    from pdf2kindle.structure import _is_heading
+
+    ln = Line(
+        spans=[Span(text="1.Literature overview", font="f", size=20.0, flags=0,
+                    color=0, bbox=(0, 0, 1, 1), origin=(0, 16))],
+        bbox=(0, 0, 1, 1),
+    )
+    assert _is_heading(ln, body_size=12.0) == 1
+
+
+def test_blank_lines_dont_trigger_map_detection():
+    """A centered title page is mostly blank spacer "lines"; left uncounted
+    they drag the map heuristic's word-per-line average toward zero."""
+    from pdf2kindle.extract import _looks_like_map
+    from pdf2kindle.model import Line, Span
+
+    def line(text, x0):
+        return Line(spans=[Span(text=text, font="f", size=14.0, flags=0, color=0,
+                                bbox=(x0, 0, x0 + 40, 10), origin=(x0, 8))],
+                    bbox=(x0, 0, x0 + 40, 10))
+
+    title_page = (
+        [line("University Name", 180), line("Author Name", 220),
+         line("A Thesis Title Here", 150), line("Field of Study", 190)]
+        + [line("", 0)] * 10  # blank spacer lines
+    )
+    assert not _looks_like_map(title_page)
+
+
+def test_same_size_headings_at_different_depths_dont_merge():
+    """A book can style every numbered depth identically ("1.Overview" and its
+    own "1.1. Subsection" both at 20pt) -- same size alone must not merge a
+    section into its own subsection."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _merge_split_headings
+
+    flat = [
+        (10, Element(kind=ElementKind.HEADING, level=1, size=20.0,
+                     runs=[InlineRun(text="1.Literature overview")])),
+        (10, Element(kind=ElementKind.HEADING, level=2, size=20.0,
+                     runs=[InlineRun(text="1.1. Hegemony and language")])),
+    ]
+    merged = _merge_split_headings(flat)
+    assert len(merged) == 2
+    assert merged[0][1].text == "1.Literature overview"
+    assert merged[1][1].text == "1.1. Hegemony and language"
+
+
+def test_footnote_zone_survives_a_same_size_block_quote_above_it():
+    """A block quote set at footnote size directly above the real footnotes
+    must not make the whole footnote block unrecognisable: only the block
+    quote should be demoted back to body text."""
+    from pdf2kindle.analyze import _split_body_notes
+    from pdf2kindle.model import Line, Span
+
+    def line(text, y0, size=10.0):
+        return Line(spans=[Span(text=text, font="f", size=size, flags=0, color=0,
+                                bbox=(70, y0, 70 + len(text) * 5, y0 + 10),
+                                origin=(70, y0 + 8))],
+                    bbox=(70, y0, 70 + len(text) * 5, y0 + 10))
+
+    lines = [
+        line("A paragraph of ordinary body text here.", 460, size=12.0),
+        line("A second line of that same body paragraph.", 500, size=12.0),
+        line('"A quoted excerpt set in a smaller font."', 580),
+        line("1 First, S. (2020). A cited source.", 668),
+        line("2 Second, T. (2021). Another source.", 700),
+    ]
+    body, notes = _split_body_notes(lines, body_size=12.0, height=842.0, line_height=13.0)
+    assert [n.text for n in notes] == ["1 First, S. (2020). A cited source.",
+                                        "2 Second, T. (2021). Another source."]
+    assert any("quoted excerpt" in ln.text for ln in body)
+
+
+def test_justified_line_split_by_wide_gaps_is_rejoined():
+    """Extreme word-spacing on a fully-justified line can make PyMuPDF report
+    each word run as its own "line"; they must be recombined into one."""
+    from pdf2kindle.extract import _merge_same_row_lines
+    from pdf2kindle.model import Line, Span
+
+    def frag(text, x0):
+        return Line(spans=[Span(text=text, font="f", size=10.0, flags=0, color=0,
+                                bbox=(x0, 464.7, x0 + 30, 474.7), origin=(x0, 472.7))],
+                    bbox=(x0, 464.7, x0 + 30, 474.7))
+
+    fragments = [frag("transmisje", 176.9), frag("on-line", 264.0),
+                 frag("i", 335.7), frag("relacje", 376.8), frag("na", 446.4)]
+    merged = _merge_same_row_lines(fragments)
+    assert len(merged) == 1
+    assert merged[0].text == "transmisje on-line i relacje na"
+
+
+def test_front_matter_gets_a_sensible_name(tmp_path):
+    """An untitled first chapter (everything before the book's first real
+    heading) is named "Front Matter", not the generic "Chapter 1"."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _split_by_headings
+
+    flat = [
+        (0, Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="A university name")])),
+        (1, Element(kind=ElementKind.HEADING, level=1, runs=[InlineRun(text="Introduction")])),
+        (1, Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="Body text.")])),
+    ]
+    chapters = _split_by_headings(flat, {})
+    assert chapters[0].title == "Front Matter"
+    assert chapters[1].title == "Introduction"
