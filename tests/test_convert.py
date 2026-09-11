@@ -578,3 +578,75 @@ def test_front_matter_gets_a_sensible_name(tmp_path):
     chapters = _split_by_headings(flat, {})
     assert chapters[0].title == "Front Matter"
     assert chapters[1].title == "Introduction"
+
+
+# --------------------------------------------------------------------------- #
+# Typography design: chapter openings, drop caps, dinkus
+# --------------------------------------------------------------------------- #
+
+
+def test_numbered_chapter_heading_splits_into_number_and_title():
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.html import _render_heading
+
+    el = Element(kind=ElementKind.HEADING, level=1,
+                 runs=[InlineRun(text="2. Methodological framework of research")])
+    html = _render_heading(el)
+    assert '<span class="chnum">2</span>' in html
+    assert '<span class="chtitle">Methodological framework of research</span>' in html
+
+
+def test_plain_chapter_heading_is_unsplit():
+    """A title with no leading number renders exactly as a bare heading --
+    required so existing content is never restyled into something new."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.html import _render_heading
+
+    el = Element(kind=ElementKind.HEADING, level=1, runs=[InlineRun(text="Chapter One")])
+    assert _render_heading(el) == "<h1>Chapter One</h1>\n"
+
+
+def test_opening_paragraph_gets_drop_cap_and_lead():
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.html import _render_opening_paragraph
+
+    el = Element(kind=ElementKind.PARAGRAPH,
+                 runs=[InlineRun(text="It was the best of times, it was the worst of times.")])
+    html = _render_opening_paragraph(el)
+    assert html is not None
+    assert '<span class="dropcap">I</span>' in html
+    assert '<span class="lead">t was</span>' in html
+    assert "best of times" in html
+
+
+def test_opening_paragraph_falls_back_for_lowercase_or_styled_start():
+    """A run that doesn't open on a plain capital letter -- lowercase, or
+    already bold/italic/a footnote marker -- must decline gracefully rather
+    than drop-cap something that would look wrong or corrupt markup."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.html import _render_opening_paragraph
+
+    lowercase = Element(kind=ElementKind.PARAGRAPH,
+                         runs=[InlineRun(text="continuing from the previous page.")])
+    assert _render_opening_paragraph(lowercase) is None
+
+    italic_start = Element(kind=ElementKind.PARAGRAPH,
+                            runs=[InlineRun(text="Emphasis", italic=True),
+                                  InlineRun(text=" opens this paragraph.")])
+    assert _render_opening_paragraph(italic_start) is None
+
+
+def test_footnote_section_has_dinkus_not_a_visible_notes_label(bookish_epub):
+    with zipfile.ZipFile(bookish_epub) as z:
+        body = _read(z, "chap_000.xhtml")
+    assert 'class="dinkus"' in body
+    assert "<h2>Notes</h2>" in body  # kept for semantics, hidden via CSS
+
+
+def test_stylesheet_keeps_required_kindle_properties():
+    """Regardless of redesign, these two properties must stay literally
+    present -- they are what makes the body text justified and hyphenated."""
+    from pdf2kindle.html import STYLESHEET
+
+    assert "text-align: justify" in STYLESHEET
+    assert "hyphens: auto" in STYLESHEET

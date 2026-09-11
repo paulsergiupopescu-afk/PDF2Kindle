@@ -9,6 +9,20 @@ Most "PDF → EPUB" tools either wrap each page in a fixed-layout image or dump 
 wall of unstructured text. `pdf2kindle` does the harder thing: it analyses the
 PDF's typography and geometry to *reconstruct* the book.
 
+## Designed like a printed book, not a text dump
+
+Every chapter opens the way a well-typeset print book does: a small
+letter-spaced chapter number over a large serif title, then the opening
+paragraph set with a drop cap and a small-caps lead-in. Block quotes run in a
+quiet italic inset; a chapter's endnotes are introduced by a centered dinkus
+(`· · ·`) instead of a plain rule. None of it is decoration bolted on after
+the fact — every flourish is generated from the same structural analysis that
+finds chapters and footnotes, and degrades to plain, correct text whenever a
+heading or paragraph doesn't cleanly fit the pattern (see `pdf2kindle/html.py`
+for the exact rules). Kindle's renderer only honours a narrow slice of CSS,
+so nothing here relies on floats being supported, embedded fonts, or script —
+worst case on an older device, a flourish just renders as plain type.
+
 ## Optimized for academic books
 
 Scholarly PDFs have structure that trips up generic converters. The default
