@@ -192,7 +192,7 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
             m = _LABEL_RE.match(txt)
             split = (_norm_label(m.group(1)), m.group(2)) if m else None
         opens = False
-        if split is not None:
+        if split is not None and not _CONTINUES_SENTENCE.match(split[1]):
             opens = (line.x0 <= label_max_x) if hanging else _starts_note(split[0], last_num)
         if opens:
             flush()
@@ -203,6 +203,15 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
             cur_parts.append(txt)  # continuation line of the current note
     flush()
     return [n for n in notes if n.text]
+
+
+# A note body never opens mid-sentence. Text that does is the continuation of
+# the note above it, and the "label" in front of that text was a number
+# inside that note's own citation -- a volume or page reference that happened
+# to fall at the start of a line ("...Les commentaires," + "113, vol. 3, pp.
+# 116-117"), which the hanging-indent geometry cannot tell from a real label
+# because it sits at the block's left edge exactly like one.
+_CONTINUES_SENTENCE = re.compile(r"^\s*[,;:.)\-]")
 
 
 def _starts_note(label: str, last_num: Optional[int]) -> bool:

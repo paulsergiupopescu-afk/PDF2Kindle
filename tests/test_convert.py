@@ -650,3 +650,221 @@ def test_stylesheet_keeps_required_kindle_properties():
 
     assert "text-align: justify" in STYLESHEET
     assert "hyphens: auto" in STYLESHEET
+
+
+# --------------------------------------------------------------------------- #
+# Re-reading a scanned page's badly-OCR'd lines (--repair-ocr)
+# --------------------------------------------------------------------------- #
+
+def _scan_line(text, *, size=11.0, y0=100.0, x0=72.0, x1=400.0, flags=0):
+    from pdf2kindle.model import Line, Span
+    y1 = y0 + size
+    return Line(spans=[Span(text=text, font="Times", size=size, flags=flags, color=0,
+                            bbox=(x0, y0, x1, y1), origin=(x0, y1))],
+                bbox=(x0, y0, x1, y1))
+
+
+def test_other_script_lines_are_never_rewritten():
+    """A Greek or Cyrillic quotation is outside what a Latin-script
+    dictionary can judge or a Latin-script OCR model can read, so it must be
+    excluded before either gets a say."""
+    from pdf2kindle.extract import _is_other_script
+
+    assert _is_other_script("κΛάσις τοῦ ἄρτου καὶ εὐχαριστία")
+    assert _is_other_script("Божественная литургия Иоанна Златоуста")
+    assert not _is_other_script("Liturghia euharistică este slujba cea mai importantă")
+    # A stray Greek word inside a Romanian sentence is still a Romanian line.
+    assert not _is_other_script("Termenul grecesc ἄρτος apare des în textele liturgice")
+
+
+def test_ocr_words_are_assigned_to_their_own_column():
+    """A word must go to the line it belongs to, never across the gutter of a
+    two-column page into the line at the same height in the other column."""
+    from pdf2kindle.extract import _assign_words_to_lines
+
+    left = _scan_line("stanga", x0=72.0, x1=280.0, y0=100.0)
+    right = _scan_line("dreapta", x0=320.0, x1=520.0, y0=100.0)
+    words = [
+        {"text": "alpha", "x0": 80.0, "x1": 120.0, "y0": 101.0, "y1": 110.0},
+        {"text": "omega", "x0": 330.0, "x1": 380.0, "y0": 101.0, "y1": 110.0},
+    ]
+    grouped = _assign_words_to_lines(words, [left, right])
+    assert [w["text"] for w in grouped[0]] == ["alpha"]
+    assert [w["text"] for w in grouped[1]] == ["omega"]
+
+
+def test_lexicon_scoring_separates_garbled_from_clean_romanian():
+    """The arbitration only works if a dictionary actually separates the two.
+    Skipped where no Romanian dictionary is installed."""
+    from pdf2kindle.spelling import Lexicon
+
+    lex = Lexicon("ron")
+    if not lex.available:
+        pytest.skip("no hunspell Romanian dictionary installed")
+    garbled = lex.score("«It scoperă tainic toate raţiunile şi sensurile existenţiale")
+    clean = lex.score("descoperă tainic toate rațiunile şi sensurile existențiale")
+    assert garbled is not None and clean is not None
+    assert clean > garbled
+    # Too few words to judge -> no opinion, so no line is rewritten on a whim.
+    assert lex.score("două vorbe") is None
+
+
+class FakeLex:
+    """A dictionary that knows a fixed handful of Romanian words."""
+
+    available = True
+    WORDS = {"bisericii", "academice", "și", "adică", "rugându-se", "rugându",
+             "iii", "actualitate", "liturghierului", "teologia", "trăirea",
+             "pentru", "oameni", "descoperit", "pre"}
+
+    def is_known(self, word):
+        return len(word) >= 2 and word.lower() in self.WORDS
+
+    def score(self, text):
+        import re
+        words = re.findall(r"[^\W\d_]{2,}", text)
+        return (sum(1 for w in words if self.is_known(w)) / len(words)) if len(words) >= 4 else None
+
+
+def _choose(original, candidate):
+    from pdf2kindle.extract import _choose_token
+    return _choose_token(original, candidate, FakeLex())
+
+
+def test_a_misread_word_is_replaced_by_the_reading_that_is_a_real_word():
+    assert _choose("Biseridi", "Bisericii") == "Bisericii"
+    # Debris the misreading picked up is not carried onto the correction...
+    assert _choose(".iradcmice,", "academice,") == "academice,"
+    # ...but real punctuation hugging the word is kept.
+    assert _choose("(Biseridi)", "(Bisericii)") == "(Bisericii)"
+
+
+def test_a_word_the_existing_text_got_right_is_never_touched():
+    """One-directional on purpose: a real word stays, even when the fresh
+    reading differs, so a correct proper name is never 'corrected' away."""
+    assert _choose("Bisericii", "Bisericij") is None
+    assert _choose("Pruteanu", "Prufeanu") is None  # neither is in the dictionary
+
+
+def test_a_hyphenated_compound_keeps_the_rest_of_its_token():
+    """'rugăndu-se' must not come back as 'rugându' -- a token can hold more
+    than one word, and dropping the remainder would lose text."""
+    assert _choose("rugăndu-se,", "rugându-se,") == "rugându-se,"
+
+
+def test_a_line_break_hyphen_survives_a_repair():
+    """The trailing hyphen is what tells de-hyphenation the word continues on
+    the next line, so it is restored even when the fresh reading missed it."""
+    assert _choose("compli-", "compli") is None  # unchanged word -> no repair
+    assert _choose(".iradcmice-", "academice") == "academice-"
+
+
+def test_a_replacement_never_duplicates_part_of_the_token():
+    """Where the new reading covers the whole token, substituting only its
+    first letter run would leave the remainder behind ('ACTUALITATE'ATE')."""
+    assert _choose("ACTUALn'ATE", "ACTUALITATE") == "ACTUALITATE"
+
+
+def test_words_too_short_to_judge_are_left_alone():
+    """'stării a 111-a' must not become 'stării a 111-III': a one-letter
+    reading is not evidence of anything, in either direction."""
+    assert _choose("111-a,", "111-III,") is None
+    assert _choose("<·<", "pre") == "pre"  # no letters at all -> clear win
+
+
+def test_repair_keeps_every_span_boundary_and_style(monkeypatch):
+    """The reason repairs are done word-by-word rather than by swapping the
+    page for a fresh OCR pass: the line keeps its spans, sizes and style
+    flags, which is what heading/footnote/furniture detection measures."""
+    from pdf2kindle.model import FLAG_BOLD, Line, Page, Span
+    from pdf2kindle import extract as ex
+
+    def span(text, flags=0):
+        return Span(text=text, font="Times", size=11.0, flags=flags, color=0,
+                    bbox=(72.0, 100.0, 400.0, 111.0), origin=(72.0, 111.0))
+
+    page = Page(number=3, width=595.0, height=842.0)
+    line = Line(spans=[span("teologia şi "), span("Biseridi", FLAG_BOLD), span(" şi")],
+                bbox=(72.0, 100.0, 400.0, 111.0))
+    page.lines = [line]
+
+    monkeypatch.setattr(ex.ocr_mod, "ocr_words", lambda *a, **k: [
+        {"text": t, "x0": 72.0 + 40 * i, "x1": 105.0 + 40 * i, "y0": 101.0, "y1": 110.0}
+        for i, t in enumerate(["teologia", "şi", "Bisericii", "şi"])
+    ])
+    monkeypatch.setattr(ex, "_has_suspicious_line", lambda *a: True)
+
+    assert ex._repair_page(page, object(), FakeLex(), lang="ron", dpi=300) == 1
+    assert line.text == "teologia şi Bisericii şi"
+    assert len(line.spans) == 3           # span structure intact
+    assert line.spans[1].bold             # and so is the styling
+    assert line.bbox == (72.0, 100.0, 400.0, 111.0)
+
+
+def test_repair_skips_a_line_the_two_passes_disagree_on_the_length_of(monkeypatch):
+    """Different word counts means there is no trustworthy correspondence
+    between the readings, so guessing one could drop or duplicate text."""
+    from pdf2kindle.model import Page
+    from pdf2kindle import extract as ex
+
+    page = Page(number=3, width=595.0, height=842.0)
+    page.lines = [_scan_line("«It scoperă tainic toate")]
+    monkeypatch.setattr(ex.ocr_mod, "ocr_words", lambda *a, **k: [
+        {"text": t, "x0": 72.0 + 40 * i, "x1": 105.0 + 40 * i, "y0": 101.0, "y1": 110.0}
+        for i, t in enumerate(["descoperă", "tainic", "toate"])  # 3 vs 4
+    ])
+    monkeypatch.setattr(ex, "_has_suspicious_line", lambda *a: True)
+    assert ex._repair_page(page, object(), FakeLex(), lang="ron", dpi=300) == 0
+    assert page.lines[0].text == "«It scoperă tainic toate"
+
+
+def test_repair_keeps_low_confidence_words_so_it_cannot_delete_text(monkeypatch):
+    """Tesseract drops words it is unsure of, which would make a candidate
+    look better by deleting the hard words -- and a 'repair' that silently
+    loses text is worse than the misreading it replaces."""
+    from pdf2kindle.model import Page
+    from pdf2kindle import extract as ex
+
+    seen = {}
+
+    def fake_ocr_words(page, **kwargs):
+        seen.update(kwargs)
+        return []
+
+    monkeypatch.setattr(ex.ocr_mod, "ocr_words", fake_ocr_words)
+    monkeypatch.setattr(ex, "_has_suspicious_line", lambda *a: True)
+    p = Page(number=1, width=595.0, height=842.0)
+    p.lines = [_scan_line("orice")]
+    ex._repair_page(p, object(), FakeLex(), lang="ron", dpi=300)
+    assert seen.get("min_conf") == 0
+
+
+def test_a_footnote_marker_digit_is_never_dropped_by_a_repair():
+    """OCR flattens footnote markers into the text ('1Adică'), and notes are
+    paired by exactly those digits -- so a reading that lost them is not an
+    improvement, however much better the word looks."""
+    assert _choose("1Adicx", "Adică") is None
+    assert _choose("1Adicx", "1Adică") == "1Adică"
+
+
+def test_citation_number_at_a_line_start_is_not_a_new_footnote():
+    """A page or volume reference can fall at the left edge of the note
+    block, exactly where a hanging indent puts a real label -- but a note
+    body never opens mid-sentence, which is what gives it away."""
+    from pdf2kindle.footnotes import parse_page_notes
+    from pdf2kindle.model import Line, Span
+
+    def note_line(text, x0, size=8.0):
+        return Line(spans=[Span(text=text, font="Times", size=size, flags=0, color=0,
+                                bbox=(x0, 700.0, 500.0, 700.0 + size), origin=(x0, 708.0))],
+                    bbox=(x0, 700.0, 500.0, 700.0 + size))
+
+    notes = parse_page_notes([
+        note_line("12 R. BORNERT, Les commentaires byzantins de la Divine", 72.0),
+        note_line("Liturgie du VIIe au XVe siecle, Paris, 1966, pp. 112-", 86.0),
+        note_line("113, vol. 3, pp. 116-117. Vezi şi studiul următor.", 72.0),
+        note_line("13 J. MATEOS, La celebration de la parole, p. 40.", 72.0),
+    ], 11.0)
+
+    assert [n.label for n in notes] == ["12", "13"]
+    assert "vol. 3, pp. 116-117" in notes[0].text  # kept inside note 12

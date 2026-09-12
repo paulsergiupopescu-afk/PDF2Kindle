@@ -37,6 +37,47 @@ def is_available() -> bool:
     return _AVAILABLE
 
 
+def ocr_words(page: "pymupdf.Page", *, lang: str = "eng", dpi: int = 300,
+              min_conf: float = 40.0) -> Optional[List[dict]]:
+    """Run Tesseract over a rendered page and return word boxes in PDF points.
+
+    Used by extract.py to patch individual corrupted lines of an otherwise
+    good text layer, where whole-page replacement (ocr_page) would cost more
+    -- the fine per-glyph size/bold/superscript geometry that heading,
+    footnote and running-head detection all depend on -- than it's worth.
+    """
+    if not is_available():
+        return None
+    import pytesseract
+    from PIL import Image
+    import io
+
+    scale = dpi / 72.0
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
+    img = Image.open(io.BytesIO(pix.tobytes("png")))
+    data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DICT)
+
+    words: List[dict] = []
+    for i in range(len(data["text"])):
+        text = data["text"][i]
+        if not text or not text.strip():
+            continue
+        try:
+            conf = float(data["conf"][i])
+        except (ValueError, TypeError):
+            conf = -1.0
+        if conf >= 0 and conf < min_conf:  # drop very low-confidence noise
+            continue
+        words.append({
+            "text": text,
+            "x0": data["left"][i] / scale,
+            "y0": data["top"][i] / scale,
+            "x1": (data["left"][i] + data["width"][i]) / scale,
+            "y1": (data["top"][i] + data["height"][i]) / scale,
+        })
+    return words
+
+
 def ocr_page(page: "pymupdf.Page", *, number: int, lang: str = "eng", dpi: int = 300) -> Optional[Page]:
     if not is_available():
         return None

@@ -8,14 +8,16 @@ image-only (a scan) and therefore needs OCR. All interpretation happens later.
 from __future__ import annotations
 
 import logging
+import re
 import unicodedata
 from dataclasses import replace
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pymupdf
 
 from .model import ImageBlock, Line, Page, Span
 from . import ocr as ocr_mod
+from . import spelling
 
 log = logging.getLogger("pdf2kindle.extract")
 
@@ -26,6 +28,33 @@ _MIN_OCR_CHARS = 25
 # A line whose characters are more than this fraction raw control codes is
 # not text at all -- see _is_garbled().
 _GARBLE_THRESHOLD = 0.04
+# A page whose largest image covers more than this fraction of the page area
+# is a photograph of the whole page -- see _is_scanned_page().
+_SCAN_IMAGE_RATIO = 0.85
+# A line scoring below this fraction of real dictionary words is enough to
+# buy the page an OCR second opinion -- see _repair_page(). Set high on
+# purpose: a badly mangled line is usually *mostly* right ("teologia şi
+# trăirea (experienţa) Biseridi şi c împărtăşeşte" scores 0.875 with two
+# words destroyed), so a strict threshold here silently skips exactly the
+# pages that need the work. Being admitted costs only the OCR pass; whether
+# any line is actually rewritten is decided per line, further down.
+_SUSPICIOUS_SCORE = 0.95
+# A line with this fraction of non-Latin letters is a Greek or Slavonic
+# quotation: outside what a Latin-script dictionary or OCR model can judge.
+_NON_LATIN_LIMIT = 0.2
+# The alphabetic core of a token ("Bisericii" out of "(Bisericii,").
+_WORD_CORE = re.compile(r"[^\W\d_]+", re.UNICODE)
+# Punctuation that legitimately hugs a word. Anything else sitting against
+# one in a misread token (".iradcmice") is OCR debris, not punctuation, and
+# is dropped rather than carried over onto the corrected word.
+_LEGIT_LEAD = set("„“”\"'‘’«»([{¿¡—–-")
+# A trailing hyphen (hard or soft) matters most of all: it is what tells the
+# de-hyphenation pass this word continues on the next line.
+_LEGIT_TAIL = set(".,;:!?)]}\"'“”‘’«»…—–-\xad")
+# Shortest replacement word accepted, unless the misread token has no
+# letters at all. Two-letter "words" are where a dictionary throws false
+# positives, and swapping on one would corrupt text that was merely ugly.
+_MIN_SWAP_LEN = 3
 
 
 def _is_garbled(text: str) -> bool:
@@ -154,6 +183,203 @@ def _image_coverage(page: Page) -> float:
     return best / page_area if page_area else 0.0
 
 
+def _is_scanned_page(page: Page) -> bool:
+    """Is this page really a photograph of the whole printed page?
+
+    A scan-and-OCR pipeline (ABBYY FineReader and similar) embeds a
+    full-page raster of the original photo *and* a text layer of whatever
+    it recognized, so the page looks born-digital to a text extractor even
+    though every word on it came from that OCR pass -- of unknown, often
+    mediocre, quality (misread letters, not just missing structure -- see
+    ocr.py's module docs for the geometric case; this is the same failure
+    at the character level). A real digitally-typeset page essentially
+    never has a background image covering nearly the whole page, so this
+    signature is unambiguous even when the embedded text layer looks
+    plausible enough to pass _is_garbled().
+    """
+    return _image_coverage(page) > _SCAN_IMAGE_RATIO
+
+
+def _is_other_script(text: str) -> bool:
+    """Is this line mostly Greek/Cyrillic/etc. rather than Latin script?
+
+    This book's kind of scholarship quotes its sources in the original, and
+    such a line is untouchable here twice over: a Latin-script dictionary
+    scores it as nonsense however perfectly it was recognized, and a
+    Latin-script OCR model asked to re-read it would return nonsense in
+    fact. Left alone on both counts.
+    """
+    letters = [c for c in text if c.isalpha()]
+    if len(letters) < 4:
+        return False
+    non_latin = sum(1 for c in letters if not ("A" <= c <= "Z" or "a" <= c <= "z"
+                                               or unicodedata.name(c, "").startswith("LATIN")))
+    return non_latin / len(letters) > _NON_LATIN_LIMIT
+
+
+def _has_suspicious_line(page: Page, lex: "spelling.Lexicon") -> bool:
+    """Is any line on this page poor enough Romanian/etc. to be worth re-reading?
+
+    Purely an optimization: rendering and OCR-ing a page costs seconds, so a
+    page whose existing text already reads as real words throughout is left
+    alone without ever paying for it.
+    """
+    for line in page.lines:
+        if _is_other_script(line.text):
+            continue
+        score = lex.score(line.text)
+        if score is not None and score < _SUSPICIOUS_SCORE:
+            return True
+    return False
+
+
+def _choose_token(original: str, candidate: str, lex: "spelling.Lexicon") -> Optional[str]:
+    """Pick the better reading of one word, or None to keep *original*.
+
+    Deliberately one-directional: the existing text is replaced only when it
+    is *not* a word of the language and the fresh reading *is*. So a real
+    word is never "corrected" (a proper name absent from the dictionary
+    stays), a misreading is only swapped for something demonstrably real,
+    and where both readings are nonsense nothing happens -- which is the
+    right outcome for a Greek term or a name neither pass could manage.
+
+    Real punctuation hugging the original word is kept, so "(Biseridi,"
+    becomes "(Bisericii," rather than losing the bracket -- but debris the
+    misreading picked up (".iradcmice") is not mistaken for punctuation and
+    carried over.
+    """
+    if original == candidate:
+        return None
+    om, cm = _WORD_CORE.search(original), _WORD_CORE.search(candidate)
+    if cm is None or not lex.is_known(cm.group()):
+        return None  # the new reading is not a word: nothing to gain
+    if om is not None:
+        if lex.is_known(om.group()):
+            return None  # what we already have is a word: leave it alone
+        # Neither a one- or two-letter misreading nor a replacement that
+        # short can be judged: "a" and "III" are both plausible, and a
+        # dictionary's shortest entries are where its false positives live.
+        if min(len(om.group()), len(cm.group())) < _MIN_SWAP_LEN:
+            return None
+    # A digit fused to the front of a word is usually a footnote marker that
+    # OCR flattened into the text ("1Adică din skevofylakion"), and footnotes
+    # are paired by exactly those digits -- so a reading that has dropped
+    # them is not an improvement, whatever it did for the word.
+    if any(c.isdigit() for c in original) and not any(c.isdigit() for c in candidate):
+        return None
+    result = _trim_debris(candidate)
+    # A hyphen at the end of the line is not decoration -- it is what marks
+    # this word as continuing on the next one, so restore it if the fresh
+    # reading failed to see it.
+    if original[-1:] in ("-", "\xad") and result[-1:] not in ("-", "\xad"):
+        result += original[-1]
+    return result if result and result != original else None
+
+
+def _trim_debris(token: str) -> str:
+    """Drop leading/trailing characters that are neither letters nor punctuation.
+
+    A misreading often picks up stray marks at a word's edges (".iradcmice"),
+    and carrying them onto the corrected word would leave the repair looking
+    half-done. Only the outer edges are touched, and only characters that no
+    language puts there.
+    """
+    start, end = 0, len(token)
+    while start < end and not token[start].isalnum() and token[start] not in _LEGIT_LEAD:
+        start += 1
+    while end > start and not token[end - 1].isalnum() and token[end - 1] not in _LEGIT_TAIL:
+        end -= 1
+    return token[start:end]
+
+
+def _assign_words_to_lines(words: List[dict], lines: List[Line]) -> Dict[int, List[dict]]:
+    """Group OCR word boxes by which existing line each one belongs to.
+
+    A word goes to the line it overlaps vertically, and among several such
+    lines (a two-column page has two at every height) to the one it is
+    horizontally nearest -- so a word never jumps the gutter into the other
+    column's line, while a word running past its own line's right edge still
+    lands where it belongs.
+    """
+    out: Dict[int, List[dict]] = {}
+    for w in words:
+        cy, cx = (w["y0"] + w["y1"]) / 2, (w["x0"] + w["x1"]) / 2
+        best, best_key = None, None
+        for idx, line in enumerate(lines):
+            tol = max(line.height * 0.25, 1.0)
+            if not (line.y0 - tol <= cy <= line.y1 + tol):
+                continue
+            x_gap = 0.0 if line.x0 <= cx <= line.x1 else min(abs(cx - line.x0), abs(cx - line.x1))
+            overlap = min(w["y1"], line.y1) - max(w["y0"], line.y0)
+            key = (x_gap, -overlap)
+            if best_key is None or key < best_key:
+                best, best_key = idx, key
+        if best is not None:
+            out.setdefault(best, []).append(w)
+    return out
+
+
+def _repair_page(page: Page, pdf_page: "pymupdf.Page", lex: "spelling.Lexicon", *,
+                 lang: str, dpi: int) -> int:
+    """Re-read badly-recognized lines of a scanned page; return how many changed.
+
+    A scanned page's "text layer" is some earlier OCR pass (ABBYY FineReader
+    and similar), and where it misread the scan it leaves real prose as
+    nonsense -- "descoperă" as "«It scoperă", "academice" as ".iradcmice".
+    Replacing the whole page with a fresh OCR pass fixes the words but costs
+    far more than it gains: our OCR reports one uniform size per line and no
+    bold/italic/superscript flags, so heading levels, footnote markers and
+    running heads stop being detectable anywhere on that page -- and on a
+    title page it can even swap in the wrong title (structure.py's
+    _guess_title compares font sizes across candidates, which only works if
+    they were all measured the same way).
+
+    So each line is arbitrated separately, and only its *text* is ever
+    replaced: the line keeps its bbox, size, and style flags, which is
+    everything the later stages actually measure. A line is rewritten only
+    when a fresh OCR of it reads as clearly better words in the book's own
+    language than what the PDF already claimed (see spelling.py) -- so a
+    line the existing layer got right, or one neither pass can read (a Greek
+    or Slavonic quotation, in a Romanian dictionary's view), is left exactly
+    as it was.
+    """
+    if not lex.available or not _has_suspicious_line(page, lex):
+        return 0
+    # Keep even the words Tesseract is unsure of: dropping them would make a
+    # candidate look *better* by deleting the hard words, and a repair that
+    # silently loses text is worse than the misreading it replaces.
+    words = ocr_mod.ocr_words(pdf_page, lang=lang, dpi=dpi, min_conf=0)
+    if not words:
+        return 0
+
+    grouped = _assign_words_to_lines(words, page.lines)
+    repaired = 0
+    for idx, line in enumerate(page.lines):
+        if _is_other_script(line.text):
+            continue
+        cand_tokens = [w["text"] for w in sorted(grouped.get(idx, []), key=lambda w: w["x0"])]
+        orig_tokens = line.text.split()
+        # Word-for-word only. Where the two passes disagree about how many
+        # words the line even has, there is no trustworthy correspondence
+        # between them, and guessing one would risk dropping or duplicating
+        # text -- so that line is left exactly as it is.
+        if not cand_tokens or len(cand_tokens) != len(orig_tokens):
+            continue
+        for orig, cand in zip(orig_tokens, cand_tokens):
+            better = _choose_token(orig, cand, lex)
+            if better is None:
+                continue
+            # Substitute inside the span that holds the word, so the line
+            # keeps every span boundary, size and style flag it had. A word
+            # straddling two spans simply isn't replaced.
+            for si, span in enumerate(line.spans):
+                if orig in span.text:
+                    line.spans[si] = replace(span, text=span.text.replace(orig, better, 1))
+                    repaired += 1
+                    break
+    return repaired
+
+
 def _column_count(lines: List[Line], tol: float = 5.0) -> int:
     """Count distinct left-edge x-positions, merging ones within *tol* points.
 
@@ -240,6 +466,7 @@ def extract(
     ocr_mode: str = "auto",  # "auto" | "force" | "never"
     ocr_lang: str = "eng",
     dpi: int = 300,
+    repair_ocr: bool = False,
     progress=None,
 ) -> tuple[List[Page], dict]:
     """Return (pages, metadata) extracted from the PDF at *path*."""
@@ -253,6 +480,20 @@ def extract(
     ocr_available = ocr_mod.is_available() if ocr_mode != "never" else False
     if ocr_mode == "force" and not ocr_available:
         log.warning("OCR forced but Tesseract is unavailable; falling back to text layer.")
+
+    lex: Optional[spelling.Lexicon] = None
+    if repair_ocr:
+        if not ocr_available:
+            log.warning("--repair-ocr needs Tesseract, which is unavailable; skipping repair.")
+        else:
+            lex = spelling.Lexicon(ocr_lang)
+            if not lex.available:
+                log.warning(
+                    "--repair-ocr needs a hunspell dictionary for %r, which is not installed; "
+                    "skipping repair.", ocr_lang,
+                )
+                lex = None
+    repaired_lines = 0
 
     pages: List[Page] = []
     for i in range(doc.page_count):
@@ -292,10 +533,21 @@ def extract(
                     < 0.8 * p.width * p.height
                 ]
                 p = ocr_page
+        elif lex is not None and _is_scanned_page(p):
+            # A page that is a photograph of print, carrying someone else's
+            # OCR as its text layer -- re-read the lines it got wrong. See
+            # _repair_page for why only those lines, and only their text.
+            fixed = _repair_page(p, page, lex, lang=ocr_lang, dpi=dpi)
+            if fixed:
+                log.info("Repaired %d line(s) on page %d/%d", fixed, i + 1, doc.page_count)
+                repaired_lines += fixed
 
         pages.append(p)
         if progress:
             progress(i + 1, doc.page_count)
 
     doc.close()
+    if repair_ocr:
+        log.info("OCR repair rewrote %d line(s)", repaired_lines)
+    meta["_repaired_lines"] = repaired_lines
     return pages, meta

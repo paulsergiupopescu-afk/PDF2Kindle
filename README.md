@@ -92,6 +92,20 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
   `pdf2kindle audit book.epub`.
 - **Scanned PDFs** — when a page is image-only, it falls back to **OCR**
   (Tesseract) so scanned books still become searchable, reflowable text.
+- **Repairing someone else's bad OCR** (`--repair-ocr`) — a scanned book
+  usually arrives with a text layer already baked in by whatever digitized it,
+  and where that pass misread the scan it leaves real prose as nonsense
+  (`descoperă` as `«It scoperă`, `academice` as `.iradcmice`). Replacing such a
+  page wholesale with a fresh OCR pass reads better but throws away the
+  per-glyph size and style geometry that heading, footnote and running-head
+  detection depend on — so each *line* is arbitrated on its own instead: a
+  fresh OCR of it is accepted only when a **dictionary for the book's own
+  language** says it reads as clearly better words, and only its characters
+  are replaced, leaving the line's measurements untouched. A line the existing
+  layer got right is left alone, and so is one neither pass can read — a Greek
+  or Slavonic quotation in a Romanian book is never "corrected" into Romanian.
+  Needs Tesseract plus a hunspell dictionary for `--ocr-lang` (for Romanian:
+  `apt-get install tesseract-ocr-ron hunspell-ro`).
 
 ## Two ways to run it
 
@@ -143,6 +157,7 @@ pdf2kindle/
   structure.py   heading detection + chapter splitting (outline or font clusters)
   footnotes.py   marker ↔ note detection and pairing (footnotes and endnotes)
   ocr.py         Tesseract fallback for image-only pages
+  spelling.py    dictionary lookups, to judge which OCR reading is real words
   html.py        semantic, Kindle-tuned XHTML + CSS generation
   epub.py        EPUB3 assembly (ebooklib): nav, ncx, metadata, cover
   audit.py       quality report over a produced EPUB
