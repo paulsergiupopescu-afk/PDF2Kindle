@@ -7,6 +7,7 @@ image-only (a scan) and therefore needs OCR. All interpretation happens later.
 
 from __future__ import annotations
 
+import difflib
 import logging
 import re
 import unicodedata
@@ -42,7 +43,9 @@ _SUSPICIOUS_SCORE = 0.95
 # A line with this fraction of non-Latin letters is a Greek or Slavonic
 # quotation: outside what a Latin-script dictionary or OCR model can judge.
 _NON_LATIN_LIMIT = 0.2
-# The alphabetic core of a token ("Bisericii" out of "(Bisericii,").
+# The runs of letters in a token: "(Bisericii," has one, "F.diţiile" and
+# "rugându-se" have two. The longest is the word being judged -- taking the
+# first would judge "F.diţiile" on its "F".
 _WORD_CORE = re.compile(r"[^\W\d_]+", re.UNICODE)
 # Punctuation that legitimately hugs a word. Anything else sitting against
 # one in a misread token (".iradcmice") is OCR debris, not punctuation, and
@@ -233,6 +236,12 @@ def _has_suspicious_line(page: Page, lex: "spelling.Lexicon") -> bool:
     return False
 
 
+def _core(token: str) -> Optional[str]:
+    """The longest run of letters in *token*, which is the word it holds."""
+    runs = _WORD_CORE.findall(token)
+    return max(runs, key=len) if runs else None
+
+
 def _choose_token(original: str, candidate: str, lex: "spelling.Lexicon") -> Optional[str]:
     """Pick the better reading of one word, or None to keep *original*.
 
@@ -250,16 +259,16 @@ def _choose_token(original: str, candidate: str, lex: "spelling.Lexicon") -> Opt
     """
     if original == candidate:
         return None
-    om, cm = _WORD_CORE.search(original), _WORD_CORE.search(candidate)
-    if cm is None or not lex.is_known(cm.group()):
+    om, cm = _core(original), _core(candidate)
+    if cm is None or not lex.is_known(cm):
         return None  # the new reading is not a word: nothing to gain
     if om is not None:
-        if lex.is_known(om.group()):
+        if lex.is_known(om):
             return None  # what we already have is a word: leave it alone
         # Neither a one- or two-letter misreading nor a replacement that
         # short can be judged: "a" and "III" are both plausible, and a
         # dictionary's shortest entries are where its false positives live.
-        if min(len(om.group()), len(cm.group())) < _MIN_SWAP_LEN:
+        if min(len(om), len(cm)) < _MIN_SWAP_LEN:
             return None
         # A digit fused to a word is usually a footnote marker OCR flattened
         # into the text ("1Adică din skevofylakion"), and notes are paired by
@@ -270,6 +279,11 @@ def _choose_token(original: str, candidate: str, lex: "spelling.Lexicon") -> Opt
         if any(c.isdigit() for c in original) and not any(c.isdigit() for c in candidate):
             return None
     result = _trim_debris(candidate)
+    # Don't let the fresh reading open the word with punctuation the old one
+    # never had: OCR readily sees a quote mark in a smudge, and inventing one
+    # mid-sentence is more conspicuous than the misspelling being fixed.
+    if original[:1].isalnum():
+        result = result.lstrip("".join(_LEGIT_LEAD))
     # A hyphen at the end of the line is not decoration -- it is what marks
     # this word as continuing on the next one, so restore it if the fresh
     # reading failed to see it.
@@ -336,7 +350,7 @@ def _repair_page(page: Page, pdf_page: "pymupdf.Page", lex: "spelling.Lexicon", 
     _guess_title compares font sizes across candidates, which only works if
     they were all measured the same way).
 
-    So each line is arbitrated separately, and only its *text* is ever
+    So each line is arbitrated word by word, and only its *text* is ever
     replaced: the line keeps its bbox, size, and style flags, which is
     everything the later stages actually measure. A line is rewritten only
     when a fresh OCR of it reads as clearly better words in the book's own
@@ -360,26 +374,68 @@ def _repair_page(page: Page, pdf_page: "pymupdf.Page", lex: "spelling.Lexicon", 
         if _is_other_script(line.text):
             continue
         cand_tokens = [w["text"] for w in sorted(grouped.get(idx, []), key=lambda w: w["x0"])]
-        orig_tokens = line.text.split()
-        # Word-for-word only. Where the two passes disagree about how many
-        # words the line even has, there is no trustworthy correspondence
-        # between them, and guessing one would risk dropping or duplicating
-        # text -- so that line is left exactly as it is.
-        if not cand_tokens or len(cand_tokens) != len(orig_tokens):
+        if not cand_tokens:
             continue
-        for orig, cand in zip(orig_tokens, cand_tokens):
-            better = _choose_token(orig, cand, lex)
-            if better is None:
-                continue
-            # Substitute inside the span that holds the word, so the line
-            # keeps every span boundary, size and style flag it had. A word
+        for old, new in _token_repairs(line.text.split(), cand_tokens, lex):
+            # Substitute inside the span that holds the words, so the line
+            # keeps every span boundary, size and style flag it had. A phrase
             # straddling two spans simply isn't replaced.
             for si, span in enumerate(line.spans):
-                if orig in span.text:
-                    line.spans[si] = replace(span, text=span.text.replace(orig, better, 1))
+                if old in span.text:
+                    line.spans[si] = replace(span, text=span.text.replace(old, new, 1))
                     repaired += 1
                     break
     return repaired
+
+
+def _token_repairs(orig_tokens: List[str], cand_tokens: List[str],
+                   lex: "spelling.Lexicon") -> List[tuple]:
+    """Pair the two readings up and return the (old, new) swaps worth making.
+
+    The readings rarely agree on word count -- exactly where the old one is
+    most mangled, it has run a word together or split one in two ("descoperă"
+    survives as "«It scoperă"). The words both passes agree on anchor an
+    alignment of the rest, so each disagreement is compared as a unit: a run
+    of misread tokens is replaced by the run the fresh pass read there, but
+    only when *every* token going out fails to be a word and *every* token
+    coming in is one. Runs the fresh pass merely dropped or added are refused
+    outright, so a repair can neither lose nor invent text.
+    """
+    repairs: List[tuple] = []
+    matcher = difflib.SequenceMatcher(a=orig_tokens, b=cand_tokens, autojunk=False)
+    for op, i1, i2, j1, j2 in matcher.get_opcodes():
+        if op == "equal":
+            continue
+        old_run, new_run = orig_tokens[i1:i2], cand_tokens[j1:j2]
+        if op != "replace" or not old_run or not new_run:
+            continue  # a pure deletion or insertion is never an improvement
+        if len(old_run) == 1 and len(new_run) == 1:
+            better = _choose_token(old_run[0], new_run[0], lex)
+            if better is not None:
+                repairs.append((old_run[0], better))
+            continue
+        if any(_holds_a_word(t, lex) for t in old_run):
+            continue  # part of what we have is real: too risky to rewrite
+        if not all(_holds_a_word(t, lex) for t in new_run):
+            continue  # the replacement is not made of words
+        old_text = " ".join(old_run)
+        new_text = " ".join(_trim_debris(t) for t in new_run)
+        # As in the single-word case: a digit here is very likely a footnote
+        # marker ("1 Ediţiile mai noi..."), and notes are paired by those
+        # digits, so a replacement that has lost them is refused.
+        if any(c.isdigit() for c in old_text) and not any(c.isdigit() for c in new_text):
+            continue
+        if old_text.endswith(("-", "\xad")) and not new_text.endswith(("-", "\xad")):
+            new_text += old_text[-1]
+        if new_text and new_text != old_text:
+            repairs.append((old_text, new_text))
+    return repairs
+
+
+def _holds_a_word(token: str, lex: "spelling.Lexicon") -> bool:
+    """Does this token contain a real word of the language?"""
+    core = _core(token)
+    return core is not None and len(core) >= _MIN_SWAP_LEN and lex.is_known(core)
 
 
 def _column_count(lines: List[Line], tol: float = 5.0) -> int:

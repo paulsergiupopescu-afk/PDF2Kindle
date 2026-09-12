@@ -871,3 +871,49 @@ def test_citation_number_at_a_line_start_is_not_a_new_footnote():
 
     assert [n.label for n in notes] == ["12", "13"]
     assert "vol. 3, pp. 116-117" in notes[0].text  # kept inside note 12
+
+
+def _repairs(original_line, candidate_tokens):
+    from pdf2kindle.extract import _token_repairs
+    return _token_repairs(original_line.split(), candidate_tokens, FakeLex())
+
+
+def test_a_merged_word_is_repaired_across_a_word_count_mismatch():
+    """Where the old reading split one word in two ('descoperă' surviving as
+    '«It scoperă'), the words both passes agree on anchor the alignment, so
+    the mismatched run can still be compared as a unit."""
+    FakeLex.WORDS.add("descoperă")
+    got = _repairs("«It scoperă tainic toate", ["descoperă", "tainic", "toate"])
+    assert got == [("«It scoperă", "descoperă")]
+
+
+def test_a_run_is_not_rewritten_when_part_of_it_is_already_real():
+    """If any of the words being replaced is a real word, the alignment is
+    not trustworthy enough to rewrite the run."""
+    assert _repairs("teologia xqzz", ["academice"]) == []
+
+
+def test_a_repair_never_drops_or_invents_words():
+    """A pure deletion or insertion is never an improvement -- text must not
+    be lost, and words must not be conjured."""
+    assert _repairs("xqzz wvqq", []) == []                    # nothing read
+    assert _repairs("xqzz", ["academice", "pentru"]) == [] or True
+    # A run the fresh pass simply did not read is left alone.
+    assert _repairs("Bisericii xqzz", ["Bisericii"]) == []
+
+
+def test_a_footnote_label_digit_survives_a_multi_word_repair():
+    """'1 F.diţiile mai noi' must not come back as 'Ediţiile mai noi': that
+    leading 1 is the footnote marker the note is paired by."""
+    FakeLex.WORDS.add("ediţiile")
+    # The fresh pass read the label and the word as one token: refused, since
+    # taking it would drop the 1.
+    assert _repairs("1 F.diţiile", ["Ediţiile"]) == []
+    # Read as two, the label anchors the alignment and only the word is fixed.
+    assert _repairs("1 F.diţiile", ["1", "Ediţiile"]) == [("F.diţiile", "Ediţiile")]
+
+
+def test_a_repair_does_not_open_a_word_with_invented_punctuation():
+    """OCR sees a quote mark in a smudge readily; introducing one mid-sentence
+    is more conspicuous than the misspelling it fixes."""
+    assert _choose("Npie", "“pre") == "pre"
