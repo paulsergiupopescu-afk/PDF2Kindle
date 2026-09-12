@@ -56,6 +56,9 @@ _CHAPTER_RE = re.compile(
 # overview" (dot, space) or "1 Literature overview" (space, no dot).
 _NUM_HEAD_RE = re.compile(r"^\s*(\d+(?:\.\d+){0,3})\.?\s*\S")
 _ROMAN_HEAD_RE = re.compile(r"^\s*([IVXLC]{1,6})\.\s+\S")
+# A roman numeral alone on its own line/paragraph, nothing else -- a
+# sub-section divider, not a "IV. Title" heading (that's _ROMAN_HEAD_RE above).
+_BARE_ROMAN_HEAD_RE = re.compile(r"^\s*[IVXLC]{1,6}\.?\s*$")
 # A dot leader ("...................") or a run of ellipsis characters, as
 # used by a printed Contents/Index/List-of-Tables entry to connect a title to
 # its page number.
@@ -187,6 +190,16 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
     has_word = bool(re.search(r"[^\W\d_]{3,}", text, re.UNICODE))
     if not has_word:
         ratio_check = size / body_size if body_size else 1.0
+        # A bare roman numeral ("I", "IV") standing alone as its own
+        # paragraph marks a sub-section divider -- and unlike the arabic
+        # case just below, it needs no size/weight qualifier at all: this
+        # book sets some of these bold and some not, at body size either
+        # way, so no single geometric signal covers all of them. What
+        # covers all of them just as well is the string itself: decorative
+        # OCR noise essentially never comes out as a clean, short roman
+        # numeral with nothing else on the line by chance.
+        if _BARE_ROMAN_HEAD_RE.match(text):
+            return 2
         if not (_BARE_NUM_HEAD_RE.match(text) and ratio_check >= 1.8):
             return None
 

@@ -139,13 +139,23 @@ def _is_furniture(
     if not in_band:
         return False
 
+    # A bare folio ("12", "xiv", "[3]") -- checked before the "larger than
+    # body text" guard below, because a page number is routinely set a
+    # point or two bigger than body text for its own visual styling (a
+    # book's own choice, not a signal of anything else), and that guard
+    # would otherwise mistake it for a heading and leave it standing in the
+    # text. Capped well under the ratio (1.8) structure.py's own heading
+    # detection requires of a *real* bare-number heading (a chapter number
+    # standing alone above its title), so an actual chapter-opening numeral
+    # is never at risk of being read as a folio instead.
+    if _DIGITS_ONLY.match(txt) and len(txt) <= 12:
+        ratio = line.dominant_size / body_size if body_size else 1.0
+        if ratio < 1.8:
+            return True
+
     # Never strip something set larger than body text — that's a real heading.
     if line.dominant_size > body_size + 0.3:
         return False
-
-    # A bare folio ("12", "xiv", "[3]").
-    if _DIGITS_ONLY.match(txt) and len(txt) <= 12:
-        return True
 
     # Set noticeably smaller than body text, at the *top* margin: a running
     # head's defining trait, and one no genuine heading shares (a heading is

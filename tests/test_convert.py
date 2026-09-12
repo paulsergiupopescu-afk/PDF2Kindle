@@ -1000,3 +1000,50 @@ def test_ordinary_paragraph_break_on_the_same_page_is_kept():
     ]
     merged = _merge_split_paragraphs(flat)
     assert len(merged) == 2
+
+
+def test_bare_roman_numeral_divider_is_a_heading_regardless_of_weight():
+    """A book can set a bare 'I' / 'IV' sub-section divider bold in one place
+    and plain in another, both at body size -- no single geometric signal
+    covers both, so the clean roman-numeral string itself is the evidence."""
+    from pdf2kindle.structure import _is_heading
+
+    bold = _scan_line("I", size=11.0, flags=1 << 4)
+    assert _is_heading(bold, body_size=11.0) == 2
+    plain = _scan_line("IV", size=10.5, flags=0)
+    assert _is_heading(plain, body_size=11.0) == 2
+
+
+def test_roman_numeral_with_title_is_still_a_top_level_heading():
+    """'V. CUM TREBUIE...' must still become a level-1 chapter heading --
+    the bare-divider case above must not swallow this different shape."""
+    from pdf2kindle.structure import _is_heading
+
+    ln = _scan_line("V. CUM TREBUIE CITITE RUGĂCIUNILE DE LA LITURGHIE?", size=13.0)
+    assert _is_heading(ln, body_size=11.0) == 1
+
+
+def test_folio_set_bigger_than_body_text_is_still_stripped():
+    """A page number set a point or two larger than body text (this book's
+    own styling choice) must not be mistaken for a heading and left
+    standing in the middle of a paragraph."""
+    from pdf2kindle.analyze import _is_furniture
+    from collections import Counter
+
+    folio = _scan_line("5", size=12.0, y0=602.0)
+    neighbour = _scan_line("mente, ci înţelegerea profundă a sensurilor sale primare.", size=11.0, y0=575.0)
+    assert _is_furniture(folio, neighbour, at_top=False, height=630.0,
+                         body_size=11.0, line_height=11.2, repeats=Counter())
+
+
+def test_a_genuinely_large_bare_number_heading_is_not_mistaken_for_a_folio():
+    """A chapter-opening numeral dramatically larger than body text (the
+    shape _is_heading itself requires for a bare-number heading) must still
+    survive furniture-stripping even if it happens to land in a margin band."""
+    from pdf2kindle.analyze import _is_furniture
+    from collections import Counter
+
+    big_number = _scan_line("2", size=30.0)  # ratio ~2.7, well over the 1.8 cutoff
+    neighbour = _scan_line("Some Chapter Title", size=30.0)
+    assert not _is_furniture(big_number, neighbour, at_top=True, height=800.0,
+                             body_size=11.0, line_height=11.2, repeats=Counter())
