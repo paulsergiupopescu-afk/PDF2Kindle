@@ -261,12 +261,14 @@ def _choose_token(original: str, candidate: str, lex: "spelling.Lexicon") -> Opt
         # dictionary's shortest entries are where its false positives live.
         if min(len(om.group()), len(cm.group())) < _MIN_SWAP_LEN:
             return None
-    # A digit fused to the front of a word is usually a footnote marker that
-    # OCR flattened into the text ("1Adică din skevofylakion"), and footnotes
-    # are paired by exactly those digits -- so a reading that has dropped
-    # them is not an improvement, whatever it did for the word.
-    if any(c.isdigit() for c in original) and not any(c.isdigit() for c in candidate):
-        return None
+        # A digit fused to a word is usually a footnote marker OCR flattened
+        # into the text ("1Adică din skevofylakion"), and notes are paired by
+        # exactly those digits -- so a reading that dropped them is not an
+        # improvement, whatever it did for the word. Only where the existing
+        # token holds a word at all: a digit in a token with no letters in it
+        # (".1" for "şi") is misread ink, not a marker.
+        if any(c.isdigit() for c in original) and not any(c.isdigit() for c in candidate):
+            return None
     result = _trim_debris(candidate)
     # A hyphen at the end of the line is not decoration -- it is what marks
     # this word as continuing on the next one, so restore it if the fresh

@@ -845,6 +845,9 @@ def test_a_footnote_marker_digit_is_never_dropped_by_a_repair():
     improvement, however much better the word looks."""
     assert _choose("1Adicx", "Adică") is None
     assert _choose("1Adicx", "1Adică") == "1Adică"
+    # But a digit in a token with no letters in it is misread ink, not a
+    # marker, so fixing it is not blocked.
+    assert _choose(".1", "și") == "și"
 
 
 def test_citation_number_at_a_line_start_is_not_a_new_footnote():
