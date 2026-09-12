@@ -8,6 +8,13 @@ Born-digital PDFs often omit the superscript flag, so markers are also detected
 geometrically: a smaller span whose baseline sits above the line's baseline.
 Labels frequently run straight into the note text ("1The case is…"), so the
 label parser does not require whitespace after the number.
+
+A scanned-and-OCR'd PDF (ABBYY FineReader and similar) can lose superscript
+positioning entirely during reconstruction: the marker survives only as a
+digit fused into the surrounding word at ordinary body size and baseline
+("exprimat2 (aşa cum...") with nothing geometric left to detect it by. See
+find_embedded_markers, which recovers these by exact match against the
+note labels already known to exist on the same page.
 """
 
 from __future__ import annotations
@@ -93,6 +100,32 @@ def find_markers(line: Line, body_size: float = 0.0) -> List[Tuple[int, str]]:
             continue
         markers.append((idx, _norm_label(t)))
     return markers
+
+
+# A digit run fused onto the end of a word, with no space before it, and
+# followed by whitespace/punctuation/end-of-text -- not simply a number
+# ("anul 49/50" has a space before "49" and is left alone). Matched only
+# against note labels *already known* to exist on the same page, so an
+# innocent number stuck to a word is never mistaken for a marker: the
+# coincidence of an unrelated digit run exactly equalling an existing
+# footnote's label, right where OCR would place that citation, does not
+# happen by chance.
+_EMBEDDED_MARKER_RE = re.compile(r"(?<=[^\W\d_])(\d{1,3})(?=[\s.,;:)\]\"'”’]|$)")
+
+
+def find_embedded_markers(text: str, known_labels: set) -> List[Tuple[int, int, str]]:
+    """Return (start, end, label) for markers OCR fused into body text.
+
+    Only ever called with the labels already parsed from this same page's
+    footnote zone -- see the module docstring.
+    """
+    if not known_labels or not text:
+        return []
+    return [
+        (m.start(1), m.end(1), m.group(1))
+        for m in _EMBEDDED_MARKER_RE.finditer(text)
+        if m.group(1) in known_labels
+    ]
 
 
 # --------------------------------------------------------------------------- #

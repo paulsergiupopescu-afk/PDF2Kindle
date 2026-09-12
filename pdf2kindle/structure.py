@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Tuple
 
 from .analyze import Analyzed, PageContent
 from .extract import _column_count
-from .footnotes import find_markers, parse_page_notes
+from .footnotes import find_embedded_markers, find_markers, parse_page_notes
 from .text import normalize
 from .model import (
     Chapter,
@@ -37,7 +37,17 @@ from .model import (
 _CHAPTER_RE = re.compile(
     r"^\s*(chapters?|parts?|books?|sections?|prologue|epilogue|introduction|"
     r"preface|appendix(?:es|ices)?|conclusions?|foreword|afterword|abstract|"
-    r"summary|bibliography|references|acknowledge?ments?|glossary|index)\b",
+    r"summary|bibliography|references|acknowledge?ments?|glossary|index|"
+    # A handful of common non-English equivalents, so a division word isn't
+    # only ever recognized in English -- most usefully Romanian here, but
+    # covering the same handful of major European languages is nearly free.
+    r"capitolul?|partea|cartea|secţiunea|secțiunea|introducere|prefaţă|prefață|"
+    r"anexa|anexă|concluzii|concluzie|rezumat|bibliografie|referinţe|referințe|"
+    r"glosar|"
+    r"chapitre|partie|préface|conclusion|résumé|bibliographie|glossaire|"
+    r"kapitel|teil|einleitung|vorwort|schlussfolgerung|zusammenfassung|"
+    r"capítulo|parte|introducción|prefacio|conclusión|resumen|bibliografía|"
+    r"capitolo|prefazione|conclusione|riepilogo)\b",
     re.IGNORECASE,
 )
 # "1", "1.2", "1.2.3", "IV.", "A." style leading section numbers.
@@ -102,7 +112,12 @@ def _tail_text(runs: List[InlineRun]) -> str:
     return runs[-1].text if runs else ""
 
 
-def _paragraph_runs(lines: List[Line], note_prefix: str, body_size: float = 0.0) -> List[InlineRun]:
+def _paragraph_runs(
+    lines: List[Line],
+    note_prefix: str,
+    body_size: float = 0.0,
+    known_labels: Optional[set] = None,
+) -> List[InlineRun]:
     """Build inline runs for a paragraph spanning *lines*, linking note markers."""
     runs: List[InlineRun] = []
     for li, line in enumerate(lines):
@@ -120,8 +135,19 @@ def _paragraph_runs(lines: List[Line], note_prefix: str, body_size: float = 0.0)
             if si in markers:
                 label = markers[si]
                 runs.append(InlineRun(text=label, noteref=f"{note_prefix}{label}"))
-            else:
+                continue
+            embedded = find_embedded_markers(span.text, known_labels) if known_labels else []
+            if not embedded:
                 _append_text(runs, span.text, span.bold, span.italic)
+                continue
+            pos = 0
+            for start, end, label in embedded:
+                if start > pos:
+                    _append_text(runs, span.text[pos:start], span.bold, span.italic)
+                runs.append(InlineRun(text=label, noteref=f"{note_prefix}{label}"))
+                pos = end
+            if pos < len(span.text):
+                _append_text(runs, span.text[pos:], span.bold, span.italic)
 
     if runs:
         runs[0].text = runs[0].text.lstrip()
@@ -149,6 +175,20 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
     # otherwise satisfies just as well as an actual section title.
     if _DOT_LEADER_RE.search(text):
         return None
+    # A scanned page's decorative rule, page-break ornament, or an OCR
+    # misread of one ("■", "***", "_____ 1 Λ Λ _____") can be large or bold
+    # enough to look like a heading by every other test here. Real headings,
+    # in any language, contain an actual word -- a run of letters at least a
+    # few characters long; a stray Greek/Cyrillic OCR fragment ("1 ΠΛ") does
+    # not. The one legitimate all-digit heading, a bare chapter number set on
+    # its own line to be merged with its title later, is let through only
+    # when it is dramatically larger than body text -- unlike a folio number
+    # that survived furniture-stripping, which sits close to body size.
+    has_word = bool(re.search(r"[^\W\d_]{3,}", text, re.UNICODE))
+    if not has_word:
+        ratio_check = size / body_size if body_size else 1.0
+        if not (_BARE_NUM_HEAD_RE.match(text) and ratio_check >= 1.8):
+            return None
 
     ratio = size / body_size if body_size else 1.0
     bold = all(s.bold for s in line.spans if s.text.strip())
@@ -160,12 +200,20 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
 
     # Numbered sections: depth of the number sets the level. Guard against body
     # sentences that merely start with a number by requiring shortness + weight.
+    # Bold alone is not enough at any size: a bold lettered sub-item inside a
+    # list ("I. (a) Pentru aceasta...", set well *below* body size) matches
+    # the number/roman shape too, and a heading is never smaller than body
+    # text regardless of weight -- ratio >= 1.0 rules that out.
     m = _NUM_HEAD_RE.match(text)
-    if m and len(words) <= 14 and (bold or ratio >= 1.05) and not trailing_period:
+    if m and len(words) <= 14 and ratio >= 1.0 and (bold or ratio >= 1.05) and not trailing_period:
         depth = m.group(1).count(".")  # "1"->0, "1.2"->1, "1.2.3"->2
         return min(1 + depth, 4) if ratio >= 1.3 else min(2 + depth, 4)
-    if _ROMAN_HEAD_RE.match(text) and len(words) <= 14 and (bold or ratio >= 1.05):
-        return 2
+    if _ROMAN_HEAD_RE.match(text) and len(words) <= 14 and ratio >= 1.0 and (bold or ratio >= 1.05):
+        # Roman-then-Arabic is the classic "Part I > Section 1 > 1.1" book
+        # hierarchy -- a roman numeral outranks a plain arabic-numbered
+        # section, so it belongs at the top level alongside a named division
+        # ("Chapter 3"), not lumped in with its own subsections.
+        return 1
 
     # Font-size driven levels.
     if ratio >= 1.8:
@@ -286,6 +334,23 @@ def _covers_page(im: ImageBlock, page: PageContent) -> bool:
     return abs((x1 - x0) * (y1 - y0)) / area > 0.5
 
 
+def _is_scan_background(im: ImageBlock, page: PageContent) -> bool:
+    """A near-exact full-page raster is the scan itself, not a figure.
+
+    A "searchable PDF" produced by scanning + OCR (ABBYY FineReader and
+    similar) embeds the original page photograph behind an invisible text
+    layer on *every* page. That image is essentially always 100% of the page
+    area; a real inline illustration -- even a large plate -- almost always
+    leaves visible margin around it. 92% comfortably separates the two
+    without risking a genuine full-bleed figure.
+    """
+    area = page.width * page.height
+    if area <= 0:
+        return False
+    x0, y0, x1, y1 = im.bbox
+    return abs((x1 - x0) * (y1 - y0)) / area > 0.92
+
+
 def _select_images(page_images: List[ImageBlock]) -> List[ImageBlock]:
     return [im for im in page_images if im.width >= _MIN_IMAGE_PX and im.height >= _MIN_IMAGE_PX]
 
@@ -341,6 +406,7 @@ def _build_flow(
         note_prefix = f"n{page.number}-"
 
         page_notes = parse_page_notes(page.note_lines, analyzed.body_size)
+        known_labels = {nb.label for nb in page_notes}
         if page_notes:
             notes_by_page[page.number] = [
                 Element(
@@ -360,12 +426,12 @@ def _build_flow(
                 level = _is_wrapped_heading(group, analyzed.body_size)
                 size = group[0].dominant_size if level else 0.0
             if level:
-                runs = _paragraph_runs(group, note_prefix, analyzed.body_size)
+                runs = _paragraph_runs(group, note_prefix, analyzed.body_size, known_labels)
                 flat.append((page.number, Element(kind=ElementKind.HEADING, runs=runs,
                                                   level=level, size=size)))
                 continue
 
-            runs = _paragraph_runs(group, note_prefix, analyzed.body_size)
+            runs = _paragraph_runs(group, note_prefix, analyzed.body_size, known_labels)
             if not runs:
                 continue
 
@@ -378,6 +444,8 @@ def _build_flow(
             flat.append((page.number, Element(kind=kind, runs=runs)))
 
         for im in _select_images(page_images.get(page.number, [])):
+            if _is_scan_background(im, page):
+                continue  # the scan itself, not a figure -- see _is_scan_background
             if page.number == 0 and _covers_page(im, page):
                 continue  # full-page art on page 1 is the cover, already used
             flat.append((page.number, Element(kind=ElementKind.IMAGE, image=im)))
@@ -527,6 +595,9 @@ def _resolve_notes(chapter: Chapter) -> None:
 # Chapter splitting
 # --------------------------------------------------------------------------- #
 
+_BARE_NUM_RE = re.compile(r"^\d{1,3}$")
+
+
 def _split_by_toc(flat, notes_by_page, toc) -> Optional[List[Chapter]]:
     entries = [(int(l), str(t).strip(), int(p) - 1) for l, t, p in toc if int(p) >= 1]
     if len(entries) < 2:
@@ -534,6 +605,14 @@ def _split_by_toc(flat, notes_by_page, toc) -> Optional[List[Chapter]]:
     top_level = min(e[0] for e in entries)
     tops = [e for e in entries if e[0] == top_level]
     if len(tops) < 2:
+        return None
+    # A PDF outline built by a scan/digitization batch process sometimes
+    # carries bookmarks that are just its own numbering ("01", "02", ...),
+    # not real section titles. Splitting on those would produce a book of
+    # chapters literally titled "01" through "05"; the font-based heading
+    # detector, working from the book's own typeset headings, does far
+    # better. Reject the outline outright when every entry is this bare.
+    if all(_BARE_NUM_RE.match(t) for _, t, _ in tops):
         return None
     boundaries = sorted((t[2], t[1]) for t in tops)
 
@@ -814,6 +893,16 @@ def _guess_title(chapters: List[Chapter]) -> str:
     if not candidates:
         return "Untitled"
     best = max(candidates, key=lambda e: e.size) if any(c.size > 0 for c in candidates) else candidates[0]
+
+    # A subtitle sits immediately after the title, set noticeably smaller --
+    # not body-size-adjacent like the next real chapter heading would be, but
+    # in the range a subtitle conventionally uses relative to its title.
+    idx = next((i for i, c in enumerate(candidates) if c is best), -1)
+    if 0 <= idx < len(candidates) - 1 and best.size > 0:
+        nxt = candidates[idx + 1]
+        ratio = nxt.size / best.size if best.size else 0
+        if 0.4 <= ratio <= 0.75 and len(nxt.text.split()) <= 10:
+            return f"{best.text.strip()}: {nxt.text.strip()}"[:160]
     return best.text.strip()[:120]
 
 

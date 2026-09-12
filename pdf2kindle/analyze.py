@@ -126,6 +126,19 @@ def _is_furniture(
     if _DIGITS_ONLY.match(txt) and len(txt) <= 12:
         return True
 
+    # Set noticeably smaller than body text, at the *top* margin: a running
+    # head's defining trait, and one no genuine heading shares (a heading is
+    # never smaller than body text). Top only -- the bottom margin is exactly
+    # where a real footnote block legitimately lives, in exactly this size
+    # range, and must reach _split_body_notes rather than being discarded
+    # here. Catches a scan's running head even when OCR noise makes this
+    # specific occurrence read differently from every other one, defeating
+    # both the repeat count below and the word-count gap check after it -- a
+    # real risk on a noisily-scanned page, where the same printed header can
+    # come out as a different garbled string each time.
+    if at_top and line.dominant_size <= body_size - 1.5:
+        return True
+
     # Repeats elsewhere in the margins → running head/foot. This catches
     # per-chapter heads ("Introduction") that a whole-book ratio would miss.
     if repeats.get(_normalize_running(txt), 0) >= _REPEAT_MIN:
