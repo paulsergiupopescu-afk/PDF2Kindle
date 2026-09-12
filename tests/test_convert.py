@@ -913,6 +913,14 @@ def test_a_footnote_label_digit_survives_a_multi_word_repair():
     assert _repairs("1 F.diţiile", ["1", "Ediţiile"]) == [("F.diţiile", "Ediţiile")]
 
 
+def test_a_digit_buried_in_garbage_does_not_block_a_repair():
+    """A marker stands alone as its own token; digits inside a token that
+    holds no word at all are misread ink, and refusing there would leave
+    visible junk in the text."""
+    FakeLex.WORDS.add("cată")
+    assert _repairs("i .it«1,", ["cată,"]) == [("i .it«1,", "cată,")]
+
+
 def test_a_repair_does_not_open_a_word_with_invented_punctuation():
     """OCR sees a quote mark in a smudge readily; introducing one mid-sentence
     is more conspicuous than the misspelling it fixes."""

@@ -420,16 +420,24 @@ def _token_repairs(orig_tokens: List[str], cand_tokens: List[str],
             continue  # the replacement is not made of words
         old_text = " ".join(old_run)
         new_text = " ".join(_trim_debris(t) for t in new_run)
-        # As in the single-word case: a digit here is very likely a footnote
-        # marker ("1 Ediţiile mai noi..."), and notes are paired by those
-        # digits, so a replacement that has lost them is refused.
-        if any(c.isdigit() for c in old_text) and not any(c.isdigit() for c in new_text):
+        # A footnote marker stands alone as its own token ("1 Ediţiile mai
+        # noi..."), and notes are paired by exactly those digits, so a
+        # replacement that has lost one is refused. Digits *inside* a token
+        # that holds no word are misread ink, not a marker (".it«1," for
+        # "cată,"), and must not block the repair.
+        if (any(_is_bare_number(t) for t in old_run)
+                and not any(c.isdigit() for c in new_text)):
             continue
         if old_text.endswith(("-", "\xad")) and not new_text.endswith(("-", "\xad")):
             new_text += old_text[-1]
         if new_text and new_text != old_text:
             repairs.append((old_text, new_text))
     return repairs
+
+
+def _is_bare_number(token: str) -> bool:
+    """Is this token nothing but a number -- the shape of a footnote marker?"""
+    return token.strip("().,;:[]").isdigit()
 
 
 def _holds_a_word(token: str, lex: "spelling.Lexicon") -> bool:
