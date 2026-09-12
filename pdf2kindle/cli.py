@@ -35,6 +35,14 @@ def _add_convert(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--ocr-lang", default="eng", help="Tesseract language(s), e.g. 'eng' or 'eng+fra'")
     p.add_argument("--dpi", type=int, default=300, help="Render DPI for OCR (default: 300)")
     p.add_argument(
+        "--reference-pdf",
+        default="",
+        metavar="PDF",
+        help="a second scan of the same book; where the two disagree on a word, "
+             "the reading that is a real word of --ocr-lang wins (needs a hunspell "
+             "dictionary for it)",
+    )
+    p.add_argument(
         "--repair-ocr",
         action="store_true",
         help="on a scanned PDF, re-read lines its existing OCR text layer got "
@@ -110,6 +118,7 @@ def main(argv=None) -> int:
         ocr_lang=args.ocr_lang,
         dpi=args.dpi,
         repair_ocr=args.repair_ocr,
+        reference_pdf=args.reference_pdf,
         profile=args.profile,
         keep_print_nav=args.keep_print_nav,
     )

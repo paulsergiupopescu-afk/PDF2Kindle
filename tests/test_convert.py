@@ -720,6 +720,9 @@ class FakeLex:
     def is_known(self, word):
         return len(word) >= 2 and word.lower() in self.WORDS
 
+    def warm(self, texts):
+        pass  # the real Lexicon batches its lookups here; nothing to do
+
     def score(self, text):
         import re
         words = re.findall(r"[^\W\d_]{2,}", text)
@@ -924,7 +927,8 @@ def test_a_digit_buried_in_garbage_does_not_block_a_repair():
 def test_a_repair_does_not_open_a_word_with_invented_punctuation():
     """OCR sees a quote mark in a smudge readily; introducing one mid-sentence
     is more conspicuous than the misspelling it fixes."""
-    assert _choose("Npie", "“pre") == "pre"
+    FakeLex.WORDS.add("spre")
+    assert _choose("Npie", "“spre") == "spre"
 
 
 def test_part_label_at_body_size_is_a_heading():
@@ -1047,3 +1051,286 @@ def test_a_genuinely_large_bare_number_heading_is_not_mistaken_for_a_folio():
     neighbour = _scan_line("Some Chapter Title", size=30.0)
     assert not _is_furniture(big_number, neighbour, at_top=True, height=800.0,
                              body_size=11.0, line_height=11.2, repeats=Counter())
+
+
+# --------------------------------------------------------------------------- #
+# Correcting one scan's OCR against a second scan of the same book
+# --------------------------------------------------------------------------- #
+
+def test_pages_align_across_two_scans_with_a_shifting_offset():
+    """Two scans of one book are not page-for-page: a blank leaf kept in one
+    and dropped from the other shifts everything after it. The alignment must
+    absorb that instead of losing step."""
+    from pdf2kindle.crossref import align_pages
+
+    left = [
+        "introducere liturghia euharistica slujba importanta complexa cultului",
+        "teologia trairea experienta bisericii impartaseste necontenit fiilor",
+        "",  # a blank leaf present only in this scan
+        "centrul activitatii rascumparatoare mantuitorului nostru iisus hristos",
+        "mantuirea trebuie primita personal subiectiv fiecare crede hristos",
+    ]
+    right = [
+        "introducere liturghia euharistica slujba importanta complexa cultului",
+        "teologia trairea experienta bisericii impartaseste necontenit fiilor",
+        "centrul activitatii rascumparatoare mantuitorului nostru iisus hristos",
+        "mantuirea trebuie primita personal subiectiv fiecare crede hristos",
+    ]
+    mapping = align_pages(left, right)
+    assert mapping[0] == 0 and mapping[1] == 1
+    assert mapping[2] is None          # the leaf has no counterpart
+    assert mapping[3] == 2             # ...and the offset picks up after it
+    assert mapping[4] == 3
+
+
+def test_alignment_is_monotonic_and_never_reuses_a_page():
+    from pdf2kindle.crossref import align_pages
+
+    left = ["alpha beta gamma delta epsilon zeta", "eta theta iota kappa lambda mu",
+            "nu xi omicron pi rho sigma tau"]
+    mapping = align_pages(left, list(left))
+    matched = [x for x in mapping if x is not None]
+    assert matched == sorted(set(matched))
+
+
+def test_gap_filling_pairs_pages_whose_own_ocr_failed_completely():
+    """A page too garbled to fingerprint cannot match by content -- which is
+    backwards, since it is the one most worth repairing. Where the pages on
+    both sides agree on the offset and the gaps are the same length, the
+    correspondence is certain and gets filled in."""
+    from pdf2kindle.crossref import fill_gaps
+
+    assert fill_gaps([10, None, 12]) == [10, 11, 12]
+    assert fill_gaps([10, None, None, 13]) == [10, 11, 12, 13]
+
+
+def test_gap_filling_refuses_where_the_two_scans_genuinely_diverge():
+    """Where the offsets on either side of the gap disagree, the scans really
+    do differ (a table set across a different number of pages) and there is
+    no correspondence to guess at."""
+    from pdf2kindle.crossref import fill_gaps
+
+    # left gap of one page, but three free pages on the right: ambiguous.
+    assert fill_gaps([10, None, 14]) == [10, None, 14]
+    # No anchor before the gap at all.
+    assert fill_gaps([None, None, 5]) == [None, None, 5]
+
+
+def test_reference_repair_fixes_words_but_never_overwrites_greek(monkeypatch):
+    """The second scan reads Romanian prose better but mangles the Greek the
+    first one got right -- so a rule that only ever swaps in a recognized
+    Romanian word is what keeps its weaknesses out."""
+    from pdf2kindle.model import Page
+    from pdf2kindle import extract as ex
+
+    page = Page(number=9, width=595.0, height=842.0)
+    page.lines = [
+        _scan_line("Ut >li*/.ul - ca semn al împărtăşirii din moartea Lui"),
+        _scan_line("δοξολογούντων μεθ ών καί ήμεις ύμνούντες λέγοντες", y0=130.0),
+    ]
+    reference = [
+        "Botezul - ca semn al împărtăşirii din moartea Lui",
+        "boE,oAoyouvn„Jv µcO c0v KC{l r1µcic uµvouvuc Atyovnc",  # the same Greek, mangled
+    ]
+
+    class FakeLex:
+        available = True
+        WORDS = {"botezul", "semn", "împărtăşirii", "moartea"}
+
+        def is_known(self, word):
+            return len(word) >= 2 and word.lower() in self.WORDS
+
+        def warm(self, texts):
+            pass
+
+    assert ex._repair_page_from_reference(page, reference, FakeLex()) == 1
+    assert page.lines[0].text.startswith("Botezul - ca semn")
+    # The Greek line is untouched: excluded as another script, and its
+    # mangled counterpart holds no Romanian word that could win anyway.
+    assert page.lines[1].text == "δοξολογούντων μεθ ών καί ήμεις ύμνούντες λέγοντες"
+
+
+def test_a_repair_is_placed_by_word_boundary_not_bare_substring():
+    """The library's own substitution had this bug: replacing the standalone
+    word "c" by substring turned "Bisericii şi c" into "Biserioii şi",
+    because the first "c" in that string is the one inside "Bisericii"."""
+    from pdf2kindle.extract import apply_repairs_to_line
+
+    line = _scan_line("Bisericii şi c împărtăşeşte")
+    assert apply_repairs_to_line(line, [("c", "o")]) == 1
+    assert line.text == "Bisericii şi o împărtăşeşte"
+
+
+def test_a_repair_spanning_two_spans_is_still_applied():
+    """A phrase that changes font mid-way lives in more than one span; it used
+    to be skipped for having no single span that contained it whole."""
+    from pdf2kindle.model import FLAG_BOLD, Line, Span
+    from pdf2kindle.extract import apply_repairs_to_line
+
+    def span(text, flags=0):
+        return Span(text=text, font="Times", size=11.0, flags=flags, color=0,
+                    bbox=(72.0, 100.0, 400.0, 111.0), origin=(72.0, 111.0))
+
+    line = Line(spans=[span("iar "), span("Ut >li", FLAG_BOLD), span("*/.ul - ca semn")],
+                bbox=(72.0, 100.0, 400.0, 111.0))
+    assert apply_repairs_to_line(line, [("Ut >li*/.ul", "Botezul")]) == 1
+    assert line.text == "iar Botezul - ca semn"
+
+
+def test_a_word_the_other_scan_also_uses_is_left_alone():
+    """'Orientalia' is in no Romanian dictionary, so the arbitration would
+    happily swap it for whatever real word the other scan's misreading
+    resembles. But the other scan writes 'Orientalia' too -- which settles
+    that it is the book's own word, dictionary or no dictionary."""
+    from pdf2kindle.crossref import is_own_vocabulary
+
+    own = {"Orientalia": 2, "Proclu": 7, "loan": 241}
+    ref = {"Orientalia": 1, "Produ": 7, "Ioan": 232, "loan": 1}
+    assert is_own_vocabulary("Orientalia", own, ref)
+    # One stray occurrence against 241 is coincidence, not corroboration --
+    # this scan misreads every "Ioan" as "loan" and must still be corrected.
+    assert not is_own_vocabulary("loan", own, ref)
+
+
+def test_an_abbreviation_is_never_corrected_into_a_real_word():
+    """No dictionary lists 'vol.', so the arbitration read it as a misreading
+    of 'voi.' -- a real Romanian word. A scholarly book is full of these."""
+    from pdf2kindle.crossref import is_own_vocabulary
+
+    for abbrev in ("vol.", "cap.", "pp.", "op.", "nr."):
+        assert is_own_vocabulary(abbrev, {}, {}), abbrev
+    # An ordinary word ending a sentence is not an abbreviation.
+    assert not is_own_vocabulary("Biseridi", {"Biseridi": 1}, {})
+
+
+def test_token_counts_ignores_surrounding_punctuation():
+    from pdf2kindle.crossref import token_counts
+
+    counts = token_counts(["(Ioan 1:29); şi Ioan, apoi „Ioan”"])
+    assert counts["Ioan"] == 3
+
+
+def test_an_undamaged_word_is_not_traded_for_a_shorter_one():
+    """The rival reading being shorter by a letter is the signature of *its*
+    misreading -- two letters run together into one ("cl" read as "d"), which
+    turns "Proclu" into "Produ" and "Ancira" into "Andra": both real words to
+    a dictionary, both wrong."""
+    FakeLex.WORDS.update({"produ", "andra", "bisericii", "termen"})
+    assert _choose("Proclu", "Produ") is None
+    assert _choose("Ancira,", "Andra,") is None
+    # Substituting letters, or restoring a dropped one, is still corrected.
+    assert _choose("Biseridi", "Bisericii") == "Bisericii"
+    assert _choose("teimen", "termen") == "termen"
+
+
+def test_a_visibly_damaged_run_may_still_shrink_a_lot():
+    """The guard above must not block the main case: a run full of debris is
+    far longer than the word it should be. (It reaches the multi-word path,
+    since no single letter-run in it is long enough to judge on its own.)"""
+    FakeLex.WORDS.add("botezul")
+    assert _repairs("Ut >li*/.ul", ["Botezul"]) == [("Ut >li*/.ul", "Botezul")]
+
+
+def test_clean_and_damaged_tokens_are_told_apart():
+    from pdf2kindle.extract import _is_clean_word
+
+    assert _is_clean_word("Proclu")
+    assert _is_clean_word("(Bisericii,")
+    assert _is_clean_word("rugându-se")
+    assert not _is_clean_word("Ut >li*/.ul")
+    # A period ends a word but never opens one, so this is damage, not
+    # punctuation -- which is why the two ends are stripped differently.
+    assert not _is_clean_word(".iradcmice")
+    assert _is_clean_word("academice.")
+    # An opening quote is real punctuation, so a token behind one still counts
+    # as clean: nothing local distinguishes a quote from a smudge read as one.
+    assert _is_clean_word("«It")
+
+
+def test_a_dropped_space_is_not_adopted_as_a_correction():
+    """'şi c)' -> 'şic)' is the other scan losing a space between two words.
+    No length check can see it -- a merge keeps every letter -- but the run
+    holds a real word, and that is reason enough to leave it alone."""
+    FakeLex.WORDS.update({"şi", "şic"})
+    assert _repairs("şi c)", ["şic)"]) == []
+
+
+def test_a_run_of_pure_nonsense_is_still_merged_when_it_should_be():
+    """The protection above must not reach a run where nothing is a word:
+    neither "It" nor "scoperă" is Romanian, and the two really are one
+    misread word."""
+    FakeLex.WORDS.add("descoperă")
+    assert _repairs("«It scoperă tainic", ["descoperă", "tainic"]) == [
+        ("«It scoperă", "descoperă")
+    ]
+
+
+def test_only_the_word_that_improves_is_swapped_inside_a_token():
+    """A token can hold two words the readings disagree about separately.
+    Replacing it whole carried the other reading's mistakes in with its
+    corrections: "XH-lea" became "XII-iea", numeral fixed, Romanian ordinal
+    ending ruined."""
+    FakeLex.WORDS.update({"xii", "xiii", "rugându", "se"})
+    assert _choose("XH-lea.", "XII-iea.") == "XII-lea."
+    assert _choose("XlII-lea)1.", "XIII-lea)1") == "XIII-lea)1."
+    assert _choose("rugăndu-se,", "rugându-se,") == "rugându-se,"
+
+
+def test_a_full_stop_is_not_lost_with_the_correction():
+    """The other reading missing the period after a word is no reason to lose
+    it from a sentence."""
+    FakeLex.WORDS.add("ioan")
+    assert _choose("loan3.", "Ioan3") == "Ioan3."
+    assert _choose("teimen.", "termen") == "termen."
+
+
+def test_a_greek_word_quoted_inside_a_romanian_line_is_untouchable():
+    """The line-level script check cannot see one Greek word quoted
+    mid-sentence, and "(από)" was being "corrected" into "(ana)"."""
+    FakeLex.WORDS.add("ana")
+    assert _choose("(από)", "(ana)") is None
+
+
+def test_a_reading_that_renumbers_something_is_refused():
+    """Digits identify things -- a footnote marker, a numbered section, a
+    verse. Changing one is not correcting a word."""
+    FakeLex.WORDS.update({"unitatea"})
+    assert _choose("U nitatea 2", "Unitatea 3") is None
+    # ...but the same correction with the number left alone is fine.
+    assert _choose("U nitatea 2", "Unitatea 2") == "Unitatea 2"
+
+
+def test_a_space_the_other_scan_put_inside_a_word_is_undone():
+    """Its reading of one occurrence can break a word in two -- "Botezătorul"
+    arriving as "Boteză torul", both halves real words, so nothing about the
+    pair gives it away. What does is that the other scan writes the word whole
+    elsewhere."""
+    from pdf2kindle.crossref import rejoin_if_split
+
+    ref = {"Botezătorul": 11}
+    assert rejoin_if_split("Boteză torul", ref) == "Botezătorul"
+    # A genuine split leaves no such trace: nothing writes "celefără".
+    assert rejoin_if_split("cele fără", ref) == "cele fără"
+    assert rejoin_if_split("Bisericii", ref) == "Bisericii"
+
+
+def test_a_note_without_its_marker_gets_no_dangling_back_link():
+    """A note whose in-text marker the scan lost is still worth keeping, but
+    its label must not link back to an anchor that does not exist -- that is
+    a broken link in the finished book, and the audit's own dead-link check
+    only looks the other way down the pair."""
+    from pdf2kindle.model import Chapter, Element, ElementKind, InlineRun
+    from pdf2kindle.html import render_footnotes
+
+    cited = Element(kind=ElementKind.FOOTNOTE, note_id="n5-1", note_label="1",
+                    runs=[InlineRun(text="Cited note.")])
+    orphan = Element(kind=ElementKind.FOOTNOTE, note_id="n5-2", note_label="2",
+                     runs=[InlineRun(text="Orphan note.")])
+    body = Element(kind=ElementKind.PARAGRAPH,
+                   runs=[InlineRun(text="Text"), InlineRun(text="1", noteref="n5-1")])
+    chapter = Chapter(title="C", elements=[body], footnotes=[cited, orphan])
+
+    html = render_footnotes(chapter)
+    assert '<a href="#n5-1-ref">1.</a>' in html   # marker exists -> link back
+    assert "#n5-2-ref" not in html                 # marker missing -> no link
+    assert "Orphan note." in html                  # ...but the note is kept

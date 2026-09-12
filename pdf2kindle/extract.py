@@ -17,6 +17,7 @@ from typing import Dict, List, Optional
 import pymupdf
 
 from .model import ImageBlock, Line, Page, Span
+from . import crossref
 from . import ocr as ocr_mod
 from . import spelling
 
@@ -259,6 +260,31 @@ def _choose_token(original: str, candidate: str, lex: "spelling.Lexicon") -> Opt
     """
     if original == candidate:
         return None
+    # A Greek or Cyrillic word is outside what a Latin-script dictionary may
+    # rule on, whatever the rest of its line looks like -- the line-level
+    # check cannot see one quoted mid-sentence, and "(από)" was being
+    # "corrected" into "(ana)". What separates a real quotation from Greek
+    # *glyphs* a failed reading left behind ("Ι«·\ΙιιΙ" for "textul") is the
+    # debris around them: the quotation is a clean word, the wreckage is not.
+    if _has_other_script(original) and _is_clean_word(original):
+        return None
+    # Digits identify things -- a footnote marker, a numbered section, a
+    # verse. A reading that renumbers one is not correcting a word. Only
+    # where the token holds a word at all: a digit in a token with no letters
+    # in it (".1" for "şi") is misread ink, not a number.
+    if _core(original) and _digits(original) and _digits(original) != _digits(candidate):
+        return None
+    # A token can hold more than one word ("XII-lea", "rugându-se"), and the
+    # two readings can disagree about each of them separately. Judging such a
+    # token by its longest word alone and then replacing the whole thing
+    # carries the other reading's mistakes in with its corrections: "XH-lea"
+    # became "XII-iea", the numeral fixed and the ordinary Romanian ordinal
+    # ending ruined. So each word in it is decided on its own, and the result
+    # is rebuilt on this token's own punctuation.
+    old_runs = list(_WORD_CORE.finditer(original))
+    new_runs = _WORD_CORE.findall(candidate)
+    if len(old_runs) > 1 and len(old_runs) == len(new_runs):
+        return _choose_within_token(original, old_runs, new_runs, lex)
     om, cm = _core(original), _core(candidate)
     if cm is None or not lex.is_known(cm):
         return None  # the new reading is not a word: nothing to gain
@@ -278,6 +304,17 @@ def _choose_token(original: str, candidate: str, lex: "spelling.Lexicon") -> Opt
         # (".1" for "şi") is misread ink, not a marker.
         if any(c.isdigit() for c in original) and not any(c.isdigit() for c in candidate):
             return None
+        # An undamaged word is not traded for a shorter one. The other reading
+        # being shorter by a letter is the signature of *its* own misreading:
+        # two letters run together into one ("cl" read as "d"), which is how
+        # "Proclu" becomes "Produ" and "Ancira" becomes "Andra" -- both real
+        # words to a dictionary, both wrong. Genuine corrections of a clean
+        # word substitute letters or restore a dropped one ("Biseridi" ->
+        # "Bisericii", "teimen" -> "termen"), so they never need this. A
+        # visibly damaged token is exempt: "Ut >li*/.ul" is far longer than
+        # the "Botezul" it should be.
+        if _is_clean_word(original) and _letters(candidate) < _letters(original):
+            return None
     result = _trim_debris(candidate)
     # Don't let the fresh reading open the word with punctuation the old one
     # never had: OCR readily sees a quote mark in a smudge, and inventing one
@@ -289,7 +326,83 @@ def _choose_token(original: str, candidate: str, lex: "spelling.Lexicon") -> Opt
     # reading failed to see it.
     if original[-1:] in ("-", "\xad") and result[-1:] not in ("-", "\xad"):
         result += original[-1]
+    # Likewise the punctuation that ends a sentence: the other reading missing
+    # the full stop after a word is no reason to lose it.
+    if original[-1:] in ".,;:!?" and result[-1:] not in ".,;:!?":
+        result += original[-1]
     return result if result and result != original else None
+
+
+def _choose_within_token(original: str, old_runs: List["re.Match"],
+                         new_runs: List[str], lex: "spelling.Lexicon") -> Optional[str]:
+    """Swap only the words inside *original* that the other reading improves.
+
+    The token's own punctuation and spacing are kept exactly -- the result is
+    built by substituting into it, never by adopting the other reading's
+    version of the whole token -- so a correction to one word in it cannot
+    damage another, and a trailing period cannot go missing with it.
+
+    Two-letter words are accepted here, unlike in a token standing alone: a
+    word bounded by the rest of the token is far less ambiguous than one on
+    its own, and a roman numeral ("XH" for "XII") is exactly this shape.
+    """
+    pieces: List[str] = []
+    last = 0
+    changed = False
+    for match, new_run in zip(old_runs, new_runs):
+        pieces.append(original[last:match.start()])
+        old_run = match.group()
+        take_new = (
+            old_run != new_run
+            and len(old_run) >= 2 and len(new_run) >= 2
+            and not lex.is_known(old_run)
+            and lex.is_known(new_run)
+        )
+        pieces.append(new_run if take_new else old_run)
+        changed = changed or take_new
+        last = match.end()
+    pieces.append(original[last:])
+    result = "".join(pieces)
+    return result if changed and result != original else None
+
+
+def _has_other_script(text: str) -> bool:
+    """Does this text hold any letter outside the Latin alphabet?
+
+    Stricter than _is_other_script, which weighs a whole line: a single Greek
+    word quoted inside a Romanian sentence is still untouchable, and a
+    line-level measure cannot see it.
+    """
+    for c in text:
+        if c.isalpha() and not ("a" <= c.lower() <= "z") \
+                and not unicodedata.name(c, "").startswith("LATIN"):
+            return True
+    return False
+
+
+def _digits(text: str) -> str:
+    return "".join(c for c in text if c.isdigit())
+
+
+def _is_clean_word(token: str) -> bool:
+    """Is this token undamaged -- letters, with only real punctuation around it?
+
+    A misread token usually carries the evidence on its face: debris sitting
+    inside it ("Ut >li*/.ul", ".iradcmice", "«It"). One that is nothing but
+    letters may still be *wrong* ("Biseridi" for "Bisericii"), but it is not
+    visibly damaged, and that difference is what decides how much benefit of
+    the doubt a rival reading gets.
+    """
+    # Asymmetric on purpose: a period legitimately *ends* a word and never
+    # opens one, so ".iradcmice" is damaged while "academice." is not.
+    core = token.lstrip("".join(_LEGIT_LEAD)).rstrip("".join(_LEGIT_TAIL))
+    if not core:
+        return False
+    return all(c.isalpha() or c in "-'’" for c in core)
+
+
+def _letters(text: str) -> int:
+    return sum(1 for c in text if c.isalpha())
 
 
 def _trim_debris(token: str) -> str:
@@ -376,16 +489,121 @@ def _repair_page(page: Page, pdf_page: "pymupdf.Page", lex: "spelling.Lexicon", 
         cand_tokens = [w["text"] for w in sorted(grouped.get(idx, []), key=lambda w: w["x0"])]
         if not cand_tokens:
             continue
-        for old, new in _token_repairs(line.text.split(), cand_tokens, lex):
-            # Substitute inside the span that holds the words, so the line
-            # keeps every span boundary, size and style flag it had. A phrase
-            # straddling two spans simply isn't replaced.
-            for si, span in enumerate(line.spans):
-                if old in span.text:
-                    line.spans[si] = replace(span, text=span.text.replace(old, new, 1))
-                    repaired += 1
-                    break
+        repaired += apply_repairs_to_line(line, _token_repairs(line.text.split(), cand_tokens, lex))
     return repaired
+
+
+def _repair_page_from_reference(page: Page, ref_lines: List[str],
+                                lex: "spelling.Lexicon",
+                                own_counts: Optional[Dict[str, int]] = None,
+                                ref_counts: Optional[Dict[str, int]] = None) -> int:
+    """Correct this page's words against the same page of a second scan.
+
+    Both scans photographed the same printed page, so its lines are the same
+    lines -- found rather than assumed (see crossref.align_lines), since
+    either OCR pass may have merged or split one. Which reading wins is
+    decided exactly as it is against a fresh Tesseract pass: only a reading
+    that is a word of the book's language replaces one that isn't. That is
+    what keeps the *other* scan's weaknesses out -- in the pair this was
+    built for, the second scan reads ordinary Romanian prose far better but
+    mangles the Greek quotations the first one got right, and a rule that
+    only ever swaps in a recognized Romanian word cannot touch those.
+    """
+    if not lex.available or not ref_lines:
+        return 0
+    own_lines = [ln.text for ln in page.lines]
+    # One dictionary lookup for the page's whole vocabulary, rather than one
+    # per word as it comes up: a lookup costs a process.
+    lex.warm(own_lines + list(ref_lines))
+    pairs = crossref.align_lines(own_lines, ref_lines)
+    repaired = 0
+    for li, ri in pairs.items():
+        line = page.lines[li]
+        candidate = ref_lines[ri]
+        if _is_other_script(line.text) or _is_other_script(candidate):
+            continue
+        repairs = _token_repairs(line.text.split(), candidate.split(), lex)
+        if own_counts is not None and ref_counts is not None:
+            # Don't "correct" a word this book demonstrably uses -- see
+            # crossref.is_own_vocabulary.
+            repairs = _keep_the_book_s_own_words(repairs, own_counts, ref_counts)
+        repaired += apply_repairs_to_line(line, repairs)
+    return repaired
+
+
+def _keep_the_book_s_own_words(repairs: List[tuple], own_counts: Dict[str, int],
+                               ref_counts: Dict[str, int]) -> List[tuple]:
+    """Drop repairs that would overwrite a word this book demonstrably uses.
+
+    Judged per word rather than per run, and only on the words a repair
+    actually changes: a run like "loan Botezătorul" -> "Ioan Botezătorul"
+    leaves "Botezătorul" alone, so there is nothing there to protect.
+
+    A one- or two-letter fragment is never taken as evidence of vocabulary.
+    Those are debris from a word the scan broke apart -- the "C" of "C Vntrul"
+    for "Centrul", the "I" of "I Iristos" for "Hristos" -- and because the
+    other scan is full of single letters as initials and roman numerals,
+    counting them would protect exactly the wreckage this is meant to repair.
+    """
+    out: List[tuple] = []
+    for old, new in repairs:
+        new = crossref.rejoin_if_split(new, ref_counts)
+        replaced = set(old.split()) - set(new.split())
+        if any(
+            crossref.is_own_vocabulary(tok, own_counts, ref_counts)
+            for tok in replaced
+            if len(_core(tok) or "") >= _MIN_SWAP_LEN
+        ):
+            continue
+        out.append((old, new))
+    return out
+
+
+def _span_offsets(line: Line) -> List[tuple]:
+    """The [start, end) character range each span occupies in ``line.text``."""
+    offsets, pos = [], 0
+    for s in line.spans:
+        offsets.append((pos, pos + len(s.text)))
+        pos += len(s.text)
+    return offsets
+
+
+def apply_repairs_to_line(line: Line, repairs: List[tuple]) -> int:
+    """Apply (old, new) word swaps to *line* in place; return how many landed.
+
+    Each swap is located on the line's own text with a word-boundary match,
+    left to right, rather than by a bare substring search: replacing the
+    standalone word "c" by substring turned "Bisericii şi c" into
+    "Biserioii şi", because the first "c" in that string is the one *inside*
+    "Bisericii". A run that straddles more than one span (a citation that
+    changes font mid-phrase) is merged into a single span rather than skipped
+    for having no one span that contains it whole -- everything outside the
+    matched range keeps its own span, and with it its size and style flags.
+    """
+    if not repairs:
+        return 0
+    full = line.text
+    offsets = _span_offsets(line)
+    done = 0
+    search_from = 0
+    for old, new in repairs:
+        pattern = re.compile(r"(?<!\w)" + re.escape(old) + r"(?!\w)")
+        m = pattern.search(full, search_from) or pattern.search(full)
+        if not m:
+            continue
+        start, end = m.span()
+        covering = [i for i, (s0, s1) in enumerate(offsets) if s1 > start and s0 < end]
+        if not covering:
+            continue
+        first, last = covering[0], covering[-1]
+        prefix = full[offsets[first][0]:start]
+        suffix = full[end:offsets[last][1]]
+        line.spans[first:last + 1] = [replace(line.spans[first], text=prefix + new + suffix)]
+        full = line.text
+        offsets = _span_offsets(line)
+        search_from = offsets[first][0] + len(prefix) + len(new)
+        done += 1
+    return done
 
 
 def _token_repairs(orig_tokens: List[str], cand_tokens: List[str],
@@ -416,6 +634,29 @@ def _token_repairs(orig_tokens: List[str], cand_tokens: List[str],
             continue
         if any(_holds_a_word(t, lex) for t in old_run):
             continue  # part of what we have is real: too risky to rewrite
+        # Protection is the one direction where the shortest dictionary words
+        # are worth trusting: a run holding a real word, even a two-letter
+        # one _holds_a_word will not vouch for, is not a run to rewrite. This
+        # is what separates "şi c)" -> "şic)" -- the other scan dropping a
+        # space, which no length check can see, since a merge keeps every
+        # letter -- from "«It scoperă" -> "descoperă", where neither "It" nor
+        # "scoperă" is a word at all.
+        if any(lex.is_known(_core(t) or "") for t in old_run):
+            continue
+        # A number standing on its own in the run identifies something -- a
+        # numbered section, a footnote marker -- so a reading that renumbers
+        # it is not correcting a word: "U nitatea 2" must not become
+        # "Unitatea 3". Digits fused inside wreckage (".it«1,") are ink, not
+        # a number, and must not block the repair.
+        if (any(_is_bare_number(t) for t in old_run)
+                and _digits(" ".join(old_run)) != _digits(" ".join(new_run))):
+            continue
+        # As in the single-word case: undamaged words are not traded for
+        # fewer letters, which is the other reading running two of them
+        # together ("şi c)" collapsing into "şic)").
+        if (all(_is_clean_word(t) for t in old_run)
+                and _letters(" ".join(new_run)) < _letters(" ".join(old_run))):
+            continue
         if not all(_holds_a_word(t, lex) for t in new_run):
             continue  # the replacement is not made of words
         old_text = " ".join(old_run)
@@ -533,6 +774,7 @@ def extract(
     ocr_lang: str = "eng",
     dpi: int = 300,
     repair_ocr: bool = False,
+    reference_pdf: Optional[str] = None,
     progress=None,
 ) -> tuple[List[Page], dict]:
     """Return (pages, metadata) extracted from the PDF at *path*."""
@@ -547,19 +789,49 @@ def extract(
     if ocr_mode == "force" and not ocr_available:
         log.warning("OCR forced but Tesseract is unavailable; falling back to text layer.")
 
+    # The dictionary is what decides which of two readings of a word wins, so
+    # both repair paths need it -- the Tesseract one and the second-scan one.
     lex: Optional[spelling.Lexicon] = None
-    if repair_ocr:
-        if not ocr_available:
-            log.warning("--repair-ocr needs Tesseract, which is unavailable; skipping repair.")
-        else:
-            lex = spelling.Lexicon(ocr_lang)
-            if not lex.available:
-                log.warning(
-                    "--repair-ocr needs a hunspell dictionary for %r, which is not installed; "
-                    "skipping repair.", ocr_lang,
-                )
-                lex = None
+    if repair_ocr or reference_pdf:
+        lex = spelling.Lexicon(ocr_lang)
+        if not lex.available:
+            log.warning(
+                "OCR repair needs a hunspell dictionary for %r, which is not installed; "
+                "skipping repair.", ocr_lang,
+            )
+            lex = None
+    if repair_ocr and not ocr_available:
+        log.warning("--repair-ocr needs Tesseract, which is unavailable; skipping that pass.")
     repaired_lines = 0
+
+    # A second scan of the same book: align its pages to this one's, so each
+    # page can be corrected against the same printed page read by a different
+    # engine from a different photograph. See crossref.
+    ref_lines_by_page: Dict[int, List[str]] = {}
+    own_counts: Dict[str, int] = {}
+    ref_counts: Dict[str, int] = {}
+    if reference_pdf and lex is not None:
+        try:
+            ref_doc = pymupdf.open(reference_pdf)
+        except Exception as exc:
+            log.warning("Cannot open reference PDF %r: %s", reference_pdf, exc)
+        else:
+            own_text = [doc[i].get_text() for i in range(doc.page_count)]
+            ref_text = [ref_doc[j].get_text() for j in range(ref_doc.page_count)]
+            mapping = crossref.fill_gaps(crossref.align_pages(own_text, ref_text))
+            own_counts = crossref.token_counts(own_text)
+            ref_counts = crossref.token_counts(ref_text)
+            for i, j in enumerate(mapping):
+                if j is not None:
+                    ref_lines_by_page[i] = [
+                        ln for ln in ref_text[j].splitlines() if ln.strip()
+                    ]
+            ref_doc.close()
+            log.info(
+                "Reference scan aligned: %d of %d pages matched",
+                len(ref_lines_by_page), doc.page_count,
+            )
+            meta["_reference_pages_matched"] = len(ref_lines_by_page)
 
     pages: List[Page] = []
     for i in range(doc.page_count):
@@ -599,14 +871,24 @@ def extract(
                     < 0.8 * p.width * p.height
                 ]
                 p = ocr_page
-        elif lex is not None and _is_scanned_page(p):
-            # A page that is a photograph of print, carrying someone else's
-            # OCR as its text layer -- re-read the lines it got wrong. See
-            # _repair_page for why only those lines, and only their text.
-            fixed = _repair_page(p, page, lex, lang=ocr_lang, dpi=dpi)
-            if fixed:
-                log.info("Repaired %d line(s) on page %d/%d", fixed, i + 1, doc.page_count)
-                repaired_lines += fixed
+        else:
+            # A second scan of the same page is both free and a better second
+            # opinion than re-reading this one's image, so it goes first.
+            if i in ref_lines_by_page and lex is not None:
+                fixed = _repair_page_from_reference(
+                    p, ref_lines_by_page[i], lex, own_counts, ref_counts)
+                if fixed:
+                    log.info("Page %d/%d: %d word(s) corrected against the reference scan",
+                             i + 1, doc.page_count, fixed)
+                    repaired_lines += fixed
+            if repair_ocr and ocr_available and lex is not None and _is_scanned_page(p):
+                # A page that is a photograph of print, carrying someone else's
+                # OCR as its text layer -- re-read the lines it got wrong. See
+                # _repair_page for why only those lines, and only their text.
+                fixed = _repair_page(p, page, lex, lang=ocr_lang, dpi=dpi)
+                if fixed:
+                    log.info("Repaired %d line(s) on page %d/%d", fixed, i + 1, doc.page_count)
+                    repaired_lines += fixed
 
         pages.append(p)
         if progress:

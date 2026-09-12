@@ -104,6 +104,19 @@ class Lexicon:
             self._learn([w])
         return self._known.get(w, False)
 
+    def warm(self, texts: Iterable[str]) -> None:
+        """Look up every word in *texts* at once, before asking about any.
+
+        is_known() falls back to a lookup per unseen word, and a lookup costs
+        a process; asked word by word over a whole book that is tens of
+        thousands of them. Handing the page's whole vocabulary over in one
+        call first turns all of that into cache hits.
+        """
+        words = []
+        for text in texts:
+            words.extend(w.translate(_LOOKUP_FOLD) for w in _WORD_RE.findall(text))
+        self._learn(w for w in words if len(w) >= 2)
+
     def score(self, text: str) -> Optional[float]:
         """Fraction of *text*'s words the dictionary recognizes, or None.
 

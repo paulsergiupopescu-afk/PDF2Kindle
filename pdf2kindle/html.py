@@ -356,13 +356,20 @@ def render_footnotes(chapter: Chapter) -> str:
         '<section class="footnotes" epub:type="footnotes">\n'
         f'<p class="dinkus">{_DINKUS}</p>\n<h2>Notes</h2>\n'
     ]
+    # A note's label links back to the marker that cites it -- but only when
+    # that marker is actually on the page. Where the marker was never found
+    # (its printed digit lost to the scan), the note is still worth keeping;
+    # the back-link is not, because it would point at an anchor that does not
+    # exist, which is a broken link in the finished book.
+    cited = {r.noteref for el in chapter.elements for r in el.runs if r.noteref}
     for note in chapter.footnotes:
         nid = escape(note.note_id or "")
         label = escape(note.note_label or "*")
         body = _render_runs(note.runs)
+        back = f'<a href="#{nid}-ref">{label}.</a>' if note.note_id in cited else f"{label}."
         parts.append(
             f'<aside class="footnote" epub:type="footnote" id="{nid}">'
-            f'<p><a href="#{nid}-ref">{label}.</a> {body}</p></aside>\n'
+            f'<p>{back} {body}</p></aside>\n'
         )
     parts.append("</section>\n")
     return "".join(parts)
