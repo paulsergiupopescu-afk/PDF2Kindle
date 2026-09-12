@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 from .model import Line, Span
-from .text import normalize
+from .text import drop_break_hyphen, ends_hyphenated, normalize
 
 # A label is 1-3 digits *not* followed by another digit (so "1972" is not a
 # label), or a footnote symbol. Trailing "." / ")" and the space are optional.
@@ -236,8 +236,8 @@ def _dehyphenate_join(parts: List[str]) -> str:
         part = part.strip()
         if not part:
             continue
-        if out.endswith("-") and part[:1].islower():
-            out = out[:-1] + part
+        if ends_hyphenated(out) and part[:1].islower():
+            out = drop_break_hyphen(out) + part
         elif out:
             out += " " + part
         else:

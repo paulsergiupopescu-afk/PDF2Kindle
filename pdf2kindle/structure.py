@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Tuple
 from .analyze import Analyzed, PageContent
 from .extract import _column_count
 from .footnotes import find_embedded_markers, find_markers, parse_page_notes
-from .text import normalize
+from .text import drop_break_hyphen, ends_hyphenated, normalize
 from .model import (
     Chapter,
     Document,
@@ -126,8 +126,8 @@ def _paragraph_runs(
         if li > 0 and runs:
             tail = _tail_text(runs).rstrip()
             first_char = line.text.strip()[:1]
-            if tail.endswith("-") and first_char.islower():
-                runs[-1].text = runs[-1].text.rstrip()[:-1]
+            if ends_hyphenated(tail) and first_char.islower():
+                runs[-1].text = drop_break_hyphen(runs[-1].text)
             elif not tail.endswith((" ", "—", "–")):
                 _append_text(runs, " ", runs[-1].bold, runs[-1].italic)
 
@@ -194,8 +194,12 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
     bold = all(s.bold for s in line.spans if s.text.strip())
     trailing_period = text.endswith((".", ",", ";", ":")) and not text.endswith("...")
 
-    # Named divisions ("Chapter 3", "Appendix B", "Introduction").
-    if _CHAPTER_RE.match(text) and ratio >= 1.02:
+    # Named divisions ("Chapter 3", "Appendix B", "Introduction"). A "Part"
+    # label conventionally sits at body size, a small superior line over the
+    # real (larger) title on the next line or two -- so unlike a numbered or
+    # roman heading below, this is let through at body size rather than
+    # required to be larger than it, on the strength of the word alone.
+    if _CHAPTER_RE.match(text) and ratio >= 0.98:
         return 1
 
     # Numbered sections: depth of the number sets the level. Guard against body
@@ -486,7 +490,15 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
         ):
             prev = out[-1][1]
             ptxt, cur = prev.text.strip(), el.text.strip()
-            numbered = bool(_BARE_NUM_HEAD_RE.match(ptxt))
+            # A bare chapter number ("2") or a short "Part"/"Chapter" label
+            # ("Partea întâi") is set at its own, usually smaller, size as a
+            # superior line over the real title that follows -- so either one
+            # merges forward into a differently-sized next line on sight,
+            # the same way a numbered heading's own wrapped continuation
+            # does below.
+            numbered = bool(_BARE_NUM_HEAD_RE.match(ptxt)) or (
+                bool(_CHAPTER_RE.match(ptxt)) and len(ptxt.split()) <= 4
+            )
             # A genuine multi-line wrap keeps the same font size throughout;
             # a title page stacks several *different* short heading-like
             # lines (field of study, title, thesis type, supervisor) that
@@ -522,25 +534,33 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
     return out
 
 
-def _merge_across_pages(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Element]]:
-    """Rejoin a paragraph that continues onto the next page.
+def _merge_split_paragraphs(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Element]]:
+    """Rejoin a paragraph that was broken in two.
 
-    Page furniture used to interrupt these; now that it is stripped, a sentence
-    broken by a page turn should read as one paragraph again.
+    A page turn is the usual cause: page furniture used to interrupt these,
+    and now that it is stripped a sentence broken by the turn should read as
+    one paragraph again. Continuing lowercase is the evidence there, so the
+    merge is limited to a genuine page boundary -- within a page, the break
+    between two paragraphs is real and must be respected.
+
+    A paragraph ending in a hyphenated part-word needs no such caution: no
+    paragraph ever ends that way, so the word plainly continues in whatever
+    comes next, whether or not a page boundary falls in between. That case is
+    common in a scan, where anything the extractor could not place (a note
+    zone, a stray folio) can interrupt a paragraph mid-word.
     """
     out: List[Tuple[int, Element]] = []
     for page_no, el in flat:
-        if out and el.kind == ElementKind.PARAGRAPH and out[-1][1].kind == ElementKind.PARAGRAPH \
-                and page_no != out[-1][0]:
+        if out and el.kind == ElementKind.PARAGRAPH and out[-1][1].kind == ElementKind.PARAGRAPH:
             prev = out[-1][1]
             ptxt, ctxt = prev.text.rstrip(), el.text.lstrip()
-            if ptxt and ctxt and not ptxt.endswith(_SENT_END):
-                if ptxt.endswith("-") and ctxt[:1].islower():
+            if ptxt and ctxt and not ptxt.endswith(_SENT_END) and ctxt[:1].islower():
+                if ends_hyphenated(ptxt):
                     if prev.runs[-1].noteref is None and not prev.runs[-1].sup:
-                        prev.runs[-1].text = prev.runs[-1].text.rstrip()[:-1]
+                        prev.runs[-1].text = drop_break_hyphen(prev.runs[-1].text)
                     prev.runs.extend(el.runs)
                     continue
-                if ctxt[:1].islower():
+                if page_no != out[-1][0]:
                     _join_runs(prev, " ")
                     prev.runs.extend(el.runs)
                     continue
@@ -741,8 +761,8 @@ def _extract_endnotes(chapter: Chapter, idx: int) -> None:
         elif cur is not None:
             tail = cur.runs[-1].text.rstrip() if cur.runs else ""
             piece = el.text.strip()
-            if tail.endswith("-") and piece[:1].islower():
-                cur.runs[-1].text = tail[:-1] + piece  # word split across lines
+            if ends_hyphenated(tail) and piece[:1].islower():
+                cur.runs[-1].text = drop_break_hyphen(tail) + piece  # word split across lines
             else:
                 cur.runs.append(InlineRun(text=" " + piece))
         else:
@@ -813,7 +833,7 @@ def build_document(
     academic = profile == "academic"
     flat, notes_by_page = _build_flow(analyzed, page_images, academic, keep_print_nav)
     flat = _merge_split_headings(flat)
-    flat = _merge_across_pages(flat)
+    flat = _merge_split_paragraphs(flat)
 
     toc = meta.get("_toc") or []
     chapters = _split_by_toc(flat, notes_by_page, toc) if toc else None

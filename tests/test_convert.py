@@ -925,3 +925,78 @@ def test_a_repair_does_not_open_a_word_with_invented_punctuation():
     """OCR sees a quote mark in a smudge readily; introducing one mid-sentence
     is more conspicuous than the misspelling it fixes."""
     assert _choose("Npie", "“pre") == "pre"
+
+
+def test_part_label_at_body_size_is_a_heading():
+    """A "Part"/"Chapter" label conventionally sits at body size, a small
+    superior line over the real (larger) title below it -- unlike a numbered
+    or roman heading, it must not be required to be larger than body text."""
+    from pdf2kindle.structure import _is_heading
+
+    ln = _scan_line("Partea întâi", size=11.0)
+    assert _is_heading(ln, body_size=11.0) == 1
+
+
+def test_part_label_merges_forward_into_its_larger_title():
+    """'Partea întâi' at body size, followed by a much larger two-line title,
+    must merge into one heading -- the label alone, with nothing after it,
+    would otherwise become its own empty chapter."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _merge_split_headings
+
+    flat = [
+        (7, Element(kind=ElementKind.HEADING, level=1, size=11.0,
+                    runs=[InlineRun(text="Partea întâi")])),
+        (7, Element(kind=ElementKind.HEADING, level=2, size=17.5,
+                    runs=[InlineRun(text="DE LA CINA DE TAINĂ")])),
+        (7, Element(kind=ElementKind.HEADING, level=2, size=17.5,
+                    runs=[InlineRun(text="LA LITURGHIA BIZANTINĂ")])),
+    ]
+    merged = _merge_split_headings(flat)
+    assert len(merged) == 1
+    assert merged[0][1].text == "Partea întâi DE LA CINA DE TAINĂ LA LITURGHIA BIZANTINĂ"
+
+
+def test_a_word_broken_across_pages_by_debris_still_rejoins():
+    """A stray scanned-in mark ('Λ') landing between the two halves of a
+    hyphenated word must not stop them from being rejoined -- the mark is
+    debris, not a paragraph in its own right."""
+    from pdf2kindle.analyze import _is_debris
+
+    assert _is_debris(_scan_line("Λ"))
+    assert _is_debris(_scan_line("■"))
+    assert not _is_debris(_scan_line("a"))     # a real short word/list marker
+    assert not _is_debris(_scan_line("12"))    # a folio, handled elsewhere
+    assert not _is_debris(_scan_line(""))
+
+
+def test_paragraphs_split_by_a_hyphenated_word_merge_on_the_same_page():
+    """Unlike an ordinary paragraph break, a paragraph ending mid-word with a
+    hyphen must rejoin its continuation even when both sit on the same page
+    -- no paragraph ever legitimately ends that way."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _merge_split_paragraphs
+
+    flat = [
+        (5, Element(kind=ElementKind.PARAGRAPH,
+                    runs=[InlineRun(text="o traiectorie istorică destul de compli-")])),
+        (5, Element(kind=ElementKind.PARAGRAPH,
+                    runs=[InlineRun(text="cată, în care elementul uman a fost evident.")])),
+    ]
+    merged = _merge_split_paragraphs(flat)
+    assert len(merged) == 1
+    assert merged[0][1].text == "o traiectorie istorică destul de complicată, în care elementul uman a fost evident."
+
+
+def test_ordinary_paragraph_break_on_the_same_page_is_kept():
+    """Two genuinely separate paragraphs on one page must not be glued
+    together just because the first doesn't end in sentence punctuation."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _merge_split_paragraphs
+
+    flat = [
+        (5, Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="First paragraph ends here")])),
+        (5, Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="Second paragraph starts here.")])),
+    ]
+    merged = _merge_split_paragraphs(flat)
+    assert len(merged) == 2

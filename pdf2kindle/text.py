@@ -39,6 +39,26 @@ _FRACTION_RE = re.compile(r"(\d)⁄(\d)(?!\d)")
 _MULTISPACE_RE = re.compile(r"  +")
 
 
+# What a word broken across a line end can be hyphenated with. The *soft*
+# hyphen (U+00AD) is the one that matters in practice: it is invisible unless
+# the break actually happens, so typesetting sprinkles it through a paragraph
+# and PDF extraction hands it back at the line end exactly where a plain
+# hyphen would be. Code that only looks for "-" rejoins none of those, and
+# leaves "Litur ghia" and "Dumne zeu" scattered through the text.
+_BREAK_HYPHENS = ("-", "\xad", "‐", "‑")
+
+
+def ends_hyphenated(text: str) -> bool:
+    """Does *text* end in a hyphen that splits a word across a line break?"""
+    return text.rstrip().endswith(_BREAK_HYPHENS)
+
+
+def drop_break_hyphen(text: str) -> str:
+    """Strip a trailing line-break hyphen, to rejoin the word it split."""
+    stripped = text.rstrip()
+    return stripped[:-1] if stripped.endswith(_BREAK_HYPHENS) else stripped
+
+
 def _fractions(text: str) -> str:
     def repl(m: re.Match) -> str:
         return _VULGAR.get((m.group(1), m.group(2)), f"{m.group(1)}/{m.group(2)}")

@@ -99,6 +99,27 @@ def _margin_repeats(pages: List[Page]) -> Counter:
 # Page furniture
 # --------------------------------------------------------------------------- #
 
+def _is_debris(line: Line) -> bool:
+    """Is this whole line a stray mark rather than text?
+
+    A speck on a scanned page, a printer's rule, or the edge of a neighbouring
+    sheet comes back as a line holding a single glyph -- "Λ", "■", "·" --
+    wherever on the page the mark happened to fall. Two things go wrong if it
+    is kept: it reads as gibberish, and where the mark landed between the two
+    halves of a word broken over a line end it stops them from being rejoined,
+    because what follows the hyphen is then the mark instead of the rest of
+    the word.
+
+    Deliberately narrow. A digit is left alone -- a folio is dealt with in the
+    margins, where its position is the evidence -- and so is anything holding
+    a Latin letter, which may be a list marker or a drop cap.
+    """
+    txt = line.text.strip()
+    if not txt or len(txt) > 2:
+        return False
+    return not any(c.isdigit() or ("a" <= c.lower() <= "z") for c in txt)
+
+
 def _is_furniture(
     line: Line,
     neighbour: Optional[Line],
@@ -295,7 +316,7 @@ def analyze(pages: List[Page]) -> Analyzed:
 
     out = Analyzed(body_size=body_size, line_height=line_height, body_left=body_left)
     for p in pages:
-        lines = [ln for ln in p.lines if ln.text.strip()]
+        lines = [ln for ln in p.lines if ln.text.strip() and not _is_debris(ln)]
         kept = _strip_furniture(lines, p.height, body_size, line_height, repeats)
         ordered = _order_lines(kept, p.width)
         body_lines, note_lines = _split_body_notes(ordered, body_size, p.height, line_height)
