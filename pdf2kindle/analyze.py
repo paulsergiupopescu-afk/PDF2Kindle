@@ -210,21 +210,73 @@ def _strip_furniture(
 # Reading order
 # --------------------------------------------------------------------------- #
 
-def _order_lines(lines: List[Line], width: float) -> List[Line]:
-    if len(lines) < 6:
-        return sorted(lines, key=lambda ln: (round(ln.y0, 1), ln.x0))
+def _by_position(lines: List[Line]) -> List[Line]:
+    return sorted(lines, key=lambda ln: (round(ln.y0, 1), ln.x0))
+
+
+def _side(line: Line, width: float) -> str:
+    """Which column *line* sits in: left, right, or spanning both."""
     mid = width / 2.0
-    left = [ln for ln in lines if ln.x1 <= mid + width * 0.03]
-    right = [ln for ln in lines if ln.x0 >= mid - width * 0.03]
-    crossing = [ln for ln in lines if ln not in left and ln not in right]
+    tol = width * 0.03
+    if line.x1 <= mid + tol:
+        return "L"
+    if line.x0 >= mid - tol:
+        return "R"
+    return "S"
+
+
+def _order_band(lines: List[Line], width: float) -> List[Line]:
+    """Order one horizontal band, which is either one or two columns."""
+    if len(lines) < 6:
+        return _by_position(lines)
+    sides = [_side(ln, width) for ln in lines]
+    left = [ln for ln, s in zip(lines, sides) if s == "L"]
+    right = [ln for ln, s in zip(lines, sides) if s == "R"]
+    crossing = sum(1 for s in sides if s == "S")
     if (
         len(left) >= 4 and len(right) >= 4
-        and len(crossing) <= 0.15 * len(lines)
+        and crossing <= 0.15 * len(lines)
         and 0.4 <= len(left) / (len(left) + len(right)) <= 0.6
     ):
-        return (sorted(left, key=lambda ln: (round(ln.y0, 1), ln.x0))
-                + sorted(right, key=lambda ln: (round(ln.y0, 1), ln.x0)))
-    return sorted(lines, key=lambda ln: (round(ln.y0, 1), ln.x0))
+        return _by_position(left) + _by_position(right)
+    return _by_position(lines)
+
+
+def _order_lines(lines: List[Line], width: float) -> List[Line]:
+    """Put a page's lines into reading order, column by column.
+
+    A page is rarely all one thing. A journal article ends with a few
+    full-measure paragraphs of conclusion and then breaks into two columns
+    for its notes -- and judging the page as a whole, those full-measure
+    lines look like noise crossing the gutter, so a single verdict for the
+    page either mistakes a one-column page for two or, as here, gives up on
+    a page that really is two and reads straight across the gutter. That
+    last failure is the damaging one: both columns share the same line
+    positions, so sorting by height alone interleaves them line for line and
+    every sentence comes out shuffled with a different sentence.
+
+    So the full-measure lines are taken for what they are -- separators --
+    and each band between them is judged on its own. A page with no columns
+    anywhere has no separators to find and falls through to the same
+    top-to-bottom order as before.
+    """
+    if len(lines) < 6:
+        return _by_position(lines)
+    spanning = sorted((ln for ln in lines if _side(ln, width) == "S"),
+                      key=lambda ln: ln.y0)
+    if not spanning:
+        return _order_band(lines, width)
+    rest = [ln for ln in lines if _side(ln, width) != "S"]
+    out: List[Line] = []
+    prev = float("-inf")
+    for sp in spanning + [None]:  # type: ignore[list-item]
+        top = sp.y0 if sp is not None else float("inf")
+        band = [ln for ln in rest if prev <= ln.y0 < top]
+        out.extend(_order_band(band, width))
+        if sp is not None:
+            out.append(sp)
+            prev = sp.y0
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -247,9 +299,25 @@ def _starts_with_marker(line: Line, body_size: float) -> bool:
 def _split_body_notes(
     lines: List[Line], body_size: float, height: float, line_height: float
 ) -> tuple[List[Line], List[Line]]:
-    """Peel a trailing smaller-type footnote block off the bottom of the page."""
+    """Peel a trailing smaller-type footnote block off the bottom of the page.
+
+    Where the footnotes are is a fact about the *geometry* -- small type at
+    the bottom -- so they are found against a top-to-bottom view of the page.
+    But which order the lines are read in is a fact about the *layout*, and
+    on a two-column page it is column by column, not down the page. Those
+    are two different orders, and this used to answer the first question by
+    destroying the answer to the second: it sorted by height and returned
+    that, so a two-column notes section came back with its columns
+    interleaved line for line. So the zone is found by height and then
+    applied back to the lines in the order they are meant to be read.
+    """
     if not lines:
         return [], []
+    reading = {id(ln): i for i, ln in enumerate(lines)}
+
+    def as_read(seq: List[Line]) -> List[Line]:
+        return sorted(seq, key=lambda ln: reading[id(ln)])
+
     ordered = sorted(lines, key=lambda ln: ln.y0)
 
     notes: List[Line] = []
@@ -263,7 +331,7 @@ def _split_body_notes(
             break
     notes.reverse()
     if not notes:
-        return ordered, []
+        return as_read(ordered), []
 
     # The block must open with a note label -- but body content set at
     # footnote size (a block quote, an epigraph) can sit directly above the
@@ -271,17 +339,24 @@ def _split_body_notes(
     # non-marker line to the top. Trim down to the first line that actually
     # opens a note, rather than discarding the whole run (and the genuine
     # footnotes still in it) over a false start above it.
+    # Which line opens the note block is a question about reading order, not
+    # height: in two columns the right column's first line can sit a hair
+    # above the left column's, and judged by height it is "first" -- so the
+    # real opening marker looked like a false start and note 1 was demoted
+    # into the body.
+    notes = as_read(notes)
     start = next((i for i, ln in enumerate(notes) if _starts_with_marker(ln, body_size)), None)
     if start is None:
-        return ordered, []
-    demoted, notes = notes[:start], notes[start:]
+        return as_read(ordered), []
+    notes = notes[start:]
 
-    body = ordered[: len(ordered) - len(notes) - len(demoted)] + demoted
+    note_ids = {id(ln) for ln in notes}
+    body = [ln for ln in lines if id(ln) not in note_ids]
     # A real footnote zone sits *under* body text. A page that is small type
     # all the way up is a dedicated endnote/reference page, which belongs to
     # the endnote handler — peeling it here would split it in half.
     if sum(1 for ln in body if ln.dominant_size >= body_size - 0.3) < 2:
-        return ordered, []
+        return as_read(ordered), []
     return body, notes
 
 

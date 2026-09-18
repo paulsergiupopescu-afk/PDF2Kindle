@@ -104,8 +104,136 @@ def _line_from_dict(ld: dict) -> Optional[Line]:
     return Line(spans=spans, bbox=tuple(ld.get("bbox", (0, 0, 0, 0))))  # type: ignore[arg-type]
 
 
+# A word run together with the next one is only visible once it is long
+# enough that no single word plausibly reaches it.
+_RUN_TOGETHER_LEN = 25
+
+
+# A word welded to the punctuation before it ("centrality,entire"), or to an
+# opening quote ("but'as if real'"). Both are the same defect as a
+# run-together token, just too short to see by length alone.
+_WELDED = re.compile(r"[^\W\d_][,.;:][^\W\d_]|[^\W\d_][\u2018\u201c]", re.UNICODE)
+
+
+def _needs_space_recovery(text: str) -> bool:
+    """Has this line lost the spaces between its words?
+
+    Some typesetters emit no space characters at all, positioning each word
+    instead -- the reader sees spaces because the glyphs sit apart, but the
+    text layer holds one unbroken run. A whole line of it shows up as a
+    token longer than any real word; a single missing space after a comma
+    does not, so that shape is looked for too.
+
+    Only a trigger, never a verdict: what actually gets a space is decided
+    by the glyphs, so a line caught here that turns out to be properly set
+    ("e.g.", "doi.org", "3.5") is left exactly as it was.
+    """
+    if any(
+        len(tok) >= _RUN_TOGETHER_LEN and sum(c.isalpha() for c in tok) > len(tok) * 0.7
+        for tok in text.split()
+    ):
+        return True
+    return bool(_WELDED.search(text))
+
+
+def _space_threshold(gaps: List[float]) -> Optional[float]:
+    """Where the gap between two words starts, for a line that marks it only
+    by distance.
+
+    The gaps in a line of type are not a spread but two clusters: the space
+    inside a word, and the wider one between words. Rather than assume how
+    wide a space is -- it is 0.15em in the document this was written for and
+    0.3em in the next one -- the split is found in the line's own
+    measurements, by the usual two-means over one dimension. A line whose
+    gaps form no two clusters (a single word, a line already spaced) yields
+    nothing and is left alone.
+    """
+    if len(gaps) < 8:
+        return None
+    lo, hi = min(gaps), max(gaps)
+    if hi - lo < 1e-6:
+        return None
+    a, b = lo, hi
+    for _ in range(20):
+        left = [g for g in gaps if abs(g - a) <= abs(g - b)]
+        right = [g for g in gaps if abs(g - a) > abs(g - b)]
+        if not left or not right:
+            return None
+        na, nb = sum(left) / len(left), sum(right) / len(right)
+        if abs(na - a) < 1e-9 and abs(nb - b) < 1e-9:
+            break
+        a, b = na, nb
+    # Two clusters that are barely apart are one cluster: the line is evenly
+    # set and has no word gaps to find.
+    if b - a < 0.02:
+        return None
+    return (a + b) / 2.0
+
+
+def _respace_line(ld: dict) -> None:
+    """Put the missing spaces back into one raw line, in place.
+
+    Only ever inserts, and only where the glyphs are actually far apart, so
+    a line that already carries its spaces is unchanged.
+    """
+    chars = [(c, sd) for sd in ld.get("spans", []) for c in sd.get("chars", [])]
+    gaps: List[float] = []
+    prev_x1 = None
+    for c, sd in chars:
+        size = float(sd.get("size", 0.0)) or 1.0
+        if prev_x1 is not None and c.get("c", "") != " ":
+            gaps.append((float(c["bbox"][0]) - prev_x1) / size)
+        prev_x1 = float(c["bbox"][2])
+    thr = _space_threshold(gaps)
+    if thr is None:
+        return
+    prev_x1 = None
+    for sd in ld.get("spans", []):
+        size = float(sd.get("size", 0.0)) or 1.0
+        out: List[str] = []
+        for c in sd.get("chars", []):
+            ch = c.get("c", "")
+            if prev_x1 is not None and ch != " " and not (out and out[-1] == " "):
+                if (float(c["bbox"][0]) - prev_x1) / size > thr:
+                    out.append(" ")
+            out.append(ch)
+            prev_x1 = float(c["bbox"][2])
+        sd["text"] = "".join(out)
+
+
+def _recover_spaces(page: "pymupdf.Page", d: dict) -> dict:
+    """Rebuild a page's text from glyph positions where its spaces are gone.
+
+    Falls back to the page as extracted if the raw glyph data does not line
+    up, and repairs only the lines that actually lost their spaces -- an
+    ordinary line's text is never rewritten from geometry.
+    """
+    try:
+        raw = page.get_text("rawdict")
+    except Exception:  # pragma: no cover - defensive
+        return d
+    broken = 0
+    for block in raw.get("blocks", []):
+        if block.get("type") != 0:
+            continue
+        for ld in block.get("lines", []):
+            text = "".join(c.get("c", "") for sd in ld.get("spans", [])
+                           for c in sd.get("chars", []))
+            if _needs_space_recovery(text):
+                _respace_line(ld)
+                broken += 1
+            else:
+                for sd in ld.get("spans", []):
+                    sd["text"] = "".join(c.get("c", "") for c in sd.get("chars", []))
+    return raw if broken else d
+
+
 def _extract_text_page(page: "pymupdf.Page", number: int) -> Page:
     d = page.get_text("dict")
+    if any(_needs_space_recovery("".join(s.get("text", "") for s in ln.get("spans", [])))
+           for b in d.get("blocks", []) if b.get("type") == 0
+           for ln in b.get("lines", [])):
+        d = _recover_spaces(page, d)
     out = Page(number=number, width=float(d.get("width", page.rect.width)),
                height=float(d.get("height", page.rect.height)))
     for block in d.get("blocks", []):

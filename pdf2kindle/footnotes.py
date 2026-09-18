@@ -151,6 +151,47 @@ def _label_from_spans(line: Line, body_size: float) -> Optional[Tuple[str, str]]
     return _norm_label(t), rest.strip()
 
 
+# Two columns of notes are further apart than any indent within one.
+_COLUMN_GAP = 40.0
+
+
+def _label_split(line: Line, body_size: float):
+    """The (label, rest) this line opens with, if it looks like one at all."""
+    split = _label_from_spans(line, body_size)
+    if split is not None:
+        return split
+    m = _LABEL_RE.match(line.text.strip())
+    return (_norm_label(m.group(1)), m.group(2)) if m else None
+
+
+def _modal(values: List[float]) -> float:
+    """The position these lines share, to the nearest half point."""
+    counts: Dict[float, int] = {}
+    for v in values:
+        key = round(v * 2) / 2
+        counts[key] = counts.get(key, 0) + 1
+    return max(counts.items(), key=lambda kv: (kv[1], -kv[0]))[0]
+
+
+def _note_columns(note_lines: List[Line]) -> Dict[int, List[Line]]:
+    """Group note lines by the column they are set in."""
+    xs = sorted({round(ln.x0, 1) for ln in note_lines})
+    bands: List[List[float]] = []
+    for x in xs:
+        if bands and x - bands[-1][-1] <= _COLUMN_GAP:
+            bands[-1].append(x)
+        else:
+            bands.append([x])
+    out: Dict[int, List[Line]] = {i: [] for i in range(len(bands))}
+    for ln in note_lines:
+        x = round(ln.x0, 1)
+        for i, band in enumerate(bands):
+            if band[0] - 0.05 <= x <= band[-1] + 0.05:
+                out[i].append(ln)
+                break
+    return out
+
+
 def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[NoteBody]:
     """Group footnote-zone lines into individual notes keyed by label.
 
@@ -162,13 +203,38 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
     """
     if not note_lines:
         return []
-    xs = [ln.x0 for ln in note_lines]
-    lo, hi = min(xs), max(xs)
-    # Label lines and continuation lines form two indent clusters; split them
-    # at the midpoint. A fixed tolerance off the left edge does not work,
-    # because wider labels hang further left ("10" starts left of "1").
-    hanging = (hi - lo) >= 6.0
-    label_max_x = lo + (hi - lo) * 0.5
+
+    # Which lines open a note is settled by where they sit -- but "where"
+    # only means anything within one column. Measured across a two-column
+    # notes section, the left edge of one column and the left edge of the
+    # other are the two extremes, the midpoint between them falls in the
+    # gutter, and every line in the right-hand column is "too far right" to
+    # open anything: its notes simply vanish.
+    columns = _note_columns(note_lines)
+
+    # Nor is the label always the part that hangs left. Some houses indent
+    # the label and set the continuations flush ("  1. I am..." over "indebted
+    # to..."), which is a first-line indent, not a hanging one. So rather than
+    # assume a direction, take the position the labels in this column actually
+    # share, and read anything at that position as a label.
+    label_x: Dict[int, Optional[float]] = {}
+    for ci, lines in columns.items():
+        cands = [ln.x0 for ln in lines if _label_split(ln, body_size) is not None]
+        others = [ln.x0 for ln in lines if _label_split(ln, body_size) is None]
+        if len(cands) < 2:
+            label_x[ci] = None
+            continue
+        mode = _modal(cands)
+        # With nothing set differently from the labels there is no geometry to
+        # read, and the numbering has to decide instead.
+        if others and abs(_modal(others) - mode) < 3.0:
+            label_x[ci] = None
+        elif not others:
+            label_x[ci] = None
+        else:
+            label_x[ci] = mode
+
+    col_of = {id(ln): ci for ci, lines in columns.items() for ln in lines}
 
     notes: List[NoteBody] = []
     cur_label: Optional[str] = None
@@ -187,13 +253,12 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
         txt = line.text.strip()
         if not txt:
             continue
-        split = _label_from_spans(line, body_size)
-        if split is None:
-            m = _LABEL_RE.match(txt)
-            split = (_norm_label(m.group(1)), m.group(2)) if m else None
+        split = _label_split(line, body_size)
         opens = False
         if split is not None and not _CONTINUES_SENTENCE.match(split[1]):
-            opens = (line.x0 <= label_max_x) if hanging else _starts_note(split[0], last_num)
+            lx = label_x.get(col_of.get(id(line), 0))
+            opens = (abs(line.x0 - lx) <= 2.0) if lx is not None \
+                else _starts_note(split[0], last_num)
         if opens:
             flush()
             cur_label, cur_parts = split[0], [split[1]]
@@ -211,7 +276,7 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
 # to fall at the start of a line ("...Les commentaires," + "113, vol. 3, pp.
 # 116-117"), which the hanging-indent geometry cannot tell from a real label
 # because it sits at the block's left edge exactly like one.
-_CONTINUES_SENTENCE = re.compile(r"^\s*[,;:.)\-]")
+_CONTINUES_SENTENCE = re.compile(r"^\s*(?:[,;:.)\-]|\(\d)")
 
 
 def _starts_note(label: str, last_num: Optional[int]) -> bool:

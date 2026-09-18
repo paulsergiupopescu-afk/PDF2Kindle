@@ -581,6 +581,47 @@ def _merge_split_paragraphs(flat: List[Tuple[int, Element]]) -> List[Tuple[int, 
     return out
 
 
+def _rehome_endnotes(chapters: List[Chapter]) -> None:
+    """Move a note to the chapter that cites it.
+
+    Notes are collected from the pages they are *printed* on, and in a
+    journal article that is a "Notes" section at the very end -- pages after
+    the last heading, so they land in the final chapter while every marker
+    that refers to them sits in an earlier one. Resolved chapter by chapter,
+    both halves then fail: the markers find no note and are downgraded to
+    plain superscripts, and the notes sit at the end with nothing pointing
+    at them.
+
+    A note is moved only when exactly one chapter cites its label and its own
+    chapter does not, so notes genuinely belonging where they are printed --
+    footnotes at the foot of their own page -- are left alone.
+    """
+    cites: Dict[str, List[int]] = {}
+    for i, ch in enumerate(chapters):
+        for el in ch.elements:
+            for run in el.runs:
+                if run.noteref:
+                    label = run.text.strip()
+                    if label:
+                        cites.setdefault(label, [])
+                        if i not in cites[label]:
+                            cites[label].append(i)
+    for i, ch in enumerate(chapters):
+        for note in list(ch.footnotes):
+            label = (note.note_label or "").strip()
+            if not label:
+                continue
+            where = cites.get(label, [])
+            if len(where) != 1 or where[0] == i:
+                continue
+            target = chapters[where[0]]
+            # Only if that chapter has no note under this label already.
+            if any((f.note_label or "").strip() == label for f in target.footnotes):
+                continue
+            ch.footnotes.remove(note)
+            target.footnotes.append(note)
+
+
 def _resolve_notes(chapter: Chapter) -> None:
     """Bind every reference marker to its note, then guarantee no dead links.
 
@@ -864,6 +905,9 @@ def build_document(
             _style_references(ch)
             _assign_nav(ch, i)
         ch.footnotes = [f for f in ch.footnotes if f.text.strip()]
+
+    _rehome_endnotes(chapters)
+    for ch in chapters:
         _resolve_notes(ch)
 
     doc = Document(chapters=chapters, language=language)

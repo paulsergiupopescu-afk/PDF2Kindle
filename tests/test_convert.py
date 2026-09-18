@@ -1334,3 +1334,88 @@ def test_a_note_without_its_marker_gets_no_dangling_back_link():
     assert '<a href="#n5-1-ref">1.</a>' in html   # marker exists -> link back
     assert "#n5-2-ref" not in html                 # marker missing -> no link
     assert "Orphan note." in html                  # ...but the note is kept
+
+
+# --------------------------------------------------------------------------- #
+# Two-column pages
+# --------------------------------------------------------------------------- #
+
+def _col_line(text, x0, y0, x1, size=10.0):
+    from pdf2kindle.model import Line, Span
+    return Line(spans=[Span(text=text, font="F", size=size, flags=0, color=0,
+                            bbox=(x0, y0, x1, y0 + size), origin=(x0, y0))],
+                bbox=(x0, y0, x1, y0 + size))
+
+
+def test_two_columns_are_read_down_each_column_not_across():
+    """Both columns share line positions, so height alone interleaves them."""
+    from pdf2kindle.analyze import _order_lines
+    lines = []
+    for i in range(6):
+        lines.append(_col_line(f"L{i}", 50, 100 + i * 12, 200))
+        lines.append(_col_line(f"R{i}", 250, 100 + i * 12, 400))
+    got = [ln.text for ln in _order_lines(lines, 440.0)]
+    assert got == [f"L{i}" for i in range(6)] + [f"R{i}" for i in range(6)]
+
+
+def test_full_measure_lines_separate_bands_of_columns():
+    """Prose above a two-column notes block must not defeat column detection."""
+    from pdf2kindle.analyze import _order_lines
+    lines = [_col_line(f"prose{i}", 50, 20 + i * 12, 400) for i in range(4)]
+    for i in range(6):
+        lines.append(_col_line(f"L{i}", 50, 200 + i * 12, 200))
+        lines.append(_col_line(f"R{i}", 250, 200 + i * 12, 400))
+    got = [ln.text for ln in _order_lines(lines, 440.0)]
+    assert got == [f"prose{i}" for i in range(4)] \
+        + [f"L{i}" for i in range(6)] + [f"R{i}" for i in range(6)]
+
+
+def test_note_labels_are_found_in_the_right_hand_column():
+    """Indents measured across the gutter hide every note in column two."""
+    from pdf2kindle.footnotes import parse_page_notes
+    lines = [
+        _col_line("1. first note opens here", 56, 300, 200),
+        _col_line("and continues on this line", 48, 312, 200),
+        _col_line("2. second note opens here", 250, 300, 400),
+        _col_line("and continues on this line", 242, 312, 400),
+    ]
+    got = {n.label for n in parse_page_notes(lines)}
+    assert got == {"1", "2"}
+
+
+def test_note_label_may_be_indented_rather_than_hanging():
+    """Some houses indent the label and set continuations flush left."""
+    from pdf2kindle.footnotes import parse_page_notes
+    lines = [
+        _col_line("1. the first note", 56, 300, 200),
+        _col_line("runs on to here", 48, 312, 200),
+        _col_line("2. the second note", 56, 324, 200),
+        _col_line("runs on to here", 48, 336, 200),
+    ]
+    assert [n.label for n in parse_page_notes(lines)] == ["1", "2"]
+
+
+def test_issue_number_is_not_a_note_label():
+    """A bibliography's "4(1): 86-101" must not open a note numbered 4."""
+    from pdf2kindle.footnotes import parse_page_notes
+    lines = [
+        _col_line("1. a genuine note body", 56, 300, 200),
+        _col_line("continuing here", 48, 312, 200),
+        _col_line("4. (1): 86-101. Marin, Louis 1988 Portrait", 56, 324, 200),
+    ]
+    assert [n.label for n in parse_page_notes(lines)] == ["1"]
+
+
+def test_missing_word_spaces_are_recovered_from_glyph_positions():
+    from pdf2kindle.extract import _needs_space_recovery, _space_threshold
+    assert _needs_space_recovery("Thestateisoneofseriesofconceptswhichpose")
+    assert _needs_space_recovery("this centrality,entire traditions")
+    assert not _needs_space_recovery("a normal line of ordinary prose")
+    # e.g. and doi.org are triggers, but geometry decides, so they are safe
+    assert _needs_space_recovery("see doi.org for details")
+    # gaps in two clear clusters yield a split between them
+    gaps = [0.09] * 10 + [0.15] * 6
+    thr = _space_threshold(gaps)
+    assert thr is not None and 0.09 < thr < 0.15
+    # one evenly-set cluster yields nothing
+    assert _space_threshold([0.09] * 16) is None
