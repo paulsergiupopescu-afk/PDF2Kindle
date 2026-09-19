@@ -76,7 +76,9 @@ def build_epub(doc: Document, out_path: str) -> str:
             file_name=fname,
             lang=doc.language or "en",
         )
-        item.content = render_chapter(chapter, image_href_for, doc.language or "en").encode("utf-8")
+        item.content = render_chapter(
+            chapter, image_href_for, doc.language or "en", doc.flourishes
+        ).encode("utf-8")
         # ebooklib regenerates <head>, discarding any <link> we wrote ourselves,
         # so the stylesheet must be attached through its own API.
         item.add_item(css)

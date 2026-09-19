@@ -16,6 +16,7 @@ import re
 from dataclasses import replace
 from typing import Dict, List, Optional, Tuple
 
+from . import cover as cover_mod
 from .analyze import Analyzed, PageContent
 from .extract import _column_count
 from .footnotes import find_embedded_markers, find_markers, parse_page_notes
@@ -163,12 +164,82 @@ def _paragraph_runs(
     for r in runs:
         if r.noteref is None:
             r.text = normalize(r.text)
-    return [r for r in runs if r.text != "" or r.noteref]
+    runs = [r for r in runs if r.text != "" or r.noteref]
+    _smooth_punctuation_runs(runs)
+    return runs
+
+
+_PUNCT_ONLY_RE = re.compile(r"^[^\w]+$", re.UNICODE)
+
+
+def _smooth_punctuation_runs(runs: List[InlineRun]) -> None:
+    """Let a lone punctuation mark take the weight of the words around it.
+
+    When a subsetted font lacks a glyph, the typesetter pulls that one
+    character from a sibling subset -- often the bold one. The PDF then
+    honestly reports a bold "?" in the middle of a regular title, and
+    reproducing it faithfully puts a stray bold mark in the text. Nobody set
+    that question mark in bold on purpose, so match it to its neighbours.
+    """
+    for i, run in enumerate(runs):
+        if run.noteref or not _PUNCT_ONLY_RE.match(run.text.strip() or "x"):
+            continue
+        prev = runs[i - 1] if i else None
+        nxt = runs[i + 1] if i + 1 < len(runs) else None
+        neighbours = [n for n in (prev, nxt) if n is not None and not n.noteref]
+        if not neighbours:
+            continue
+        if all(n.bold == neighbours[0].bold for n in neighbours):
+            run.bold = neighbours[0].bold
+        if all(n.italic == neighbours[0].italic for n in neighbours):
+            run.italic = neighbours[0].italic
 
 
 # --------------------------------------------------------------------------- #
 # Heading classification
 # --------------------------------------------------------------------------- #
+
+def _norm_head(text: str) -> str:
+    """Normalize a heading for comparison with an outline entry.
+
+    The two spellings of one heading rarely match character for character:
+    the outline says "1 Introduction" where the page says "1. Introduction",
+    and a bookmark may carry a non-breaking space or an en dash where the
+    text has a hyphen. Strip it all down to lowercase words and digits.
+    """
+    t = normalize(text).lower().replace("\u2013", "-").replace("\u2014", "-")
+    t = re.sub(r"[^\w\s-]", " ", t, flags=re.UNICODE)
+    return " ".join(t.split())
+
+
+def _outline_headings(toc) -> Dict[str, int]:
+    """Map each outline entry's normalized title to the heading level it implies.
+
+    The outline is the document's own statement of its structure -- exact
+    titles, exact depths. Leaning on it beats inferring a heading from font
+    size, which fails outright on a journal article whose section headings
+    are set a third of a point above body text and whose subsection headings
+    are set *below* it.
+    """
+    out: Dict[str, int] = {}
+    levels = sorted({int(l) for l, _, _ in toc})
+    if not levels:
+        return out
+    # An outline root that wraps everything is the document title, not a
+    # section; depth is measured from the first level that has real siblings.
+    base = levels[0]
+    for lvl in levels:
+        if len([e for e in toc if int(e[0]) == lvl]) >= 2:
+            base = lvl
+            break
+    for lvl, title, _ in toc:
+        key = _norm_head(str(title))
+        if not key:
+            continue
+        depth = max(0, int(lvl) - base)
+        out.setdefault(key, min(1 + depth, 4))
+    return out
+
 
 def _is_heading(line: Line, body_size: float) -> Optional[int]:
     """Return a heading level (1..4) if the line looks like a heading, else None."""
@@ -434,9 +505,11 @@ def _build_flow(
     page_images: Dict[int, List[ImageBlock]],
     academic: bool,
     keep_print_nav: bool = False,
+    toc=None,
 ) -> Tuple[List[Tuple[int, Element]], Dict[int, List[Element]]]:
     flat: List[Tuple[int, Element]] = []
     notes_by_page: Dict[int, List[Element]] = {}
+    outline_heads = _outline_headings(toc or [])
 
     for page in analyzed.pages:
         if not keep_print_nav and _is_headless_toc_page(page):
@@ -470,7 +543,12 @@ def _build_flow(
             ]
 
         for group in _group_paragraphs(page, analyzed.body_size, analyzed.line_height):
-            if len(group) == 1:
+            # The outline names this document's own headings, with their
+            # depths; trust it over any inference from font size.
+            outline_level = outline_heads.get(_norm_head(" ".join(ln.text for ln in group)))
+            if outline_level is not None:
+                level, size = outline_level, group[0].dominant_size
+            elif len(group) == 1:
                 level = _is_heading(group[0], analyzed.body_size)
                 size = group[0].dominant_size if level else 0.0
             else:
@@ -492,7 +570,9 @@ def _build_flow(
                     kind = ElementKind.CAPTION
                 elif _is_blockquote(group, analyzed.body_left, analyzed.body_size, page.width):
                     kind = ElementKind.BLOCKQUOTE
-            flat.append((page.number, Element(kind=kind, runs=runs)))
+            bbox = (min(g.x0 for g in group), group[0].y0,
+                    max(g.x1 for g in group), group[-1].y1)
+            flat.append((page.number, Element(kind=kind, runs=runs, bbox=bbox)))
             text_tops.append((group[0].y0, len(flat)))
 
         for im in _select_images(page_images.get(page.number, [])):
@@ -938,6 +1018,196 @@ def _relink_cross_chapter_notes(chapters: List[Chapter]) -> int:
     return moved
 
 
+# A verse line is indented past the body's left edge, set far short of the
+# measure, and is not a sentence. Three in a row make a quoted poem.
+_VERSE_MIN_INDENT = 5.0
+_VERSE_MAX_WIDTH_FRAC = 0.62
+_VERSE_MAX_WORDS = 12
+_VERSE_MIN_LINES = 3
+
+
+def _merge_verse_blocks(flat, analyzed: Analyzed):
+    """Fold a run of short indented lines into one verse element.
+
+    A poem quoted in the body arrives as one paragraph per line, because that
+    is what it is on the page. Rendered as paragraphs they come out indented
+    and justified like prose, which is precisely wrong: in verse the line
+    breaks *are* the content. Collect the run and keep its breaks.
+
+    The indent is measured against the body edge *of that page*, not one
+    figure for the book: a printed volume alternates its recto and verso
+    margins, so a single global left edge makes a genuinely indented quote on
+    one side of the spread look flush.
+    """
+    widths = [el.bbox[2] - el.bbox[0] for _, el in flat if el.bbox]
+    if not widths:
+        return flat
+    measure = max(widths)
+
+    page_left: Dict[int, float] = {}
+    for pno, el in flat:
+        if el.bbox and (el.bbox[2] - el.bbox[0]) > 0.8 * measure:
+            page_left[pno] = min(page_left.get(pno, el.bbox[0]), el.bbox[0])
+
+    def is_verse_line(pno: int, el: Element) -> bool:
+        if el.kind != ElementKind.PARAGRAPH or not el.bbox:
+            return False
+        text = el.text.strip()
+        if not text or len(text.split()) > _VERSE_MAX_WORDS:
+            return False
+        left = page_left.get(pno, analyzed.body_left)
+        if el.bbox[0] - left < _VERSE_MIN_INDENT:
+            return False
+        return (el.bbox[2] - el.bbox[0]) < _VERSE_MAX_WIDTH_FRAC * measure
+
+    out = []
+    i = 0
+    while i < len(flat):
+        j = i
+        while (j < len(flat) and flat[j][0] == flat[i][0]
+               and is_verse_line(flat[j][0], flat[j][1])):
+            j += 1
+        if j - i >= _VERSE_MIN_LINES:
+            runs: List[InlineRun] = []
+            for k in range(i, j):
+                if runs:
+                    runs.append(InlineRun(text="\n"))
+                runs.extend(flat[k][1].runs)
+            out.append((flat[i][0], Element(kind=ElementKind.VERSE, runs=runs)))
+            i = j
+        else:
+            out.append(flat[i])
+            i += 1
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Article front matter
+# --------------------------------------------------------------------------- #
+
+_ABSTRACT_HEAD_RE = re.compile(r"^\s*abstract\s*[.:]?\s*$", re.IGNORECASE)
+_ABSTRACT_INLINE_RE = re.compile(r"^\s*abstract\s*[.:\u2014-]\s+(?=\S)", re.IGNORECASE)
+_KEYWORDS_RE = re.compile(r"^\s*(?:key\s*words?)\s*[:.]\s*(?=\S)", re.IGNORECASE)
+_EMAIL_LINE_RE = re.compile(r"^\s*e-?mail\s*[:.]|\S+@\S+\.\S+", re.IGNORECASE)
+_COLOPHON_RE = re.compile(
+    r"\u00a9|\(c\)\s*\d{4}|all rights reserved|published by|"
+    r"creative commons|doi\s*:|licence|license",
+    re.IGNORECASE,
+)
+# How far into the opening chapter the front matter can possibly reach.
+_FRONT_MATTER_SCAN = 14
+# A byline is a name, a department, an email -- never a sentence of prose.
+_BYLINE_MAX_WORDS = 22
+
+
+def _looks_like_byline(el: Element) -> bool:
+    text = el.text.strip()
+    if not text or len(text.split()) > _BYLINE_MAX_WORDS:
+        return False
+    if _EMAIL_LINE_RE.search(text):
+        return True
+    # A name or an affiliation line: short, and not a finished sentence.
+    return not text.endswith(".") or len(text.split()) <= 12
+
+
+def _extract_article_front_matter(chapters: List[Chapter], doc_title: str) -> None:
+    """Lift an article's opening page into a front-matter chapter of its own.
+
+    A journal article opens with a fixed sequence -- title, author,
+    affiliation, contact, abstract, keywords -- which the generic pipeline
+    sees as half a dozen indistinguishable paragraphs sitting in front of the
+    introduction. Reading that on a device is miserable: the abstract runs
+    into section 1 with nothing to mark where one ends and the other begins.
+
+    Split it out, tag each part for what it is so the stylesheet can set it
+    apart, and give the abstract a real heading. The publisher's copyright
+    notice is moved here too -- it is stranded mid-paragraph in the body
+    otherwise -- rather than dropped, since no text is ever discarded.
+    """
+    if not chapters:
+        return
+    first = chapters[0]
+    els = first.elements
+    if not els:
+        return
+
+    title_key = _norm_head(doc_title)
+    take: List[int] = []
+    abstract_at: Optional[int] = None
+    kw_at: Optional[int] = None
+
+    for i, el in enumerate(els[:_FRONT_MATTER_SCAN]):
+        text = el.text.strip()
+        if _ABSTRACT_HEAD_RE.match(text) or _ABSTRACT_INLINE_RE.match(text):
+            abstract_at = i
+            break
+        if title_key and _norm_head(text) == title_key:
+            el.kind = ElementKind.TITLE
+            take.append(i)
+        elif take and _looks_like_byline(el):
+            el.kind = ElementKind.BYLINE
+            take.append(i)
+        elif take:
+            break  # prose has started: this is the body, not the front matter
+
+    if abstract_at is None:
+        return  # no abstract: not an article opening we can improve on
+
+    # The abstract runs to the keyword list, or to the first real heading.
+    end = abstract_at
+    for j in range(abstract_at, min(len(els), _FRONT_MATTER_SCAN + 6)):
+        el = els[j]
+        if j > abstract_at:
+            if el.kind == ElementKind.HEADING:
+                break
+            if _KEYWORDS_RE.match(el.text.strip()):
+                kw_at = j
+                end = j
+                break
+            if el.kind != ElementKind.PARAGRAPH:
+                break
+        el.kind = ElementKind.ABSTRACT
+        end = j
+
+    # The abstract is a section, and gets a section's heading. Where the PDF
+    # prints a bare "Abstract" label, that line becomes the heading; where it
+    # runs the label into the first sentence ("Abstract. This article..."),
+    # the label is lifted off and a heading put in its place.
+    head = els[abstract_at]
+    if _ABSTRACT_HEAD_RE.match(head.text.strip()):
+        head.kind = ElementKind.HEADING
+        head.level = 2
+        head.runs = [InlineRun(text="Abstract")]
+    else:
+        m = _ABSTRACT_INLINE_RE.match(head.text)
+        if m and head.runs:
+            head.runs[0].text = head.runs[0].text[m.end():].lstrip()
+        els.insert(abstract_at, Element(
+            kind=ElementKind.HEADING, level=2, runs=[InlineRun(text="Abstract")]))
+        end += 1
+        if kw_at is not None:
+            kw_at += 1
+
+    if kw_at is not None:
+        els[kw_at].kind = ElementKind.KEYWORDS
+
+    moved = take + list(range(abstract_at, end + 1))
+    if not moved:
+        return
+
+    # The publisher's notice belongs with the front matter, not adrift in the
+    # middle of the introduction where the PDF's reading order left it.
+    for i, el in enumerate(els):
+        if (i not in moved and el.kind == ElementKind.PARAGRAPH
+                and _COLOPHON_RE.search(el.text) and len(el.text.split()) <= 90):
+            el.kind = ElementKind.COLOPHON
+            moved.append(i)
+
+    front = Chapter(title="Abstract", elements=[els[i] for i in sorted(moved)])
+    first.elements = [el for i, el in enumerate(els) if i not in set(moved)]
+    chapters.insert(0, front)
+
+
 # --------------------------------------------------------------------------- #
 # Public entry point
 # --------------------------------------------------------------------------- #
@@ -953,12 +1223,12 @@ def build_document(
     profile: str = "academic",
     keep_print_nav: bool = False,
 ) -> Document:
-    academic = profile == "academic"
-    flat, notes_by_page = _build_flow(analyzed, page_images, academic, keep_print_nav)
+    academic = profile in ("academic", "article")
+    toc = meta.get("_toc") or []
+    flat, notes_by_page = _build_flow(analyzed, page_images, academic, keep_print_nav, toc)
     flat = _merge_split_headings(flat)
     flat = _merge_split_paragraphs(flat)
-
-    toc = meta.get("_toc") or []
+    flat = _merge_verse_blocks(flat, analyzed)
     chapters = _split_by_toc(flat, notes_by_page, toc) if toc else None
     if not chapters:
         chapters = _split_by_headings(flat, notes_by_page)
@@ -991,6 +1261,21 @@ def build_document(
         meta_title = ""
     doc.title = title or meta_title or _outline_title(toc) or _guess_title(chapters)
     doc.author = author or (meta.get("author") or "").strip() or _guess_author(chapters)
+
+    if profile == "article":
+        # A drop cap and a small-caps lead-in are book typography; on a
+        # research paper they read as decoration over the argument.
+        doc.flourishes = False
+        _extract_article_front_matter(doc.chapters, doc.title)
+        if not doc.author:
+            doc.author = _byline_author(doc.chapters)
+    # An article gets a generated cover -- title and author, nothing else.
+    # A thumbnail of a paper's first page is a wall of two-column type under
+    # a publisher's banner, illegible at the size a library actually shows.
+    if profile == "article":
+        doc.cover = cover_mod.render_article_cover(doc.title, doc.author)
+        if doc.cover is not None:
+            return doc
 
     # Cover: a render of page 1 is the most faithful and always available;
     # fall back to a large embedded image only if rendering failed.
@@ -1083,6 +1368,22 @@ def _guess_title(chapters: List[Chapter]) -> str:
         if 0.4 <= ratio <= 0.75 and len(nxt.text.split()) <= 10:
             return f"{best.text.strip()}: {nxt.text.strip()}"[:160]
     return best.text.strip()[:120]
+
+
+def _byline_author(chapters: List[Chapter]) -> str:
+    """The first byline line of an article's front matter is its author.
+
+    A journal PDF routinely ships with an empty /Author, and its byline is
+    stripped as a running header before `_guess_author` ever sees it -- but
+    the front-matter pass has just tagged it, so read it from there.
+    """
+    for ch in chapters[:1]:
+        for el in ch.elements:
+            if el.kind == ElementKind.BYLINE:
+                name = el.text.strip().rstrip(",")
+                if name and not _EMAIL_LINE_RE.search(name):
+                    return name
+    return ""
 
 
 def _guess_author(chapters: List[Chapter]) -> str:

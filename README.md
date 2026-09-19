@@ -51,9 +51,28 @@ Scholarly PDFs have structure that trips up generic converters. The default
 Use `--profile general` (CLI) or the **Book type** menu (web app) for prose and
 fiction, which uses a lighter reconstruction.
 
+## Journal articles
+
+`--profile article` is the academic profile plus everything a paper needs that
+a book does not:
+
+- **Front matter as a section of its own** — title, byline, affiliation and
+  contact are each recognized and set apart, instead of arriving as a run of
+  anonymous paragraphs in front of the introduction.
+- **The abstract is a real section**, with its own heading and nav entry, so
+  it is visibly finished before section 1 starts. Keywords are set apart
+  below it, and the publisher's copyright notice is moved out of the middle
+  of the argument, where the PDF's reading order tends to strand it.
+- **A generated cover** carrying just the title and the author. A thumbnail
+  of a paper's first page is a wall of two-column type under a journal
+  banner — unreadable at the size a library actually shows it.
+- **No drop caps.** They are book typography; on a paper they read as
+  decoration over the argument.
+
 ```bash
-pdf2kindle convert thesis.pdf -o thesis.epub            # academic by default
-pdf2kindle convert novel.pdf  -o novel.epub --profile general
+pdf2kindle convert thesis.pdf  -o thesis.epub            # academic by default
+pdf2kindle convert paper.pdf   -o paper.epub  --profile article
+pdf2kindle convert novel.pdf   -o novel.epub  --profile general
 ```
 
 ## What it does
@@ -69,8 +88,20 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
   chapter per section with a full EPUB3 + NCX table of contents. A printed
   Contents page's dot-leader rows ("Introduction .......... 4") are never
   mistaken for real headings, however boldly Word styled them.
+- **Headings from the document's own outline** — where a PDF has bookmarks,
+  they name the headings and their depths, which beats inferring a heading
+  from font size. It has to: a journal sets its section headings a third of a
+  point above body text and its subsection headings *below* it, so no
+  size-based rule can see them at all.
+- **Verse keeps its line breaks** — a quoted poem arrives as one paragraph
+  per line, and set as prose it comes out justified and indented, which is
+  exactly wrong. A run of short, indented lines is kept as one block with its
+  breaks intact.
 - **Typographic nuance** — preserves **bold** / *italic* runs, small-caps and
-  superscripts, block quotes, and headings; body text is **justified** with
+  superscripts, block quotes, and headings; weight is read from subsetted
+  font names (`AdvOT…B`) as well as flags, and a lone punctuation mark pulled
+  from a bold subset for want of a glyph takes the weight of its neighbours
+  rather than printing a stray bold "?" mid-title; body text is **justified** with
   automatic hyphenation, tuned for Kindle's renderer.
 - **Footnote management** — detects superscript reference markers and the
   matching notes at the foot of the page, then re-links them as EPUB3

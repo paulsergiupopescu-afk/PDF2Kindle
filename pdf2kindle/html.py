@@ -161,6 +161,77 @@ div.image {
 }
 div.image img { max-width: 100%; height: auto; }
 
+/* Quoted verse: the line breaks are the content, so no justification and
+   no first-line indent -- only a hanging indent for a line too long to fit. */
+blockquote.verse {
+  margin: 1.1em 0 1.1em 1.4em;
+  padding: 0;
+  border: 0;
+}
+blockquote.verse p {
+  text-indent: -1.2em;
+  margin-left: 1.2em;
+  text-align: left;
+  font-style: italic;
+  line-height: 1.45;
+  -webkit-hyphens: none;
+  hyphens: none;
+}
+
+/* Article front matter ------------------------------------------------*/
+
+/* The opening page of a paper, set apart from the body that follows: the
+   title large and unindented, the byline quiet beneath it, the abstract
+   inset so the eye can see where it ends and section 1 begins. */
+h1.article-title {
+  font-size: 1.5em;
+  font-weight: normal;
+  line-height: 1.25;
+  text-align: left;
+  margin: 0 0 0.6em 0;
+  -webkit-hyphens: none;
+  hyphens: none;
+}
+
+p.byline {
+  text-indent: 0;
+  text-align: left;
+  margin: 0 0 0.15em 0;
+  font-size: 0.9em;
+  line-height: 1.35;
+}
+p.byline.byline-name { font-size: 1.05em; margin-bottom: 0.4em; }
+p.byline.byline-contact { font-size: 0.8em; color: #444; margin-bottom: 1.4em; }
+
+p.abstract {
+  text-indent: 0;
+  margin: 0 0 0.8em 0;
+  font-size: 0.95em;
+  line-height: 1.5;
+  padding-left: 1em;
+  border-left: 2px solid #bbb;
+}
+
+p.keywords {
+  text-indent: 0;
+  margin: 1em 0 1.4em 0;
+  font-size: 0.85em;
+}
+p.keywords .kw-label { font-variant: small-caps; letter-spacing: 0.06em; }
+
+p.colophon {
+  text-indent: 0;
+  margin: 2em 0 0 0;
+  padding-top: 0.8em;
+  border-top: 1px solid #ccc;
+  font-size: 0.75em;
+  line-height: 1.4;
+  color: #555;
+  text-align: left;
+  -webkit-hyphens: none;
+  hyphens: none;
+}
+
 /* Footnotes -----------------------------------------------------------*/
 
 sup { line-height: 0; font-size: 0.7em; }
@@ -324,8 +395,50 @@ def _render_opening_paragraph(el: Element) -> Optional[str]:
     )
 
 
+_BYLINE_CONTACT_RE = re.compile(r"^\s*e-?mail\s*[:.]|\S+@\S+\.\S+", re.IGNORECASE)
+_KEYWORDS_LABEL_RE = re.compile(r"^(\s*key\s*words?\s*[:.])(\s*)", re.IGNORECASE)
+
+
+def _byline_class(el: Element) -> str:
+    """Name, affiliation and contact each get their own weight."""
+    text = el.text.strip()
+    if _BYLINE_CONTACT_RE.search(text):
+        return "byline-contact"
+    return "byline-name" if len(text.split()) <= 5 else "byline-affil"
+
+
+def _render_keywords(el: Element) -> str:
+    """Set the "Keywords:" label apart from the keywords themselves.
+
+    Matched on the element's plain text, not on the rendered markup: the
+    label is usually set bold in the PDF, so the rendered string starts with
+    a <strong> tag and a pattern anchored at the label would never fire.
+    """
+    m = _KEYWORDS_LABEL_RE.match(el.text)
+    if not m:
+        return _render_runs(el.runs)
+    rest = list(el.runs)
+    label = m.group(1).strip()
+    # Re-emit the keywords without the label, then set the label in caps.
+    consumed = m.end()
+    trimmed: List[InlineRun] = []
+    for run in rest:
+        if consumed <= 0:
+            trimmed.append(run)
+            continue
+        if len(run.text) <= consumed:
+            consumed -= len(run.text)
+            continue
+        trimmed.append(InlineRun(text=run.text[consumed:], bold=False,
+                                 italic=run.italic, sup=run.sup, noteref=run.noteref))
+        consumed = 0
+    body = _render_runs(trimmed) if trimmed else ""
+    return f'<span class="kw-label">{escape(label)}</span> {body.lstrip()}'
+
+
 def _render_element(
-    el: Element, image_href_for: Callable[[Element], str], prev_heading: bool, prev_h1: bool
+    el: Element, image_href_for: Callable[[Element], str], prev_heading: bool,
+    prev_h1: bool, flourishes: bool = True
 ) -> str:
     if el.kind == ElementKind.HEADING:
         return _render_heading(el)
@@ -338,10 +451,25 @@ def _render_element(
         return f"<blockquote><p>{_render_runs(el.runs)}</p></blockquote>\n"
     if el.kind == ElementKind.CAPTION:
         return f'<p class="caption">{_render_runs(el.runs)}</p>\n'
+    if el.kind == ElementKind.TITLE:
+        return f'<h1 class="article-title">{_render_runs(el.runs)}</h1>\n'
+    if el.kind == ElementKind.BYLINE:
+        return f'<p class="byline {_byline_class(el)}">{_render_runs(el.runs)}</p>\n'
+    if el.kind == ElementKind.ABSTRACT:
+        return f'<p class="abstract">{_render_runs(el.runs)}</p>\n'
+    if el.kind == ElementKind.KEYWORDS:
+        return f'<p class="keywords">{_render_keywords(el)}</p>\n'
+    if el.kind == ElementKind.COLOPHON:
+        return f'<p class="colophon">{_render_runs(el.runs)}</p>\n'
+    if el.kind == ElementKind.VERSE:
+        lines = "<br/>\n".join(
+            part for part in _render_runs(el.runs).split("\n") if part.strip()
+        )
+        return f'<blockquote class="verse"><p>{lines}</p></blockquote>\n'
     if el.kind == ElementKind.REFERENCE:
         return f'<p class="reference">{_render_runs(el.runs)}</p>\n'
     # paragraph
-    if prev_h1:
+    if prev_h1 and flourishes:
         rendered = _render_opening_paragraph(el)
         if rendered is not None:
             return rendered
@@ -368,13 +496,14 @@ def render_footnotes(chapter: Chapter) -> str:
     return "".join(parts)
 
 
-def render_chapter(chapter: Chapter, image_href_for: Callable[[Element], str], language: str = "en") -> str:
+def render_chapter(chapter: Chapter, image_href_for: Callable[[Element], str],
+                   language: str = "en", flourishes: bool = True) -> str:
     head = _DOC_HEAD.format(lang=quoteattr(language), title=escape(chapter.title or "Chapter"))
     body: List[str] = []
     prev_heading = False
     prev_h1 = False
     for el in chapter.elements:
-        body.append(_render_element(el, image_href_for, prev_heading, prev_h1))
+        body.append(_render_element(el, image_href_for, prev_heading, prev_h1, flourishes))
         prev_h1 = el.kind == ElementKind.HEADING and min(max(el.level, 1), 4) == 1
         prev_heading = el.kind == ElementKind.HEADING
     body.append(render_footnotes(chapter))

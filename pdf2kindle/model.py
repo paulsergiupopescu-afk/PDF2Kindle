@@ -8,6 +8,7 @@ about. Later stages progressively turn that geometry into semantic elements
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -20,6 +21,13 @@ FLAG_ITALIC = 1 << 1
 FLAG_SERIF = 1 << 2
 FLAG_MONO = 1 << 3
 FLAG_BOLD = 1 << 4
+
+# A subsetted font encodes its weight as a suffix on an opaque family name
+# ("AdvOTb65e897d.B", "AdvOT6a84369d.BI") rather than spelling out "Bold".
+# Without this, every bold run in such a PDF reads as regular -- and heading
+# detection, which leans on weight, goes blind on the whole document.
+_SUBSET_BOLD_RE = re.compile(r"\.B[I]?$")
+_SUBSET_ITALIC_RE = re.compile(r"\.(I|BI)$")
 
 
 @dataclass
@@ -36,11 +44,18 @@ class Span:
 
     @property
     def bold(self) -> bool:
-        return bool(self.flags & FLAG_BOLD) or "bold" in self.font.lower() or "black" in self.font.lower()
+        if bool(self.flags & FLAG_BOLD):
+            return True
+        name = self.font.lower()
+        return "bold" in name or "black" in name or _SUBSET_BOLD_RE.search(self.font) is not None
 
     @property
     def italic(self) -> bool:
-        return bool(self.flags & FLAG_ITALIC) or "italic" in self.font.lower() or "oblique" in self.font.lower()
+        if bool(self.flags & FLAG_ITALIC):
+            return True
+        name = self.font.lower()
+        return ("italic" in name or "oblique" in name
+                or _SUBSET_ITALIC_RE.search(self.font) is not None)
 
     @property
     def superscript(self) -> bool:
@@ -115,6 +130,13 @@ class ElementKind(str, Enum):
     CAPTION = "caption"  # figure/table caption ("Figure 1.2 …")
     REFERENCE = "reference"  # bibliography entry (hanging indent)
     FOOTNOTE = "footnote"  # a collected note body (rendered at chapter end)
+    # Article front matter, each set apart from the body it precedes.
+    TITLE = "title"  # the article's own title, on its opening page
+    BYLINE = "byline"  # author, affiliation, contact
+    ABSTRACT = "abstract"  # a paragraph of the abstract
+    KEYWORDS = "keywords"  # the keyword list
+    COLOPHON = "colophon"  # copyright / publisher notice
+    VERSE = "verse"  # a quoted poem: line breaks are the content
 
 
 @dataclass
@@ -142,6 +164,9 @@ class Element:
     # footnote payload
     note_id: Optional[str] = None
     note_label: str = ""
+    # Source geometry, kept so later passes can reason about indentation and
+    # measure -- how a verse block is told apart from ordinary prose.
+    bbox: Optional[BBox] = None
 
     @property
     def text(self) -> str:
@@ -172,3 +197,6 @@ class Document:
     author: str = ""
     language: str = "en"
     cover: Optional[ImageBlock] = None
+    # Book flourishes: drop cap and small-caps lead on a chapter's opening
+    # paragraph. Right for a book, wrong for a paper -- see the article profile.
+    flourishes: bool = True

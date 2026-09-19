@@ -25,7 +25,7 @@ class ConvertOptions:
     ocr_lang: str = "eng"
     dpi: int = 300
     repair_ocr: bool = False  # re-read badly-OCR'd lines of a scanned PDF
-    profile: str = "academic"  # "academic" | "general"
+    profile: str = "academic"  # "academic" | "article" | "general"
     keep_print_nav: bool = False  # keep the printed Contents/Index chapters
 
 

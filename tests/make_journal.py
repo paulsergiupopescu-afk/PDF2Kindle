@@ -7,8 +7,11 @@ Exercises what a book-shaped fixture cannot:
 * a ruled comparison table with a "Table 1." caption;
 * endnotes numbered continuously and printed once, in a Notes section at the
   end, far from the markers that cite them;
-* a bibliography typeset smaller than the body text; and
-* a production code in the PDF's /Title, the way a typesetter leaves it.
+* a bibliography typeset smaller than the body text;
+* a production code in the PDF's /Title, the way a typesetter leaves it;
+* the front matter an article opens with -- byline, affiliation, contact,
+  abstract, keywords -- and a publisher's notice printed at the page foot; and
+* a quoted poem, whose line breaks are its content.
 """
 import sys
 import pymupdf
@@ -49,7 +52,29 @@ FICTION = """
 <h2>3 The evidence of fiction</h2>
 <p>Novels and periodicals record what official correspondence omits: the texture
 of an argument as it was actually conducted.<sup>5</sup> The periodical press is
-especially valuable here, since it published both sides.</p>
+especially valuable here, since it published both sides. One verse of the period
+put the case plainly:</p>
+"""
+
+# A quoted poem: short lines, indented well inside the measure.
+VERSE_LINES = [
+    "People of the island, near and far,",
+    "Together with your neighbour,",
+    "You have a common interest,",
+    "Work together now.",
+]
+
+FRONT = """
+<p>Jane Doe</p>
+<p>Department of History, University of Somewhere</p>
+<p>Email: jane.doe@example.edu</p>
+<p>Abstract</p>
+<p>This article examines how island communities came to describe themselves in
+national terms during the long nineteenth century, and argues that the
+vocabulary they adopted was borrowed rather than local. It draws on
+administrative records, the periodical press, and a comparative frame covering
+four neighbouring cases.</p>
+<p>Keywords: islands; nationalism; identity; empire</p>
 """
 
 NOTES = """
@@ -126,7 +151,13 @@ def main(out="tests/journal.pdf"):
     p1 = doc.new_page()
     p1.insert_text((56, 60), "ARTICLE", fontsize=8, fontname="hebo")
     htmlbox(p1, "<h1>Who are the islanders? Identity on the periphery</h1>"
-                "<p>Jane Doe, Department of History</p>" + INTRO, top=70)
+                + FRONT + INTRO, top=70)
+    p1.insert_text(
+        (56, 700),
+        "\u00a9 The Author(s), 2024. Published by Example University Press. This is "
+        "an Open Access article distributed under a Creative Commons licence.",
+        fontsize=6, fontname="helv",
+    )
 
     p2 = doc.new_page()
     htmlbox(p2, COMPARISON, top=72, bottom=560)
@@ -134,7 +165,12 @@ def main(out="tests/journal.pdf"):
     htmlbox(p2, AFTER_TABLE, top=end + 14)
 
     p3 = doc.new_page()
-    htmlbox(p3, FICTION)
+    htmlbox(p3, FICTION, bottom=420)
+    # Verse, indented past the body's left edge and far short of the measure.
+    y = 330
+    for line in VERSE_LINES:
+        p3.insert_text((92, y), line, fontsize=11, fontname="tiro")
+        y += 17
 
     p4 = doc.new_page()
     htmlbox(p4, NOTES)

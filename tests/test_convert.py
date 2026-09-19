@@ -1138,3 +1138,94 @@ def test_small_type_bibliography_survives(journal_pdf, tmp_path):
     assert "Imagined Communities" in body
     assert "The Dance of the Islands" in body
     assert "The Invention of Tradition" in body
+
+
+def _article_epub(journal_pdf, tmp_path):
+    out = tmp_path / "article.epub"
+    result = convert_pdf(journal_pdf, str(out),
+                         ConvertOptions(profile="article", ocr="never"))
+    return result, zipfile.ZipFile(str(out))
+
+
+def _all_chapters(z):
+    return "".join(
+        z.read(n).decode("utf-8") for n in sorted(z.namelist())
+        if n.endswith(".xhtml") and "chap" in n
+    )
+
+
+def test_article_front_matter_is_its_own_section(journal_pdf, tmp_path):
+    """Title, byline, abstract and keywords are tagged, not loose paragraphs."""
+    _, z = _article_epub(journal_pdf, tmp_path)
+    body = _all_chapters(z)
+    assert '<h1 class="article-title">' in body
+    assert 'class="byline byline-name"' in body
+    assert 'class="byline byline-contact"' in body
+    assert '<p class="abstract">' in body
+    assert '<p class="keywords">' in body
+    # The abstract is a section, so it carries a heading and a nav entry.
+    assert "<h2>Abstract</h2>" in body
+    assert "Abstract" in _read(z, "nav.xhtml")
+
+
+def test_article_abstract_does_not_run_into_the_body(journal_pdf, tmp_path):
+    """The abstract ends where section 1 begins, in a chapter of its own."""
+    _, z = _article_epub(journal_pdf, tmp_path)
+    front = z.read(sorted(
+        n for n in z.namelist() if n.endswith(".xhtml") and "chap" in n
+    )[0]).decode("utf-8")
+    assert "island communities came to describe themselves" in front
+    assert "1 Introduction" not in front
+
+
+def test_article_colophon_is_moved_out_of_the_prose(journal_pdf, tmp_path):
+    """A publisher's notice is kept, but not left stranded mid-argument."""
+    _, z = _article_epub(journal_pdf, tmp_path)
+    body = _all_chapters(z)
+    assert '<p class="colophon">' in body
+    assert "Example University Press" in body  # kept, never silently dropped
+
+
+def test_article_author_comes_from_the_byline(journal_pdf, tmp_path):
+    """An empty /Author is filled from the byline the article prints."""
+    result, _ = _article_epub(journal_pdf, tmp_path)
+    assert result.author == "Jane Doe"
+
+
+def test_article_cover_is_generated_not_a_page_render(journal_pdf, tmp_path):
+    """An article gets a plain title/author cover, not a shot of page one."""
+    _, z = _article_epub(journal_pdf, tmp_path)
+    name = next(n for n in z.namelist() if "cover" in n.lower()
+                and n.lower().endswith((".jpg", ".jpeg", ".png")))
+    data = z.read(name)
+    assert len(data) > 1000
+    from pdf2kindle.cover import HEIGHT, WIDTH
+    assert WIDTH < HEIGHT  # portrait, the shape a cover is
+
+
+def test_article_skips_book_flourishes(journal_pdf, tmp_path):
+    """No drop cap on a research paper -- it is decoration over an argument."""
+    _, z = _article_epub(journal_pdf, tmp_path)
+    body = _all_chapters(z)
+    assert "dropcap" not in body
+    # The opening words survive intact rather than being split by a drop cap.
+    assert "This article examines how island communities" in body
+
+
+def test_quoted_verse_keeps_its_line_breaks(journal_pdf, tmp_path):
+    """A poem is one block with real breaks, not a line-per-paragraph run."""
+    _, z = _article_epub(journal_pdf, tmp_path)
+    body = _all_chapters(z)
+    assert '<blockquote class="verse">' in body
+    verse = body[body.index('<blockquote class="verse">'):]
+    verse = verse[:verse.index("</blockquote>")]
+    assert verse.count("<br/>") == 3  # four lines, three breaks
+    assert "Work together now." in verse
+
+
+def test_outline_gives_subsections_their_level(journal_pdf, tmp_path):
+    """Headings come from the outline, not from a font-size guess."""
+    _, z = _article_epub(journal_pdf, tmp_path)
+    body = _all_chapters(z)
+    for section in ("1 Introduction", "2 Comparative frame", "3 The evidence of fiction"):
+        assert section in body

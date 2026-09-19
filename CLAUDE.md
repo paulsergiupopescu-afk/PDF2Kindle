@@ -105,6 +105,25 @@ These are settled decisions, not defaults to revisit per book.
   when the notes are printed once at the end of the document and the markers
   that cite them live in other chapters. Notes move to the chapter citing
   them so the link stays in-file.
+- **An article gets the `article` profile**, which is `academic` plus the
+  rules below. Use it whenever the source is a journal paper rather than a
+  book — the user saying "it's an article" is the trigger.
+  - **The front matter is formatted as its own section**, never left as a
+    run of anonymous paragraphs. Title, byline, affiliation and contact are
+    each tagged and styled; the publisher's copyright notice is moved here
+    rather than left stranded mid-argument where the PDF's reading order
+    drops it.
+  - **The abstract is a section**, with a real `<h2>Abstract</h2>` heading
+    and a nav entry, set apart from the body so a reader can see where it
+    ends and section 1 begins. This holds whether the PDF prints a bare
+    "Abstract" label or runs it into the first sentence.
+  - **The cover is generated, not a page render**: a plain image carrying
+    the title and the author and nothing else (`cover.py`). A thumbnail of a
+    paper's first page is a wall of two-column type under a publisher's
+    banner, illegible at the size a library actually shows.
+  - **No book flourishes.** Drop caps and small-caps lead-ins are book
+    typography; on a research paper they read as decoration over the
+    argument. `Document.flourishes` is off for this profile.
 - **A clean reading interface always wins over the original formatting.**
   This produces a reflowable ebook, not a facsimile. When the two conflict,
   the page's appearance loses every time: drop the print furniture, let the
