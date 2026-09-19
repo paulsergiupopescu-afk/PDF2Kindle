@@ -11,7 +11,7 @@ from .analyze import analyze
 from .epub import build_epub
 from .extract import extract
 from .model import ElementKind, ImageBlock
-from .structure import build_document
+from .structure import build_document, detect_profile
 
 log = logging.getLogger("pdf2kindle")
 
@@ -25,7 +25,7 @@ class ConvertOptions:
     ocr_lang: str = "eng"
     dpi: int = 300
     repair_ocr: bool = False  # re-read badly-OCR'd lines of a scanned PDF
-    profile: str = "academic"  # "academic" | "article" | "general"
+    profile: str = "auto"  # "auto" | "academic" | "article" | "general"
     keep_print_nav: bool = False  # keep the printed Contents/Index chapters
 
 
@@ -58,6 +58,11 @@ def convert_pdf(
         if progress:
             progress(stage, frac)
 
+    profile = opts.profile
+    if profile == "auto":
+        profile = detect_profile(input_path)
+        log.info("Detected %s profile", profile)
+
     report("Reading PDF", 0.05)
     pages, meta = extract(
         input_path,
@@ -67,7 +72,7 @@ def convert_pdf(
         repair_ocr=opts.repair_ocr,
         # The article profile generates its own cover, so a render of page 1
         # would be built and then thrown away.
-        page_cover=opts.profile != "article",
+        page_cover=profile != "article",
         progress=lambda done, total: report("Extracting pages", 0.05 + 0.45 * done / max(total, 1)),
     )
 
@@ -77,6 +82,7 @@ def convert_pdf(
     report("Analyzing layout", 0.6)
     analyzed = analyze(pages)
 
+
     report("Building structure", 0.75)
     doc = build_document(
         analyzed,
@@ -85,7 +91,7 @@ def convert_pdf(
         title=opts.title,
         author=opts.author,
         language=opts.language,
-        profile=opts.profile,
+        profile=profile,
         keep_print_nav=opts.keep_print_nav,
     )
 

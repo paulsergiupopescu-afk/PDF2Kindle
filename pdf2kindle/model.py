@@ -129,6 +129,9 @@ class Page:
     lines: List[Line] = field(default_factory=list)
     images: List[ImageBlock] = field(default_factory=list)
     ocr: bool = False  # True if this page's text came from OCR
+    # x positions of the vertical gutters between text columns, measured
+    # during extraction and reused for reading order.
+    gutters: List[float] = field(default_factory=list)
 
 
 class ElementKind(str, Enum):

@@ -175,6 +175,62 @@ half of one. Keep it that way:
   drawings to find tables costs about 8%, and it stays: the rule is that
   tables are always images, with no exceptions.
 
+## Lessons from documents already handled
+
+Each of these cost a debugging session. They are written down so the next
+one starts from them rather than rediscovering them.
+
+**Geometry is the evidence; the text stream is not.** Some typesetters emit
+no space glyphs at all, leaving word boundaries as nothing but a wider gap
+between characters ("Thestateisoneofseries"). PyMuPDF's own word splitter
+does not recover them. The gap clusters separate cleanly -- inside a word
+glyphs touch or overlap, between words they do not -- so the boundary is
+found by splitting the line's own sorted gaps at their widest jump, never by
+a hard-coded fraction of the type size. The same pass fixes the missing
+space after a punctuation mark ("question.Thus"), which is the same fault in
+miniature. It runs only on pages a cheap scan flags, so clean PDFs pay
+nothing.
+
+**A column gutter is not reliably wider than the gaps inside a line.** In a
+two-column journal the gutter can be 12pt while the word gaps of a stretched
+justified line are 10pt, so no gap threshold can separate them. What
+distinguishes a gutter is that *no line crosses it anywhere on the page*.
+Measure it once per page and carry it everywhere -- merging rows, reading
+order, note parsing -- rather than guessing columns separately in each place
+(guessing at the half-way mark fails on a bibliography's short last column).
+
+**Columns run within a horizontal band, not down the whole page.** A paper
+ends its notes half way down and starts its bibliography beneath them, both
+in two columns. Reading every left-column line before any right-column one
+then puts the "Bibliography" heading, low in the left column, ahead of the
+last notes, high in the right. A heading opens a new band across every
+column; order band by band, then column by column.
+
+**Do not assume a typographic convention has only one form.** Notes are set
+with a hanging indent *or* a first-line indent, and assuming either one
+silently loses every note set in the other. Decide from the document: find
+the lines that look like they open a note and see which side of the indent
+they fall on. Likewise, indentation only means something when there are two
+genuine groups of lines -- a block that is flush left throughout still shows
+a spread, because its first note is often indented like an opening
+paragraph, and treating that lone outlier as a convention makes every other
+label fail.
+
+**Heading *level* is not heading *rank*.** Levels come from several rules at
+once, so one paper can put "Conclusion" and "Bibliography" at level 1
+(they read as named divisions) while its six actual sections sit at level 4
+(set at body size in bold). Splitting on the shallowest level that repeats
+then yields two chapters at the very end and one enormous one before them.
+Split on the level whose headings *span* the document, and treat anything
+shallower as a division too.
+
+**A rule that is right for the page can be wrong for the section.** Small
+type at the top of a page is a running head -- unless the whole page is
+small type, in which case it is a bibliography and the rule eats its first
+entries. A heading ends a notes section -- but only if the test notices a
+heading set half a point above body size and bold, rather than looking at
+size alone.
+
 ## How this program is built
 
 **The goal is the algorithm, not a model.** Every conversion must be

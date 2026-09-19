@@ -87,6 +87,92 @@ def _is_garbled(text: str) -> bool:
     return bad / len(text) > _GARBLE_THRESHOLD
 
 
+# --------------------------------------------------------------------------- #
+# Missing word spaces
+# --------------------------------------------------------------------------- #
+
+# Some typesetters emit no space glyphs at all, encoding a word boundary purely
+# as a wider gap between characters. Extracted naively the line comes out as
+# "Thestateisoneofseriesofconcepts" -- unreadable, unsearchable, and impossible
+# to hyphenate. The same PDF often drops only the space after a punctuation
+# mark ("question.Thus"), which is the same fault in miniature.
+#
+# These two patterns are only a *trigger* for the (more expensive) character
+# level pass; the gap measurement below decides where spaces actually go, so a
+# false trigger costs a little time and changes nothing.
+_GLUED_RUN_RE = re.compile(r"[^\W\d_]{16,}", re.UNICODE)
+_GLUED_PUNCT_RE = re.compile(r"[^\W\d_]{2,}[.,;:][^\W\d_]", re.UNICODE)
+_GLUED_MIN_LINE = 25
+
+# A split must be this much wider than the line's own character spacing,
+# relative to the type size, before it counts as a word boundary at all.
+_SPACE_MIN_JUMP = 0.04
+
+
+def _needs_respacing(p: Page) -> bool:
+    for line in p.lines:
+        text = line.text
+        if len(text) < _GLUED_MIN_LINE:
+            continue
+        if _GLUED_RUN_RE.search(text) or _GLUED_PUNCT_RE.search(text):
+            return True
+    return False
+
+
+def _space_threshold(gaps: List[float], size: float) -> Optional[float]:
+    """Find the gap width that separates words, from the gaps themselves.
+
+    Within a word consecutive glyphs touch or overlap slightly; between words
+    there is a real advance. The two form well-separated clusters, so rather
+    than hard-coding a fraction of the type size -- which varies by font and
+    by how tightly the line was tracked -- take the widest jump in the upper
+    half of the sorted gaps and split there.
+
+    Returns None when no such jump exists, which is the answer for a line that
+    is genuinely one long word: nothing is inserted.
+    """
+    vals = sorted(gaps)
+    if len(vals) < 4:
+        return None
+    best_jump, best_at = 0.0, None
+    for i in range(len(vals) // 2, len(vals) - 1):
+        jump = vals[i + 1] - vals[i]
+        if jump > best_jump:
+            best_jump, best_at = jump, (vals[i] + vals[i + 1]) / 2.0
+    if best_at is None or best_jump < _SPACE_MIN_JUMP * max(size, 1.0):
+        return None
+    return best_at
+
+
+def _respace_line(ld: dict) -> List[str]:
+    """Rebuild a raw line's span texts, inserting the spaces the PDF omitted."""
+    chars = [(si, c) for si, sd in enumerate(ld.get("spans", []))
+             for c in sd.get("chars", [])]
+    texts = ["".join(c["c"] for c in sd.get("chars", []))
+             for sd in ld.get("spans", [])]
+    if len(chars) < 5:
+        return texts
+
+    sizes = [sd.get("size", 0.0) for sd in ld.get("spans", [])] or [0.0]
+    gaps = [chars[i + 1][1]["bbox"][0] - chars[i][1]["bbox"][2]
+            for i in range(len(chars) - 1)]
+    threshold = _space_threshold(gaps, max(sizes))
+    if threshold is None:
+        return texts
+
+    out = [""] * len(texts)
+    for i, (si, c) in enumerate(chars):
+        out[si] += c["c"]
+        if i + 1 >= len(chars):
+            break
+        # Never double a space the PDF already set.
+        if c["c"].isspace() or chars[i + 1][1]["c"].isspace():
+            continue
+        if gaps[i] > threshold:
+            out[si] += " "
+    return out
+
+
 def _line_from_dict(ld: dict) -> Optional[Line]:
     spans: List[Span] = []
     for sd in ld.get("spans", []):
@@ -112,10 +198,25 @@ def _line_from_dict(ld: dict) -> Optional[Line]:
     return Line(spans=spans, bbox=tuple(ld.get("bbox", (0, 0, 0, 0))))  # type: ignore[arg-type]
 
 
-def _extract_text_page(page: "pymupdf.Page", number: int) -> Page:
-    d = page.get_text("dict")
+def _extract_text_page(page: "pymupdf.Page", number: int, respace: bool = False) -> Page:
+    """Build a Page from the PDF's text.
+
+    With *respace*, the character-level "rawdict" is used instead and the word
+    spaces the typesetter omitted are measured back in -- see `_respace_line`.
+    It costs a second extraction of the page, so it is only ever asked for
+    once a cheap scan of the ordinary text has found the fault.
+    """
+    if respace:
+        d = page.get_text("rawdict")
+        for block in d.get("blocks", []):
+            for ld in block.get("lines", []):
+                for sd, text in zip(ld.get("spans", []), _respace_line(ld)):
+                    sd["text"] = text
+    else:
+        d = page.get_text("dict")
     out = Page(number=number, width=float(d.get("width", page.rect.width)),
                height=float(d.get("height", page.rect.height)))
+    raw_blocks: List[List[Line]] = []
     for block in d.get("blocks", []):
         if block.get("type") == 1:  # image block
             img = block.get("image")
@@ -135,11 +236,96 @@ def _extract_text_page(page: "pymupdf.Page", number: int) -> Page:
             line = _line_from_dict(ld)
             if line is not None:
                 block_lines.append(line)
-        out.lines.extend(_merge_same_row_lines(block_lines))
+        raw_blocks.append(block_lines)
+
+    # Gutters are a property of the whole page, so they need every block's
+    # lines before any row merging happens.
+    gutters = _column_gutters([ln for b in raw_blocks for ln in b], out.width)
+    out.gutters = gutters
+    for block_lines in raw_blocks:
+        out.lines.extend(_merge_same_row_lines(block_lines, gutters))
     return out
 
 
-def _merge_same_row_lines(lines: List[Line]) -> List[Line]:
+# A gutter must be this wide, and carry this many lines on each side, before
+# the page counts as set in columns.
+_MIN_GUTTER_PT = 7.0
+_MIN_COLUMN_LINES = 5
+# A line at least this share of the widest line on the page spans the measure.
+_FULL_WIDTH_FRAC = 0.6
+
+
+def _column_gutters(lines: List[Line], width: float) -> List[float]:
+    """Find the x positions of the vertical gutters between text columns.
+
+    Needed because a column gutter is not reliably *wider* than the gaps
+    inside a line: in a two-column journal the gutter can run 12pt while the
+    word gaps of a stretched justified line run 10pt. What does distinguish
+    it is that no line crosses it anywhere on the page -- so look for a band
+    of x that every line avoids, with substantial text on both sides.
+
+    Tried twice. First over every line, which answers a page set in columns
+    throughout. Then, if that finds nothing, over the narrow lines alone: a
+    page can be single-column at the top and two-column below -- a paper
+    whose notes start half way down -- and those full-width lines cross
+    where the gutter will be, hiding it. Doing it in this order matters,
+    because on a page that is *all* columns the widest line is itself a
+    column line, so discarding "full width" lines up front would discard
+    most of the evidence.
+    """
+    if len(lines) < 2 * _MIN_COLUMN_LINES or width <= 0:
+        return []
+
+    widest = max((ln.x1 - ln.x0 for ln in lines), default=0.0)
+    narrow = [ln for ln in lines if (ln.x1 - ln.x0) <= widest * _FULL_WIDTH_FRAC]
+
+    for candidate in (lines, narrow):
+        if len(candidate) < 2 * _MIN_COLUMN_LINES:
+            continue
+        found = _gutters_of(candidate, width)
+        if found:
+            return found
+    return []
+
+
+def _gutters_of(lines: List[Line], width: float) -> List[float]:
+    """Bands of x that none of *lines* covers, with text either side."""
+    size = int(width) + 2
+    delta = [0] * (size + 1)
+    for ln in lines:
+        a = max(0, min(size, int(ln.x0)))
+        b = max(0, min(size, int(ln.x1)))
+        if b > a:
+            delta[a] += 1
+            delta[b] -= 1
+    cover, running = [], 0
+    for d in delta:
+        running += d
+        cover.append(running)
+
+    filled = [x for x, c in enumerate(cover) if c > 0]
+    if not filled:
+        return []
+    lo, hi = filled[0], filled[-1]
+
+    gutters: List[float] = []
+    x = lo
+    while x <= hi:
+        if cover[x] == 0:
+            start = x
+            while x <= hi and cover[x] == 0:
+                x += 1
+            if x - start >= _MIN_GUTTER_PT:
+                left = sum(1 for ln in lines if ln.x1 <= start)
+                right = sum(1 for ln in lines if ln.x0 >= x)
+                if left >= _MIN_COLUMN_LINES and right >= _MIN_COLUMN_LINES:
+                    gutters.append((start + x) / 2.0)
+        else:
+            x += 1
+    return gutters
+
+
+def _merge_same_row_lines(lines: List[Line], gutters: Optional[List[float]] = None) -> List[Line]:
     """Recombine fragments PyMuPDF split off from one visual line.
 
     Extreme word-spacing -- a short line stretched to fill a fully-justified
@@ -148,12 +334,23 @@ def _merge_same_row_lines(lines: List[Line]) -> List[Line]:
     words as its own "line", all sharing the identical y-position. Left
     alone, each fragment becomes its own paragraph, breaking a normal
     sentence into "word1" / "word2" / "word3" one-word paragraphs.
+
+    On a page set in columns this must stop at the gutter: two columns share
+    every y-position, and merging across would interleave a line of the left
+    column with the line of the right, which reads as neither.
     """
     if len(lines) < 2:
         return lines
+    gutters = gutters or []
+
+    def column_of(ln: Line) -> int:
+        centre = (ln.x0 + ln.x1) / 2.0
+        return sum(1 for g in gutters if centre > g)
+
     groups: List[List[Line]] = []
     for ln in lines:
-        if groups and abs(groups[-1][0].y0 - ln.y0) <= 1.5:
+        if (groups and abs(groups[-1][0].y0 - ln.y0) <= 1.5
+                and column_of(groups[-1][0]) == column_of(ln)):
             groups[-1].append(ln)
         else:
             groups.append([ln])
@@ -736,11 +933,16 @@ def extract(
                 )
                 lex = None
     repaired_lines = 0
+    respaced_pages = 0
 
     pages: List[Page] = []
     for i in range(doc.page_count):
         page = doc[i]
         p = _extract_text_page(page, i)
+        if _needs_respacing(p):
+            log.info("Restoring omitted word spaces on page %d/%d", i + 1, doc.page_count)
+            p = _extract_text_page(page, i, respace=True)
+            respaced_pages += 1
 
         if _looks_like_map(p.lines):
             # Vector line art has nothing for the text/image extractor to
@@ -799,4 +1001,5 @@ def extract(
     if repair_ocr:
         log.info("OCR repair rewrote %d line(s)", repaired_lines)
     meta["_repaired_lines"] = repaired_lines
+    meta["_respaced_pages"] = respaced_pages
     return pages, meta

@@ -70,7 +70,7 @@ a book does not:
   decoration over the argument.
 
 ```bash
-pdf2kindle convert thesis.pdf  -o thesis.epub            # academic by default
+pdf2kindle convert book.pdf    -o book.epub               # profile detected
 pdf2kindle convert paper.pdf   -o paper.epub  --profile article
 pdf2kindle convert novel.pdf   -o novel.epub  --profile general
 ```
@@ -88,6 +88,19 @@ pdf2kindle convert novel.pdf   -o novel.epub  --profile general
   chapter per section with a full EPUB3 + NCX table of contents. A printed
   Contents page's dot-leader rows ("Introduction .......... 4") are never
   mistaken for real headings, however boldly Word styled them.
+- **Word spaces the typesetter never emitted** — some PDFs encode a word
+  boundary as nothing but a wider gap between characters, so the text comes
+  out as `Thestateisoneofseriesofconcepts`. The boundary is measured back in
+  from the character geometry (and the same pass restores the missing space
+  in `question.Thus`), on the pages that need it and no others.
+- **Two-column pages** — the gutter is found from the page's own whitespace
+  rather than guessed at the half-way mark, because it is not reliably wider
+  than the gaps inside a justified line. Columns are read within horizontal
+  bands, so a bibliography stacked beneath two columns of notes does not
+  interleave with them.
+- **Profile detection** — with no flags, `pdf2kindle` decides for itself
+  whether it is looking at a paper or a book, from the presence of an
+  abstract in the opening pages and the document's length.
 - **Headings from the document's own outline** — where a PDF has bookmarks,
   they name the headings and their depths, which beats inferring a heading
   from font size. It has to: a journal sets its section headings a third of a

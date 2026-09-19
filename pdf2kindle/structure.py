@@ -12,15 +12,21 @@ and hanging-indent bibliography entries.
 
 from __future__ import annotations
 
+import logging
 import re
+from collections import Counter
 from dataclasses import replace
 from typing import Dict, List, Optional, Tuple
 
 from . import cover as cover_mod
+import pymupdf
+
 from .analyze import Analyzed, PageContent
 from .extract import _column_count
 from .footnotes import find_embedded_markers, find_markers, parse_page_notes
 from .text import drop_break_hyphen, ends_hyphenated, normalize
+log = logging.getLogger(__name__)
+
 from .model import (
     Chapter,
     Document,
@@ -96,6 +102,8 @@ _FRONT_LIST_RE = re.compile(
 _COPYRIGHT_RE = re.compile(
     r"©\s*([A-Z][\w.''\-]+(?:\s+[A-Z][\w.''\-]+){0,4})\s*,?\s*(?:19|20)\d{2}"
 )
+# Longest a heading may run before it is prose rather than a title.
+_MAX_HEADING_WORDS = 14
 _MIN_IMAGE_PX = 80
 # Printed footprint, in points, below which an image is a logo or badge.
 _MIN_IMAGE_PT = 48.0
@@ -298,10 +306,10 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
     # the number/roman shape too, and a heading is never smaller than body
     # text regardless of weight -- ratio >= 1.0 rules that out.
     m = _NUM_HEAD_RE.match(text)
-    if m and len(words) <= 14 and ratio >= 1.0 and (bold or ratio >= 1.05) and not trailing_period:
+    if m and len(words) <= _MAX_HEADING_WORDS and ratio >= 1.0 and (bold or ratio >= 1.05) and not trailing_period:
         depth = m.group(1).count(".")  # "1"->0, "1.2"->1, "1.2.3"->2
         return min(1 + depth, 4) if ratio >= 1.3 else min(2 + depth, 4)
-    if _ROMAN_HEAD_RE.match(text) and len(words) <= 14 and ratio >= 1.0 and (bold or ratio >= 1.05):
+    if _ROMAN_HEAD_RE.match(text) and len(words) <= _MAX_HEADING_WORDS and ratio >= 1.0 and (bold or ratio >= 1.05):
         # Roman-then-Arabic is the classic "Part I > Section 1 > 1.1" book
         # hierarchy -- a roman numeral outranks a plain arabic-numbered
         # section, so it belongs at the top level alongside a named division
@@ -315,7 +323,11 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
         return 2
     if ratio >= 1.18:
         return 3
-    if bold and ratio >= 1.0 and len(words) <= 10 and not trailing_period:
+    # Same length allowance as a numbered heading: a descriptive section
+    # title runs long ("'As if realism' and the 'as if real' character of the
+    # state" is twelve words) and a tighter cap silently drops it into the
+    # body, taking the chapter break with it.
+    if bold and ratio >= 1.0 and len(words) <= _MAX_HEADING_WORDS and not trailing_period:
         return 4
     if text.isupper() and 1 < len(words) <= 8 and ratio >= 1.0:
         return 3
@@ -654,7 +666,14 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
             continues = (
                 same_size
                 and not new_numbered_section
-                and not ptxt.endswith((".", "?", "!", ":", ";"))
+                # A question mark does not end a heading the way a full stop
+                # or a colon does: a title that asks something and answers
+                # itself on the next line ("Neither real nor fictitious but
+                # 'as if real'? / A political ontology of the state") is one
+                # title, and a section heading phrased as a question is
+                # followed by prose, not by another heading of its own size
+                # on the same page.
+                and not ptxt.endswith((".", ":", ";"))
                 and len(ptxt) < 160
             )
             if numbered or continues:
@@ -828,18 +847,50 @@ def _attach_notes_by_range(
 
 
 def _split_by_headings(flat, notes_by_page) -> List[Chapter]:
-    heading_levels = [el.level for _, el in flat if el.kind == ElementKind.HEADING]
-    split_level = min(heading_levels) if heading_levels else None
+    # Split on the shallowest level whose headings appear on more than one
+    # page. A division that never leaves a single page is not dividing the
+    # document: the shallowest level is typically the work's own title, set
+    # larger than anything else and sitting alone on the opening page --
+    # sometimes as two headings, where print wrapped it. Splitting there
+    # yields a front matter chapter and one chapter holding the entire work,
+    # which is what a journal article (whose section headings are often set
+    # at body size, and so detected as deep ones) used to produce.
+    pages_at_level: Dict[int, set] = {}
+    for page_no, el in flat:
+        if el.kind == ElementKind.HEADING:
+            pages_at_level.setdefault(el.level, set()).add(page_no)
+    # Among the levels that appear on more than one page, take the one whose
+    # headings reach furthest through the document, preferring the shallower
+    # on a tie. Shallowest-that-repeats is not enough on its own: heading
+    # levels come from several rules, so a paper can put "Conclusion" and
+    # "Bibliography" at level 1 (they read as named divisions) while its six
+    # actual sections sit at level 4 because they are set at body size in
+    # bold. Splitting on level 1 there yields two chapters at the very end
+    # and one enormous one before them; the level that spans the document is
+    # the one dividing it.
+    best_key, split_level = None, None
+    for lvl, page_nos in pages_at_level.items():
+        if len(page_nos) < 2:
+            continue
+        key = (max(page_nos) - min(page_nos), -lvl)
+        if best_key is None or key > best_key:
+            best_key, split_level = key, lvl
+    if split_level is None and pages_at_level:
+        split_level = min(pages_at_level)
 
     built: List[Tuple[int, Chapter]] = []
     cur = Chapter(title="")
     cur_start: Optional[int] = None
 
     for page_no, el in flat:
+        # At or above the split level: a shallower heading is a *larger*
+        # division, so it starts a chapter too. A "Conclusion" recognized as
+        # a named division (level 1) among body-size section headings
+        # (level 4) would otherwise be swallowed by the section before it.
         is_break = (
             split_level is not None
             and el.kind == ElementKind.HEADING
-            and el.level == split_level
+            and el.level <= split_level
             and cur.elements
         )
         if is_break:
@@ -850,7 +901,7 @@ def _split_by_headings(flat, notes_by_page) -> List[Chapter]:
             continue
         if cur_start is None:
             cur_start = page_no
-        if not cur.title and el.kind == ElementKind.HEADING and el.level == split_level:
+        if not cur.title and el.kind == ElementKind.HEADING and el.level <= split_level:
             cur.title = el.text.strip()
         cur.elements.append(el)
     if cur.elements:
@@ -1141,6 +1192,8 @@ def _extract_article_front_matter(chapters: List[Chapter], doc_title: str) -> No
         if _ABSTRACT_HEAD_RE.match(text) or _ABSTRACT_INLINE_RE.match(text):
             abstract_at = i
             break
+        if el.kind == ElementKind.IMAGE:
+            continue  # a journal's logo sits between the title and the byline
         if title_key and _norm_head(text) == title_key:
             el.kind = ElementKind.TITLE
             take.append(i)
@@ -1164,7 +1217,9 @@ def _extract_article_front_matter(chapters: List[Chapter], doc_title: str) -> No
                 kw_at = j
                 end = j
                 break
-            if el.kind != ElementKind.PARAGRAPH:
+            # An abstract is often typeset inset, which reads as a block
+            # quote to the generic pipeline; that is still the abstract.
+            if el.kind not in (ElementKind.PARAGRAPH, ElementKind.BLOCKQUOTE):
                 break
         el.kind = ElementKind.ABSTRACT
         end = j
@@ -1206,6 +1261,41 @@ def _extract_article_front_matter(chapters: List[Chapter], doc_title: str) -> No
     front = Chapter(title="Abstract", elements=[els[i] for i in sorted(moved)])
     first.elements = [el for i, el in enumerate(els) if i not in set(moved)]
     chapters.insert(0, front)
+
+
+# --------------------------------------------------------------------------- #
+# Profile detection
+# --------------------------------------------------------------------------- #
+
+# A paper is short, and opens with an abstract. A book is neither.
+_ARTICLE_MAX_PAGES = 60
+_ARTICLE_SCAN_PAGES = 3
+
+
+def detect_profile(path: str) -> str:
+    """Choose a conversion profile by looking at the PDF itself.
+
+    So the tool can be pointed at a file and left to it. The giveaway of a
+    journal article is an abstract on its opening pages -- no book has one --
+    and a length no book has either. Anything else is read as a book, which
+    is the safer default: the article profile rearranges the opening pages,
+    and doing that to a book would be worse than leaving a paper unadorned.
+
+    Deliberately cheap, and done before extraction, so the answer is in hand
+    early enough to skip work the chosen profile will not need.
+    """
+    try:
+        with pymupdf.open(path) as doc:
+            if doc.page_count > _ARTICLE_MAX_PAGES:
+                return "academic"
+            for index in range(min(_ARTICLE_SCAN_PAGES, doc.page_count)):
+                for line in doc[index].get_text().splitlines():
+                    text = line.strip()
+                    if _ABSTRACT_HEAD_RE.match(text) or _ABSTRACT_INLINE_RE.match(text):
+                        return "article"
+    except Exception as exc:  # pragma: no cover - defensive
+        log.debug("profile detection failed for %s: %s", path, exc)
+    return "academic"
 
 
 # --------------------------------------------------------------------------- #

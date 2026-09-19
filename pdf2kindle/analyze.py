@@ -13,7 +13,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from statistics import median
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .model import Line, Page
 
@@ -223,9 +223,45 @@ def _strip_furniture(
 # Reading order
 # --------------------------------------------------------------------------- #
 
-def _order_lines(lines: List[Line], width: float) -> List[Line]:
+def _order_lines(lines: List[Line], width: float,
+                 gutters: Optional[List[float]] = None) -> List[Line]:
+    """Put a page's lines into reading order, column by column."""
     if len(lines) < 6:
         return sorted(lines, key=lambda ln: (round(ln.y0, 1), ln.x0))
+
+    # Where extraction measured a real gutter, trust it: it was found from
+    # the page's own whitespace rather than guessed at the half-way mark,
+    # and it does not care whether the columns are evenly filled -- a last
+    # page of a bibliography, with a short second column, used to fail the
+    # balance test below and come out interleaved line by line.
+    if gutters:
+        def column_of(ln: Line) -> int:
+            centre = (ln.x0 + ln.x1) / 2.0
+            return sum(1 for g in gutters if centre > g)
+
+        # Columns run within a band, not down the whole page. A journal ends
+        # its notes half way down and starts the bibliography beneath them,
+        # both set in two columns: reading every left-column line before any
+        # right-column one then puts the "Bibliography" heading, low in the
+        # left column, ahead of the last notes, high in the right. A heading
+        # -- a line set larger than the page's usual type -- opens a new band
+        # spanning every column, so order band by band, column by column.
+        sizes = sorted(ln.dominant_size for ln in lines)
+        typical = sizes[len(sizes) // 2]
+        edges = sorted({ln.y0 for ln in lines if ln.dominant_size > typical + 0.5})
+
+        out: List[Line] = []
+        lower = float("-inf")
+        for upper in edges + [float("inf")]:
+            band = [ln for ln in lines if lower <= ln.y0 < upper]
+            lower = upper
+            columns: Dict[int, List[Line]] = {}
+            for ln in band:
+                columns.setdefault(column_of(ln), []).append(ln)
+            for key in sorted(columns):
+                out.extend(sorted(columns[key], key=lambda ln: (round(ln.y0, 1), ln.x0)))
+        return out
+
     mid = width / 2.0
     left = [ln for ln in lines if ln.x1 <= mid + width * 0.03]
     right = [ln for ln in lines if ln.x0 >= mid - width * 0.03]
@@ -263,6 +299,10 @@ def _split_body_notes(
     """Peel a trailing smaller-type footnote block off the bottom of the page."""
     if not lines:
         return [], []
+    # Sorted by y only to find the trailing block; both lists are returned in
+    # the order they came in, which is reading order -- column by column on a
+    # page set in columns. Re-sorting the result by y would interleave the
+    # columns of a two-column notes or bibliography page, line by line.
     ordered = sorted(lines, key=lambda ln: ln.y0)
 
     notes: List[Line] = []
@@ -276,7 +316,7 @@ def _split_body_notes(
             break
     notes.reverse()
     if not notes:
-        return ordered, []
+        return list(lines), []
 
     # The block must open with a note label -- but body content set at
     # footnote size (a block quote, an epigraph) can sit directly above the
@@ -286,16 +326,40 @@ def _split_body_notes(
     # footnotes still in it) over a false start above it.
     start = next((i for i, ln in enumerate(notes) if _starts_with_marker(ln, body_size)), None)
     if start is None:
-        return ordered, []
-    demoted, notes = notes[:start], notes[start:]
+        return list(lines), []
+    notes = notes[start:]
 
-    body = ordered[: len(ordered) - len(notes) - len(demoted)] + demoted
+    note_ids = {id(ln) for ln in notes}
+    body = [ln for ln in lines if id(ln) not in note_ids]
+    notes = [ln for ln in lines if id(ln) in note_ids]
     # A real footnote zone sits *under* body text. A page that is small type
     # all the way up is a dedicated endnote/reference page, which belongs to
     # the endnote handler — peeling it here would split it in half.
     if sum(1 for ln in body if ln.dominant_size >= body_size - 0.3) < 2:
-        return ordered, []
+        return list(lines), []
     return body, notes
+
+
+def _ends_note_section(line: Line, body_size: float) -> bool:
+    """Does this line start the section *after* a run of endnotes?
+
+    Size alone is not enough. A journal sets the heading that follows its
+    notes ("Bibliography") barely above body size -- half a point here --
+    while setting it bold, and a size-only test walks straight past it and
+    swallows the whole bibliography as note text. Weight and brevity say
+    heading just as clearly.
+    """
+    if line.dominant_size > body_size + 0.5:
+        return True
+    words = line.text.split()
+    if not words or len(words) > 6:
+        return False
+    spans = [s for s in line.spans if s.text.strip()]
+    return (
+        bool(spans)
+        and all(s.bold for s in spans)
+        and line.dominant_size >= body_size - 0.2
+    )
 
 
 def _mark_endnote_sections(contents: List[PageContent], body_size: float) -> None:
@@ -312,7 +376,7 @@ def _mark_endnote_sections(contents: List[PageContent], body_size: float) -> Non
         if in_notes and pc.body_lines:
             cut = len(pc.body_lines)
             for i, ln in enumerate(pc.body_lines):
-                if ln.dominant_size > body_size + 0.5:
+                if _ends_note_section(ln, body_size):
                     cut, in_notes = i, False
                     break
             pc.note_lines = pc.body_lines[:cut] + pc.note_lines
@@ -341,7 +405,7 @@ def analyze(pages: List[Page]) -> Analyzed:
     for p in pages:
         lines = [ln for ln in p.lines if ln.text.strip() and not _is_debris(ln)]
         kept = _strip_furniture(lines, p.height, body_size, line_height, repeats)
-        ordered = _order_lines(kept, p.width)
+        ordered = _order_lines(kept, p.width, p.gutters)
         body_lines, note_lines = _split_body_notes(ordered, body_size, p.height, line_height)
         out.pages.append(
             PageContent(
@@ -350,4 +414,11 @@ def analyze(pages: List[Page]) -> Analyzed:
             )
         )
     _mark_endnote_sections(out.pages, body_size)
+    # Note lines are assembled by two passes that each move lines between the
+    # body and the notes, so the result is no longer in reading order -- and
+    # on a two-column notes page an out-of-order list pairs a note label with
+    # the wrong body. Put them back in order once, at the end.
+    for pc, src in zip(out.pages, pages):
+        if pc.note_lines:
+            pc.note_lines = _order_lines(pc.note_lines, pc.width, src.gutters)
     return out

@@ -20,6 +20,7 @@ note labels already known to exist on the same page.
 from __future__ import annotations
 
 import re
+from statistics import median
 from collections import Counter
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
@@ -151,6 +152,43 @@ def _label_from_spans(line: Line, body_size: float) -> Optional[Tuple[str, str]]
     return _norm_label(t), rest.strip()
 
 
+def _note_split(line: Line, body_size: float):
+    """Split a line into (label, rest) if it looks like the start of a note."""
+    split = _label_from_spans(line, body_size)
+    if split is not None:
+        return split
+    m = _LABEL_RE.match(line.text.strip())
+    return (_norm_label(m.group(1)), m.group(2)) if m else None
+
+
+# Two x positions belong to different columns when this far apart.
+_COLUMN_GAP = 30.0
+
+
+def _column_offsets(lines: List[Line]) -> dict:
+    """Each line's indent, measured from the left edge of its own column.
+
+    The left edges of a page's lines cluster: one cluster per column, each
+    holding that column's label and continuation indents. Splitting the
+    sorted edges wherever they jump by more than a column gap recovers those
+    clusters without needing to know how many columns there are.
+    """
+    xs = sorted({round(ln.x0, 1) for ln in lines})
+    starts = [xs[0]]
+    for prev, cur in zip(xs, xs[1:]):
+        if cur - prev > _COLUMN_GAP:
+            starts.append(cur)
+
+    def left_of(x: float) -> float:
+        best = starts[0]
+        for st in starts:
+            if st <= x + 0.1:
+                best = st
+        return best
+
+    return {id(ln): ln.x0 - left_of(ln.x0) for ln in lines}
+
+
 def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[NoteBody]:
     """Group footnote-zone lines into individual notes keyed by label.
 
@@ -162,13 +200,42 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
     """
     if not note_lines:
         return []
-    xs = [ln.x0 for ln in note_lines]
-    lo, hi = min(xs), max(xs)
+    # Indent is measured from the left edge of the line's own column. Notes
+    # are often set in two columns, and measuring from the page's left edge
+    # instead makes every label in the right column look deeply indented --
+    # so none of them is recognized as opening a note, and the whole right
+    # column is swallowed as continuation text of the last left-column note.
+    offsets = _column_offsets(note_lines)
+    values = list(offsets.values())
+    lo, hi = min(values), max(values)
     # Label lines and continuation lines form two indent clusters; split them
     # at the midpoint. A fixed tolerance off the left edge does not work,
     # because wider labels hang further left ("10" starts left of "1").
-    hanging = (hi - lo) >= 6.0
-    label_max_x = lo + (hi - lo) * 0.5
+    # Indentation only tells us anything when there are genuinely two groups
+    # of lines. A block set flush left throughout -- labels and continuations
+    # alike -- can still show a spread, because the first note of the block
+    # is often indented like an opening paragraph. Treating that lone outlier
+    # as an indent convention makes every other label fail the test, and the
+    # notes are read as one enormous note. Two lines on each side, or the
+    # numbering decides instead.
+    deep = [v for v in values if v - lo >= 6.0]
+    indented = len(deep) >= 2 and (len(values) - len(deep)) >= 2
+    split_offset = lo + (hi - lo) * 0.5
+
+    # Which cluster holds the labels is not a given. A hanging indent puts
+    # them at the left edge with continuations indented; a first-line indent
+    # does exactly the reverse, and assuming one convention silently loses
+    # every note set in the other. Decide from the lines themselves: find the
+    # ones that look like they open a note, and see which side they sit on.
+    label_starts = {id(ln): sp for ln in note_lines
+                    for sp in [_note_split(ln, body_size)]
+                    if sp is not None and not _CONTINUES_SENTENCE.match(sp[1])}
+    labelled = [offsets[key] for key in label_starts]
+    other = [offsets[id(ln)] for ln in note_lines
+             if id(ln) not in label_starts and ln.text.strip()]
+    first_line_indent = bool(
+        indented and labelled and other and median(labelled) > median(other)
+    )
 
     notes: List[NoteBody] = []
     cur_label: Optional[str] = None
@@ -187,13 +254,14 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
         txt = line.text.strip()
         if not txt:
             continue
-        split = _label_from_spans(line, body_size)
-        if split is None:
-            m = _LABEL_RE.match(txt)
-            split = (_norm_label(m.group(1)), m.group(2)) if m else None
+        split = _note_split(line, body_size)
         opens = False
         if split is not None and not _CONTINUES_SENTENCE.match(split[1]):
-            opens = (line.x0 <= label_max_x) if hanging else _starts_note(split[0], last_num)
+            if indented:
+                off = offsets[id(line)]
+                opens = off >= split_offset if first_line_indent else off <= split_offset
+            else:
+                opens = _starts_note(split[0], last_num)
         if opens:
             flush()
             cur_label, cur_parts = split[0], [split[1]]

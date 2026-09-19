@@ -21,6 +21,7 @@ from tests.make_academic import main as make_academic
 from tests.make_bookish import main as make_bookish
 from tests.make_endnotes import main as make_endnotes
 from tests.make_journal import main as make_journal
+from tests.make_paper import main as make_paper
 from tests.make_sample import main as make_sample
 
 BUILDERS = {
@@ -29,6 +30,7 @@ BUILDERS = {
     "bookish": make_bookish,
     "endnotes": make_endnotes,
     "journal": make_journal,
+    "paper": make_paper,
 }
 
 # Every fixture, in every profile it is meant to be read in.
@@ -40,6 +42,8 @@ CASES = [
     ("endnotes", "academic"),
     ("journal", "academic"),
     ("journal", "article"),
+    ("paper", "article"),
+    ("paper", "auto"),
 ]
 
 # The share of the source's distinct words that must survive into the EPUB.
@@ -53,6 +57,11 @@ MIN_COVERAGE = {
     ("journal", "academic"): 0.88,
     ("journal", "article"): 0.88,
     ("endnotes", "academic"): 0.96,
+    # The paper fixture prints an "ARTICLE" label and a copyright footer that
+    # are page furniture and correctly stripped, and its unspaced lines leave
+    # the odd glued pair ("forit") behind in the source when they are split.
+    ("paper", "article"): 0.97,
+    ("paper", "auto"): 0.97,
 }
 DEFAULT_MIN_COVERAGE = 0.98
 
@@ -64,14 +73,26 @@ _ANY_TAG_RE = re.compile(r"<[^>]+>")
 _WORD_RE = re.compile(r"[^\W\d_]{4,}", re.UNICODE)
 
 
+# Longer than any real word: a run this long is a line the PDF typeset with
+# no space glyphs, which extraction hands over whole.
+_MAX_REAL_WORD = 20
+
+
 def _words(text: str) -> set:
     """Distinct words of four letters or more, with print artefacts folded.
 
     `normalize` is applied to the source side too: folding "ﬁnd" to "find" is
     a deliberate repair, not a loss, and comparing raw glyphs would flag every
     ligature in the book.
+
+    Runs too long to be a word are dropped from both sides. They are the
+    unspaced lines of a PDF that omits its space glyphs, and since restoring
+    those spaces is the correct behaviour, counting them as lost text would
+    penalize the repair. `test_missing_word_spaces_are_restored` checks that
+    repair directly.
     """
-    return set(_WORD_RE.findall(normalize(text).lower()))
+    found = _WORD_RE.findall(normalize(text).lower())
+    return {w for w in found if len(w) <= _MAX_REAL_WORD}
 
 
 def _epub_text(z: zipfile.ZipFile) -> str:

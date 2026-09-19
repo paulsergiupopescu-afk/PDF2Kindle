@@ -12,6 +12,7 @@ from tests.make_academic import main as make_academic
 from tests.make_bookish import main as make_bookish
 from tests.make_endnotes import main as make_endnotes
 from tests.make_journal import main as make_journal
+from tests.make_paper import main as make_paper
 
 HERE = os.path.dirname(__file__)
 
@@ -1229,3 +1230,99 @@ def test_outline_gives_subsections_their_level(journal_pdf, tmp_path):
     body = _all_chapters(z)
     for section in ("1 Introduction", "2 Comparative frame", "3 The evidence of fiction"):
         assert section in body
+
+
+# --------------------------------------------------------------------------- #
+# A paper's geometry: missing spaces, columns, body-size headings
+# --------------------------------------------------------------------------- #
+
+@pytest.fixture(scope="module")
+def paper_pdf(tmp_path_factory):
+    out = tmp_path_factory.mktemp("data") / "paper.pdf"
+    make_paper(str(out))
+    return str(out)
+
+
+def _paper_epub(paper_pdf, tmp_path):
+    out = tmp_path / "paper.epub"
+    result = convert_pdf(paper_pdf, str(out), ConvertOptions(ocr="never"))
+    return result, zipfile.ZipFile(str(out))
+
+
+def _text_of(z):
+    body = "".join(
+        z.read(n).decode("utf-8") for n in sorted(z.namelist())
+        if n.endswith(".xhtml") and "chap" in n
+    )
+    import html as _html
+    return _html.unescape(re.sub(r"<[^>]+>", " ", body))
+
+
+def test_profile_is_detected_from_the_document(paper_pdf, journal_pdf, sample_pdf,
+                                               bookish_pdf):
+    """Pointed at a file with no flags, the converter picks the profile."""
+    from pdf2kindle.structure import detect_profile
+    assert detect_profile(paper_pdf) == "article"
+    assert detect_profile(journal_pdf) == "article"
+    # A book has no abstract, and must not have its opening pages rearranged.
+    assert detect_profile(sample_pdf) == "academic"
+    assert detect_profile(bookish_pdf) == "academic"
+
+
+def test_missing_word_spaces_are_restored(paper_pdf, tmp_path):
+    """A line typeset with no space glyphs is read back as words."""
+    _, z = _paper_epub(paper_pdf, tmp_path)
+    text = " ".join(_text_of(z).split())
+    assert "The state is one of a series of concepts" in text
+    assert "Thestateisoneofaseries" not in text
+
+
+def test_two_column_notes_are_all_found_and_linked(paper_pdf, tmp_path):
+    """Notes set across two columns all parse, and every marker resolves."""
+    result, z = _paper_epub(paper_pdf, tmp_path)
+    assert result.footnotes >= 6
+    text = " ".join(_text_of(z).split())
+    # A note from each column.
+    assert "I am indebted to the referees" in text
+    assert "Similar observations" in text
+    for name in z.namelist():
+        if not name.endswith(".xhtml"):
+            continue
+        doc = z.read(name).decode("utf-8")
+        ids = set(re.findall(r'id="([^"]+)"', doc))
+        refs = re.findall(r'class="noteref"[^>]*href="#([^"]+)"', doc)
+        assert [r for r in refs if r not in ids] == []
+
+
+def test_bibliography_below_the_notes_survives(paper_pdf, tmp_path):
+    """A bibliography stacked under the notes is not swallowed as note text."""
+    _, z = _paper_epub(paper_pdf, tmp_path)
+    text = " ".join(_text_of(z).split())
+    for entry in ("Abrams, Philip 1988", "Eulau, Heinz 1953", "Skinner, Quentin 1989"):
+        assert entry in text, f"lost bibliography entry: {entry}"
+
+
+def test_columns_are_not_interleaved(paper_pdf, tmp_path):
+    """A reference reads as itself, not spliced with the facing column."""
+    _, z = _paper_epub(paper_pdf, tmp_path)
+    text = " ".join(_text_of(z).split())
+    assert "Eulau, Heinz 1953 The Behavioural Persuasion in Politics" in text
+    assert "Bhaskar, Roy 1979 A Realist Theory of Science" in text
+
+
+def test_body_size_bold_headings_divide_the_paper(paper_pdf, tmp_path):
+    """Sections set at body size in bold still split the document."""
+    result, z = _paper_epub(paper_pdf, tmp_path)
+    assert result.chapters >= 6
+    nav = _read(z, "nav.xhtml")
+    for section in ("The (ontological) status of the state",
+                    "The paradoxical unity of the state",
+                    "Conclusion: towards a political ontology of the state"):
+        assert section in nav
+
+
+def test_wrapped_title_ending_in_a_question_is_one_title(paper_pdf, tmp_path):
+    """A title that asks something and answers itself is not two headings."""
+    result, _ = _paper_epub(paper_pdf, tmp_path)
+    assert result.title.startswith("Neither real nor fictitious")
+    assert "political ontology of the state" in result.title

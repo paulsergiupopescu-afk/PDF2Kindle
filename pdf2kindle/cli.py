@@ -20,9 +20,10 @@ def _add_convert(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--lang", default="en", help="Language code (default: en)")
     p.add_argument(
         "--profile",
-        choices=["academic", "article", "general"],
-        default="academic",
-        help="Conversion profile: academic (default) adds numbered sections, "
+        choices=["auto", "academic", "article", "general"],
+        default="auto",
+        help="Conversion profile: auto (default) picks article or academic "
+        "from the document itself; academic adds numbered sections, "
         "nested TOC, block quotes, captions, endnote linking and reference "
         "hanging indents; article is academic plus journal-article front "
         "matter (title, byline, abstract as its own section, keywords) and a "
