@@ -9,6 +9,13 @@ Most "PDF → EPUB" tools either wrap each page in a fixed-layout image or dump 
 wall of unstructured text. `pdf2kindle` does the harder thing: it analyses the
 PDF's typography and geometry to *reconstruct* the book.
 
+## Scope
+
+This repository does one thing: turn a PDF into a Kindle-ready EPUB. It is a
+standalone project — it is not a component of, and shares no code with, any
+other project. Anything that is not PDF parsing, structure reconstruction, or
+EPUB generation does not belong here.
+
 ## Designed like a printed book, not a text dump
 
 Every chapter opens the way a well-typeset print book does: a small
@@ -128,8 +135,8 @@ pdf2kindle serve          # then open http://127.0.0.1:8000
 ## Install
 
 ```bash
-git clone <this-repo>
-cd pdf-to-kindle
+git clone https://github.com/paulsergiupopescu-afk/PDF2Kindle.git
+cd PDF2Kindle
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
 
