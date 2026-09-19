@@ -105,5 +105,37 @@ These are settled decisions, not defaults to revisit per book.
   when the notes are printed once at the end of the document and the markers
   that cite them live in other chapters. Notes move to the chapter citing
   them so the link stays in-file.
-- Favour text extraction over visual fidelity everywhere else: this produces
-  a reflowable ebook, not a facsimile.
+- **A clean reading interface always wins over the original formatting.**
+  This produces a reflowable ebook, not a facsimile. When the two conflict,
+  the page's appearance loses every time: drop the print furniture, let the
+  text reflow, and do not reproduce a layout merely because the PDF had it.
+  The table rule above is not an exception to this — a table becomes a
+  picture because reflowed cells are *unreadable*, not because the printed
+  grid is worth preserving.
+
+## How this program is built
+
+**The goal is the algorithm, not a model.** Every conversion must be
+something the code does deterministically, on its own, from the PDF's own
+geometry and typography. Do not reach for an LLM to read a page, repair a
+heading, or decide what a block is — if a document defeats the current
+heuristics, the answer is a better heuristic in the source, never a model
+call at conversion time.
+
+**Every PDF is a test case, and leaves the program better than it found
+it.** When a new book or paper is converted, the job is not finished when
+the EPUB is handed over. Work it as follows:
+
+1. Convert it, then actually inspect the result — chapter split, note
+   linking, tables, dropped text, metadata. Compare word counts against the
+   source when anything looks thin; silent loss is the failure mode that
+   hides best.
+2. Every fault found is a fault in the program, not in that one file. Fix it
+   in the engine, generically, so the next document of that shape converts
+   correctly untouched.
+3. Add a fixture and a test for the shape that broke (`tests/make_*.py` plus
+   a case in `tests/test_convert.py`), so it cannot regress.
+4. Commit the improvement. The corpus of handled shapes only grows.
+
+Earlier converted documents are worth consulting as worked examples of what
+good output looks like for a given genre.
