@@ -13,6 +13,7 @@ and hanging-indent bibliography entries.
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from typing import Dict, List, Optional, Tuple
 
 from .analyze import Analyzed, PageContent
@@ -95,6 +96,10 @@ _COPYRIGHT_RE = re.compile(
     r"©\s*([A-Z][\w.''\-]+(?:\s+[A-Z][\w.''\-]+){0,4})\s*,?\s*(?:19|20)\d{2}"
 )
 _MIN_IMAGE_PX = 80
+# Printed footprint, in points, below which an image is a logo or badge.
+_MIN_IMAGE_PT = 48.0
+# Lines needed before a page of unparsed "notes" is treated as misread body text.
+_MIN_PROMOTED_NOTE_LINES = 5
 
 
 # --------------------------------------------------------------------------- #
@@ -369,7 +374,23 @@ def _is_scan_background(im: ImageBlock, page: PageContent) -> bool:
 
 
 def _select_images(page_images: List[ImageBlock]) -> List[ImageBlock]:
-    return [im for im in page_images if im.width >= _MIN_IMAGE_PX and im.height >= _MIN_IMAGE_PX]
+    """Keep the images that are figures, drop the page furniture.
+
+    Pixel dimensions alone do not separate them: a publisher's corner logo or
+    a CC badge is often a high-resolution bitmap scaled down to a few
+    millimetres on the page. What gives it away is its *printed* footprint,
+    so an image placed smaller than a thumbnail is decoration, not a figure.
+    """
+    out = []
+    for im in page_images:
+        if im.width < _MIN_IMAGE_PX or im.height < _MIN_IMAGE_PX:
+            continue
+        w = im.bbox[2] - im.bbox[0]
+        h = im.bbox[3] - im.bbox[1]
+        if w and h and (w < _MIN_IMAGE_PT or h < _MIN_IMAGE_PT):
+            continue
+        out.append(im)
+    return out
 
 
 # Keywords that confirm a page is a front-matter list, on top of its shape
@@ -421,8 +442,21 @@ def _build_flow(
         if not keep_print_nav and _is_headless_toc_page(page):
             continue
         note_prefix = f"n{page.number}-"
+        text_tops: List[Tuple[float, int]] = []  # (page y of element, index in flat + 1)
 
         page_notes = parse_page_notes(page.note_lines, analyzed.body_size)
+
+        # A whole page set below the body size is not a page of footnotes.
+        # A bibliography is commonly typeset a point or two smaller than the
+        # body, which puts every one of its lines in the note zone; when none
+        # of them parses as a numbered note, the zone was simply misread, and
+        # dropping the lines would silently lose the entire section. Promote
+        # them back to body text. Guarded on a substantial block so a stray
+        # one-line footer is not resurrected as a paragraph.
+        if not page_notes and len(page.note_lines) >= _MIN_PROMOTED_NOTE_LINES:
+            page = replace(page, body_lines=page.body_lines + page.note_lines,
+                           note_lines=[])
+
         known_labels = {nb.label for nb in page_notes}
         if page_notes:
             notes_by_page[page.number] = [
@@ -459,13 +493,24 @@ def _build_flow(
                 elif _is_blockquote(group, analyzed.body_left, analyzed.body_size, page.width):
                     kind = ElementKind.BLOCKQUOTE
             flat.append((page.number, Element(kind=kind, runs=runs)))
+            text_tops.append((group[0].y0, len(flat)))
 
         for im in _select_images(page_images.get(page.number, [])):
             if _is_scan_background(im, page):
                 continue  # the scan itself, not a figure -- see _is_scan_background
             if page.number == 0 and _covers_page(im, page):
                 continue  # full-page art on page 1 is the cover, already used
-            flat.append((page.number, Element(kind=ElementKind.IMAGE, image=im)))
+            el = Element(kind=ElementKind.IMAGE, image=im)
+            # Place the picture where it sits on the page, not after all of
+            # the page's prose. A table rendered as an image belongs above
+            # the paragraph that says "as seen in the table", and a figure
+            # at the top of a page must not sink below it.
+            at = next((idx for top, idx in text_tops if top > im.bbox[3]), None)
+            if at is None:
+                flat.append((page.number, el))
+            else:
+                flat.insert(at - 1, (page.number, el))
+                text_tops = [(t, i + 1 if i >= at else i) for t, i in text_tops]
 
     return flat, notes_by_page
 
@@ -635,9 +680,19 @@ def _split_by_toc(flat, notes_by_page, toc) -> Optional[List[Chapter]]:
     entries = [(int(l), str(t).strip(), int(p) - 1) for l, t, p in toc if int(p) >= 1]
     if len(entries) < 2:
         return None
-    top_level = min(e[0] for e in entries)
-    tops = [e for e in entries if e[0] == top_level]
-    if len(tops) < 2:
+    # Descend past a single wrapping root. A journal article's outline is
+    # often one level-1 bookmark carrying the article title, with every real
+    # section hanging off it at level 2. Splitting on the top level alone
+    # would yield a single chapter holding the whole paper, so when a level
+    # has exactly one entry, step down to the next level that has more.
+    levels = sorted({e[0] for e in entries})
+    tops: List[Tuple[int, str, int]] = []
+    for lvl in levels:
+        at_level = [e for e in entries if e[0] == lvl]
+        if len(at_level) >= 2:
+            tops = at_level
+            break
+    if not tops:
         return None
     # A PDF outline built by a scan/digitization batch process sometimes
     # carries bookmarks that are just its own numbering ("01", "02", ...),
@@ -657,7 +712,10 @@ def _split_by_toc(flat, notes_by_page, toc) -> Optional[List[Chapter]]:
         for pno, notes in notes_by_page.items():
             if start_page <= pno < end_page:
                 ch.footnotes.extend(notes)
-        if ch.elements:
+        # Keep a section that is nothing but note bodies: an endnotes page
+        # yields no body elements at all, and dropping it here would discard
+        # every note on it before anything could link them.
+        if ch.elements or ch.footnotes:
             chapters.append(ch)
 
     first = boundaries[0][0]
@@ -828,6 +886,58 @@ def _assign_nav(chapter: Chapter, idx: int) -> None:
             k += 1
 
 
+_MARKER_LABEL_RE = re.compile(r"^\s*(\d{1,3})\s*$")
+
+
+def _relink_cross_chapter_notes(chapters: List[Chapter]) -> int:
+    """Link markers to note bodies that live in a *different* chapter.
+
+    A journal article numbers its notes continuously across the whole paper
+    and prints them once, in a "Notes" section at the end. Split into
+    chapters, every marker then sits in one file and every body in another,
+    so the per-chapter pass leaves all of them unlinked.
+
+    Rather than emit cross-file hrefs, move each note to the chapter that
+    cites it: the note travels to its marker, so the link stays in-file and
+    the notes are rendered where a reader of that chapter wants them. A note
+    nothing cites stays where it was.
+    """
+    pool: Dict[str, Tuple[Chapter, Element]] = {}
+    for ch in chapters:
+        for note in ch.footnotes:
+            label = (note.note_label or "").strip()
+            if label and label not in pool:
+                pool[label] = (ch, note)
+
+    moved = 0
+    for idx, ch in enumerate(chapters):
+        for el in ch.elements:
+            for run in el.runs:
+                if run.noteref or not run.sup:
+                    continue
+                m = _MARKER_LABEL_RE.match(run.text)
+                if not m:
+                    continue
+                entry = pool.get(m.group(1))
+                if entry is None:
+                    continue
+                owner, note = entry
+                if owner is not ch:
+                    owner.footnotes = [f for f in owner.footnotes if f is not note]
+                    note.note_id = f"xn{idx}-{m.group(1)}"
+                    ch.footnotes.append(note)
+                    pool[m.group(1)] = (ch, note)
+                    moved += 1
+                run.noteref = note.note_id
+                run.sup = False
+
+    for ch in chapters:
+        ch.footnotes.sort(
+            key=lambda f: int(f.note_label) if (f.note_label or "").isdigit() else 10 ** 9
+        )
+    return moved
+
+
 # --------------------------------------------------------------------------- #
 # Public entry point
 # --------------------------------------------------------------------------- #
@@ -866,8 +976,20 @@ def build_document(
         ch.footnotes = [f for f in ch.footnotes if f.text.strip()]
         _resolve_notes(ch)
 
+    if academic:
+        _relink_cross_chapter_notes(chapters)
+        # A notes section that handed every body to the chapter citing it has
+        # nothing left to show; drop the now-empty shell.
+        chapters = [
+            c for c in chapters
+            if c.elements or c.footnotes or not _NOTES_HEAD_RE.match(c.title.strip())
+        ]
+
     doc = Document(chapters=chapters, language=language)
-    doc.title = title or (meta.get("title") or "").strip() or _guess_title(chapters)
+    meta_title = (meta.get("title") or "").strip()
+    if meta_title and _looks_like_production_id(meta_title):
+        meta_title = ""
+    doc.title = title or meta_title or _outline_title(toc) or _guess_title(chapters)
     doc.author = author or (meta.get("author") or "").strip() or _guess_author(chapters)
 
     # Cover: a render of page 1 is the most faithful and always available;
@@ -908,6 +1030,30 @@ def _drop_front_matter_lists(chapter: Chapter) -> None:
             continue
         out.append(el)
     chapter.elements = out
+
+
+# A typesetter's job number left in the PDF's /Title -- "NPS_2400088 1..23",
+# "9781108845, 1..340". Signatures: a page range written with a double dot,
+# or an all-caps/underscored production code with a long serial. Either is a
+# far worse title than the outline's own root, which names the work.
+_PRODUCTION_ID_RE = re.compile(
+    r"\d+\s*\.\.\s*\d+|^[A-Z][A-Za-z]{1,6}[_-]?\d{5,}"
+)
+
+
+def _looks_like_production_id(value: str) -> bool:
+    return bool(_PRODUCTION_ID_RE.search(value.strip()))
+
+
+def _outline_title(toc) -> str:
+    """The outline's single root entry, when it has one.
+
+    A journal article's outline is often one level-1 bookmark carrying the
+    article's full title, with the sections beneath it -- the most reliable
+    title the file has when its metadata carries a production code instead.
+    """
+    tops = [str(t).strip() for l, t, _ in toc if int(l) == 1]
+    return tops[0] if len(tops) == 1 else ""
 
 
 def _guess_title(chapters: List[Chapter]) -> str:

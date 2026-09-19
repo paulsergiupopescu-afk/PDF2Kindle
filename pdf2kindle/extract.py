@@ -12,7 +12,7 @@ import logging
 import re
 import unicodedata
 from dataclasses import replace
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pymupdf
 
@@ -498,6 +498,169 @@ def _looks_like_map(lines: List[Line]) -> bool:
     return avg_words < 2.5 and median_len < 25 and _column_count(lines) > 10
 
 
+# A table is reproduced as a picture rather than reflowed as text: a grid's
+# meaning lives in the alignment of its cells, and a reflowing reader has no
+# way to preserve that. Extracted as text it does not degrade gracefully --
+# it shreds, the columns of a row interleaving into nonsense ("Aspect Cyprus
+# Malta", "rule", "Ottoman to"). Rendering the region keeps it readable.
+_TABLE_CAPTION_RE = re.compile(r"^\s*(table|map)\s+\d+[.:)]?\s", re.IGNORECASE)
+
+# A rule must span a good part of the text column to count as a table rule,
+# and be thin enough not to be a filled box.
+_RULE_MIN_WIDTH_FRAC = 0.30
+_RULE_MAX_HEIGHT = 3.0
+# Rules further apart than this belong to different objects, not one grid.
+_RULE_MAX_GAP = 120.0
+# Booktabs style is top rule + header rule + bottom rule; two is the minimum
+# that can bracket anything at all.
+_MIN_RULES = 2
+_CLIP_PAD = 4.0
+# How far above/below a ruled grid its caption and source note may sit.
+_CAPTION_REACH = 30.0
+_FOOTER_REACH = 14.0
+# A line this short is a cell or a note, not the prose that follows the table.
+_TABLE_FRAGMENT_WORDS = 12
+
+
+def _horizontal_rules(page: "pymupdf.Page") -> List[Tuple[float, float, float]]:
+    """Return (y, x0, x1) for each thin, wide horizontal line drawn on *page*."""
+    out: List[Tuple[float, float, float]] = []
+    min_w = _RULE_MIN_WIDTH_FRAC * page.rect.width
+    try:
+        drawings = page.get_drawings()
+    except Exception as exc:  # pragma: no cover - defensive
+        log.debug("get_drawings failed on page %d: %s", page.number, exc)
+        return out
+    for d in drawings:
+        r = d.get("rect")
+        if r is None:
+            continue
+        if r.width >= min_w and r.height <= _RULE_MAX_HEIGHT:
+            out.append((float(r.y0), float(r.x0), float(r.x1)))
+    out.sort()
+    return out
+
+
+def _rule_clusters(rules: List[Tuple[float, float, float]]) -> List[Tuple[float, float, float, float]]:
+    """Group rules into (y_top, y_bottom, x0, x1) boxes, one per ruled grid."""
+    boxes: List[Tuple[float, float, float, float]] = []
+    cur: List[Tuple[float, float, float]] = []
+    for rule in rules:
+        if cur and rule[0] - cur[-1][0] > _RULE_MAX_GAP:
+            if len(cur) >= _MIN_RULES:
+                boxes.append((cur[0][0], cur[-1][0],
+                              min(r[1] for r in cur), max(r[2] for r in cur)))
+            cur = []
+        cur.append(rule)
+    if len(cur) >= _MIN_RULES:
+        boxes.append((cur[0][0], cur[-1][0],
+                      min(r[1] for r in cur), max(r[2] for r in cur)))
+    return boxes
+
+
+def _table_regions(page: "pymupdf.Page", lines: List[Line]) -> List["pymupdf.Rect"]:
+    """Locate table/map regions on *page*, as rectangles to render as images.
+
+    Two signatures, because a table may carry either or both:
+
+    * a bracket of horizontal rules -- the ruled grid itself; and
+    * a "Table 3." / "Map 2." caption, which names a grid whose own borders
+      may be drawn in a way `get_drawings` does not report as rules at all.
+
+    A caption with no rules under it still anchors a region: the run of
+    fragmented, multi-column lines beneath it is the borderless grid.
+    """
+    regions: List["pymupdf.Rect"] = []
+    for y0, y1, x0, x1 in _rule_clusters(_horizontal_rules(page)):
+        rect = pymupdf.Rect(x0 - _CLIP_PAD, y0 - _CLIP_PAD,
+                            x1 + _CLIP_PAD, y1 + _CLIP_PAD)
+        # Pull in the grid's own caption and any source note printed tight
+        # against it. A caption sitting at the very top of a page is stripped
+        # as a running header by the time the text pipeline is done with it,
+        # so carrying it inside the picture is the only way it survives at
+        # all -- and it reads the way it was typeset.
+        for ln in lines:
+            # The caption may already graze the padded top edge, so allow a
+            # small overlap as well as a gap.
+            if (_TABLE_CAPTION_RE.match(ln.text)
+                    and -_CLIP_PAD * 2 <= rect.y0 - ln.y1 <= _CAPTION_REACH):
+                rect.y0 = min(rect.y0, ln.y0 - _CLIP_PAD)
+                rect.x0 = min(rect.x0, ln.x0 - _CLIP_PAD)
+            elif (0 <= ln.y0 - rect.y1 <= _FOOTER_REACH
+                  and len(ln.text.split()) <= _TABLE_FRAGMENT_WORDS):
+                rect.y1 = max(rect.y1, ln.y1 + _CLIP_PAD)
+        regions.append(rect)
+
+    for i, ln in enumerate(lines):
+        if not _TABLE_CAPTION_RE.match(ln.text):
+            continue
+        if any(r.y0 - 30 <= ln.y1 <= r.y1 for r in regions):
+            continue  # the rules under this caption are already a region
+        below = [o for o in lines[i + 1:] if o.y0 > ln.y1]
+        block: List[Line] = []
+        for o in below:
+            gap = o.y0 - (block[-1].y1 if block else ln.y1)
+            if gap > 40:
+                break
+            if len(o.text.split()) > _TABLE_FRAGMENT_WORDS:
+                break  # a full sentence: prose has resumed
+            block.append(o)
+        if len(block) >= 4 and _column_count(block) >= 3:
+            regions.append(pymupdf.Rect(
+                min(b.x0 for b in block) - _CLIP_PAD,
+                block[0].y0 - _CLIP_PAD,
+                max(b.x1 for b in block) + _CLIP_PAD,
+                block[-1].y1 + _CLIP_PAD,
+            ))
+    return regions
+
+
+def _rasterize_clip(page: "pymupdf.Page", rect: "pymupdf.Rect") -> Optional[ImageBlock]:
+    """Render one region of a page to a PNG.
+
+    Zoomed harder than a full page: table type is typically set smaller than
+    the body, and this picture is all the reader gets of it.
+    """
+    clip = rect & page.rect
+    if clip.is_empty or clip.width < 20 or clip.height < 12:
+        return None
+    try:
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(3.5, 3.5), clip=clip, alpha=False)
+    except Exception as exc:  # pragma: no cover - defensive
+        log.debug("table clip render failed on page %d: %s", page.number, exc)
+        return None
+    return ImageBlock(
+        data=pix.tobytes("png"), ext="png",
+        bbox=(float(clip.x0), float(clip.y0), float(clip.x1), float(clip.y1)),
+        width=pix.width, height=pix.height,
+    )
+
+
+def _extract_table_images(page: "pymupdf.Page", p: Page) -> int:
+    """Replace each table region on *p* with a rendered picture of it.
+
+    The lines inside the region are dropped: they are the shredded cells, and
+    leaving them in would print the garbled text underneath the image.
+    """
+    regions = _table_regions(page, p.lines)
+    if not regions:
+        return 0
+    renders = [im for im in (_rasterize_clip(page, r) for r in regions) if im is not None]
+    if not renders:
+        return 0
+
+    def in_region(bbox) -> bool:
+        cx, cy = (bbox[0] + bbox[2]) / 2.0, (bbox[1] + bbox[3]) / 2.0
+        return any(r.x0 <= cx <= r.x1 and r.y0 <= cy <= r.y1 for r in regions)
+
+    # A publisher sometimes ships the grid itself as a low-resolution raster
+    # sitting inside the region we just rendered. Keep only our render, which
+    # is sharper and carries the rules and header the embedded copy may crop.
+    p.images = [im for im in p.images if not in_region(im.bbox)] + renders
+    p.lines = [ln for ln in p.lines if not in_region(ln.bbox)]
+    return len(renders)
+
+
 def _rasterize_page(page: "pymupdf.Page") -> ImageBlock:
     """Render a full page to a PNG, for a map/diagram whose vector content
     (borders, rivers, roads) has no text/image representation to extract."""
@@ -577,6 +740,13 @@ def extract(
             if progress:
                 progress(i + 1, doc.page_count)
             continue
+
+        # Tables and maps are always reproduced as pictures, never reflowed:
+        # a grid shreds into interleaved nonsense when extracted as text.
+        n_tables = _extract_table_images(page, p)
+        if n_tables:
+            log.info("Rendering %d table/map region(s) on page %d/%d as image(s)",
+                     n_tables, i + 1, doc.page_count)
 
         needs_ocr = False
         if ocr_mode == "force":

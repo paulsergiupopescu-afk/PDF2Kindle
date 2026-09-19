@@ -11,6 +11,7 @@ from tests.make_sample import main as make_sample
 from tests.make_academic import main as make_academic
 from tests.make_bookish import main as make_bookish
 from tests.make_endnotes import main as make_endnotes
+from tests.make_journal import main as make_journal
 
 HERE = os.path.dirname(__file__)
 
@@ -1047,3 +1048,93 @@ def test_a_genuinely_large_bare_number_heading_is_not_mistaken_for_a_folio():
     neighbour = _scan_line("Some Chapter Title", size=30.0)
     assert not _is_furniture(big_number, neighbour, at_top=True, height=800.0,
                              body_size=11.0, line_height=11.2, repeats=Counter())
+
+
+# --------------------------------------------------------------------------- #
+# Journal articles: outline shape, tables as images, document-level endnotes
+# --------------------------------------------------------------------------- #
+
+@pytest.fixture(scope="module")
+def journal_pdf(tmp_path_factory):
+    out = tmp_path_factory.mktemp("data") / "journal.pdf"
+    make_journal(str(out))
+    return str(out)
+
+
+def _journal_epub(journal_pdf, tmp_path):
+    out = tmp_path / "journal.epub"
+    result = convert_pdf(journal_pdf, str(out),
+                         ConvertOptions(profile="academic", ocr="never"))
+    return result, zipfile.ZipFile(str(out))
+
+
+def test_outline_descends_past_single_root(journal_pdf, tmp_path):
+    """One level-1 bookmark wrapping the sections must not yield one chapter."""
+    result, z = _journal_epub(journal_pdf, tmp_path)
+    assert result.chapters >= 3
+    nav = _read(z, "nav.xhtml")
+    for section in ("1 Introduction", "2 Comparative frame", "3 The evidence of fiction"):
+        assert section in nav
+
+
+def test_production_id_title_is_rejected(journal_pdf, tmp_path):
+    """A typesetter's job number in /Title loses to the outline's own root."""
+    result, _ = _journal_epub(journal_pdf, tmp_path)
+    assert "JNL_2400088" not in result.title
+    assert result.title == "Who are the islanders? Identity on the periphery"
+
+
+def test_table_is_rendered_as_an_image(journal_pdf, tmp_path):
+    """A ruled table becomes a picture, and its shredded cells do not survive."""
+    result, z = _journal_epub(journal_pdf, tmp_path)
+    assert result.images >= 1
+    assert any(n.endswith(".png") for n in z.namelist())
+
+    body = "".join(
+        z.read(n).decode("utf-8") for n in z.namelist()
+        if n.endswith(".xhtml") and "chap" in n
+    )
+    assert "<img" in body
+    # The cells are inside the picture now, not loose in the prose. "rule" is
+    # the giveaway fragment: a wrapped cell that reads as a stray word.
+    assert "Orthodox Christian, Muslim" not in body
+    assert ">rule<" not in body
+
+
+def test_table_image_precedes_the_text_discussing_it(journal_pdf, tmp_path):
+    """The picture belongs where the table sat, not after the page's prose."""
+    _, z = _journal_epub(journal_pdf, tmp_path)
+    chapter = next(
+        z.read(n).decode("utf-8") for n in sorted(z.namelist())
+        if n.endswith(".xhtml") and "chap" in n and "<img" in z.read(n).decode("utf-8")
+    )
+    assert chapter.index("<img") < chapter.index("As the table shows")
+
+
+def test_document_level_endnotes_link_across_chapters(journal_pdf, tmp_path):
+    """Notes printed once at the end still link from the chapters citing them."""
+    result, z = _journal_epub(journal_pdf, tmp_path)
+    assert result.footnotes == 5
+
+    linked = 0
+    for name in z.namelist():
+        if not (name.endswith(".xhtml") and "chap" in name):
+            continue
+        doc = z.read(name).decode("utf-8")
+        ids = set(re.findall(r'id="([^"]+)"', doc))
+        refs = re.findall(r'class="noteref"[^>]*href="#([^"]+)"', doc)
+        assert [r for r in refs if r not in ids] == []  # every link resolves in-file
+        linked += len(refs)
+    assert linked == 5
+
+
+def test_small_type_bibliography_survives(journal_pdf, tmp_path):
+    """A bibliography set below the body size is not swallowed as footnotes."""
+    _, z = _journal_epub(journal_pdf, tmp_path)
+    body = "".join(
+        z.read(n).decode("utf-8") for n in z.namelist()
+        if n.endswith(".xhtml") and "chap" in n
+    )
+    assert "Imagined Communities" in body
+    assert "The Dance of the Islands" in body
+    assert "The Invention of Tradition" in body

@@ -33,3 +33,6 @@ tests/academic.pdf
 tests/bookish.pdf
 
 tests/endnotes.pdf
+
+# Generated test fixture (rebuilt by the test suite)
+tests/journal.pdf

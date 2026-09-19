@@ -83,3 +83,27 @@ rebuilt on demand.
   to plain, correct text.
 - Structure detection is heuristic. When adding a rule, add a test PDF case
   alongside it in `tests/test_convert.py`.
+
+## Standing conversion rules
+
+These are settled decisions, not defaults to revisit per book.
+
+- **A table is always reproduced as an image, never reflowed as text. No
+  exceptions.** The same goes for maps and diagrams. A grid's meaning is
+  carried by the alignment of its cells, which no reflowing reader preserves;
+  extracted as text it shreds, interleaving the cells of a row into nonsense.
+  Render the region (`_extract_table_images` in `extract.py`), place the
+  picture where the table sat, pull the caption and any source note into the
+  image, and drop the shredded lines from the text.
+- **Never discard text silently.** If a heuristic cannot classify a block,
+  it must fall back to emitting it as body text. Two bugs of exactly this
+  shape have already cost whole sections: a bibliography set smaller than the
+  body was dropped as unparseable footnotes, and a notes-only chapter was
+  dropped for having no body elements. Prefer slightly wrong output to
+  missing output.
+- **Footnote and endnote markers must end up as working links**, including
+  when the notes are printed once at the end of the document and the markers
+  that cite them live in other chapters. Notes move to the chapter citing
+  them so the link stays in-file.
+- Favour text extraction over visual fidelity everywhere else: this produces
+  a reflowable ebook, not a facsimile.

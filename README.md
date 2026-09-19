@@ -80,11 +80,27 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
   recognized and kept in the body rather than taking the real footnotes down
   with it.
 - **Images** — embeds figures and illustrations inline at their reading position.
+- **Tables are always pictures, never reflowed** — a grid's meaning lives in
+  the alignment of its cells, and a reflowing reader cannot preserve that.
+  Extracted as text a table does not degrade gracefully, it shreds: the cells
+  of a row interleave into nonsense ("Aspect Cyprus Malta", "rule", "Ottoman
+  to"). So a table region — found by its bracket of rules, or by a "Table 3."
+  caption over a run of fragmented multi-column lines — is rendered as one
+  image at the position it occupied, with its caption and any source note
+  inside the picture, and the shredded cells dropped from the text.
 - **Maps and diagrams** — a page that is really vector art (a map's borders,
   rivers, a chart's lines) has nothing for a text/image extractor to find but
   the scatter of labels drawn on top; such pages are rendered as one picture
   instead of scattering "50", "I", "C" through the surrounding chapter as
   bogus paragraphs.
+- **Journal articles, not just books** — an outline whose single level-1
+  bookmark is the article title is descended past, so the paper splits into
+  its real sections; endnotes printed once in a *Notes* section at the end are
+  moved to the chapters that cite them, so every marker is a working in-file
+  pop-up link; a bibliography typeset smaller than the body is recognized as
+  body text rather than discarded as unparseable footnotes; and a typesetter's
+  job number left in the PDF's `/Title` ("NPS_2400088 1..23") loses to the
+  outline's own root.
 - **Typography repair** — folds ligature glyphs (`ﬁ`→`fi`) so Kindle search and
   dictionary lookup work, converts `` ``quoted'' `` to real curly quotes,
   rebuilds split fractions (`51⁄2` → `5½`), and collapses the padding spaces
@@ -179,9 +195,11 @@ web/             TypeScript + React (Vite) drag-and-drop UI
 Perfect conversion of an arbitrary PDF is not possible — PDFs describe *ink on a
 page*, not document structure. `pdf2kindle` reconstructs structure heuristically
 and does very well on prose-heavy books; heavily designed layouts (magazines,
-textbooks with sidebars, dense tables) are best-effort — **tables in particular
-are flattened to lines**. Run `pdf2kindle audit` on the result: it reports what
-it could not resolve rather than leaving you to find it on the device.
+textbooks with sidebars) are best-effort. Tables are not reflowed at all —
+they are reproduced as pictures, which keeps them readable but means their
+text is not searchable or selectable. Run `pdf2kindle audit` on the result: it
+reports what it could not resolve rather than leaving you to find it on the
+device.
 
 ## License
 
