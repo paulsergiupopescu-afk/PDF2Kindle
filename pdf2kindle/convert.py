@@ -65,6 +65,9 @@ def convert_pdf(
         ocr_lang=opts.ocr_lang,
         dpi=opts.dpi,
         repair_ocr=opts.repair_ocr,
+        # The article profile generates its own cover, so a render of page 1
+        # would be built and then thrown away.
+        page_cover=opts.profile != "article",
         progress=lambda done, total: report("Extracting pages", 0.05 + 0.45 * done / max(total, 1)),
     )
 

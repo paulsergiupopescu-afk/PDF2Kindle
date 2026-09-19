@@ -70,10 +70,19 @@ class Span:
 class Line:
     spans: List[Span]
     bbox: BBox
+    # Joined lazily and kept: every later stage reads a line's text many
+    # times over, and rebuilding it per access was measurable on a long book.
+    _text: Optional[str] = field(default=None, repr=False, compare=False)
 
     @property
     def text(self) -> str:
-        return "".join(s.text for s in self.spans)
+        if self._text is None:
+            self._text = "".join(s.text for s in self.spans)
+        return self._text
+
+    def invalidate_text(self) -> None:
+        """Call after replacing a span, so the cached join is rebuilt."""
+        self._text = None
 
     @property
     def x0(self) -> float:

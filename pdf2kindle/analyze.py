@@ -129,6 +129,7 @@ def _is_furniture(
     body_size: float,
     line_height: float,
     repeats: Counter,
+    page_has_body: bool = True,
 ) -> bool:
     """Is this margin line a running head / folio rather than real content?"""
     txt = line.text.strip()
@@ -167,7 +168,14 @@ def _is_furniture(
     # both the repeat count below and the word-count gap check after it -- a
     # real risk on a noisily-scanned page, where the same printed header can
     # come out as a different garbled string each time.
-    if at_top and line.dominant_size <= body_size - 1.5:
+    # ...but only on a page that has body-size text for it to head. A
+    # bibliography or an endnotes page is set *entirely* below body size, so
+    # this test matches its first real line just as well as a running head,
+    # and silently eats the top of the section -- several reference entries
+    # per page. Where nothing on the page is body size, there is no body for
+    # a running head to sit above, and the genuine head is still caught by
+    # the repeat count below.
+    if at_top and line.dominant_size <= body_size - 1.5 and page_has_body:
         return True
 
     # Repeats elsewhere in the margins → running head/foot. This catches
@@ -187,11 +195,16 @@ def _strip_furniture(
     lines: List[Line], height: float, body_size: float, line_height: float, repeats: Counter
 ) -> List[Line]:
     kept = sorted(lines, key=lambda ln: ln.y0)
+    # Does anything on this page sit at body size? If not, the page is a
+    # dedicated small-type section (references, endnotes) rather than body
+    # text under a running head -- see _is_furniture.
+    page_has_body = any(ln.dominant_size >= body_size - 0.3 for ln in kept)
     for _ in range(_MAX_STRIP):
         if len(kept) < 2:
             break
         if _is_furniture(kept[0], kept[1], at_top=True, height=height, body_size=body_size,
-                         line_height=line_height, repeats=repeats):
+                         line_height=line_height, repeats=repeats,
+                         page_has_body=page_has_body):
             kept = kept[1:]
         else:
             break

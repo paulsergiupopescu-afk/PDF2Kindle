@@ -132,6 +132,49 @@ These are settled decisions, not defaults to revisit per book.
   picture because reflowed cells are *unreadable*, not because the printed
   grid is worth preserving.
 
+## What the program is aiming at
+
+Two things, in this order.
+
+**1. Consistent, optimal results across PDFs.** A rule that makes one
+document better and another worse is not an improvement. Every heuristic
+must be justified by the *shape* it detects -- small type at the top of a
+page, a bracket of rules, an outline depth -- never by the document that
+prompted it. Before committing a change, run the whole suite, not just the
+test for the thing being fixed.
+
+`tests/test_quality.py` is the guard: it converts every fixture in every
+profile and asserts the invariants that must always hold -- almost all
+source words survive into the EPUB, every note link resolves in-file, the
+XML parses, the nav points at real files, no chapter is empty. The word
+coverage gate exists because silent loss is this program's characteristic
+failure, and it has now bitten four times (a bibliography dropped as
+unparseable footnotes; a notes-only chapter dropped for having no body
+elements; reference entries eaten by the running-head stripper; a table
+shredded into its neighbours). When adding a fixture, add it to `CASES`.
+
+A test that cannot fail is worse than no test. After fixing a bug, put the
+bug back and confirm the suite goes red, then restore the fix. That is how
+the running-head bug above was found: the fixture written for an earlier
+bug did not actually reproduce it, so its test had been passing for free.
+
+**2. Fast conversions.** Roughly 5 ms/page, linear in page count -- a
+400-page book converts in about two seconds, a 23-page article in under
+half of one. Keep it that way:
+
+- Measure before optimizing, with `cProfile` over a few hundred pages.
+  Most of the remaining time is PyMuPDF parsing the content stream
+  (`page_get_textpage`, `JM_make_textpage_dict`), which is not ours to win.
+- Watch for per-character work in anything that runs over every line.
+  Checking for control characters via `unicodedata.category` was once a
+  tenth of total runtime; a `str.translate` table does the same test for
+  almost nothing.
+- Do not compute what will be discarded -- an article renders its own
+  cover, so page 1 is not rasterized for it.
+- Never trade a correctness rule for speed. Scanning every page's vector
+  drawings to find tables costs about 8%, and it stays: the rule is that
+  tables are always images, with no exceptions.
+
 ## How this program is built
 
 **The goal is the algorithm, not a model.** Every conversion must be

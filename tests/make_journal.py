@@ -22,7 +22,11 @@ h1 { font-family: sans-serif; font-size: 20px; }
 h2 { font-family: sans-serif; font-size: 13px; }
 sup { font-size: 7px; vertical-align: super; }
 """
-SMALL_CSS = CSS + "body { font-size: 8px; }"
+# The bibliography, heading and all, is set below the body size -- the way a
+# journal typesets it, and the condition that put every one of its lines in
+# the footnote zone. The heading must be small too: a large one ends the
+# notes run before the page is reached, and the bug never reproduces.
+SMALL_CSS = CSS + "body { font-size: 8px; } h2 { font-size: 9px; }"
 
 INTRO = """
 <h2>1 Introduction</h2>

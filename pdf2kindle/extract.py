@@ -28,6 +28,10 @@ _MIN_TEXT_CHARS = 12
 _MIN_OCR_CHARS = 25
 # A line whose characters are more than this fraction raw control codes is
 # not text at all -- see _is_garbled().
+# Control characters, minus the whitespace ones that are legitimate text.
+_CONTROL_DELETE = {c: None for c in list(range(0x00, 0x20)) + list(range(0x7F, 0xA0))
+                   if c not in (0x09, 0x0A, 0x0D)}
+
 _GARBLE_THRESHOLD = 0.04
 # A page whose largest image covers more than this fraction of the page area
 # is a photograph of the whole page -- see _is_scanned_page().
@@ -74,7 +78,12 @@ def _is_garbled(text: str) -> bool:
     """
     if not text:
         return False
-    bad = sum(1 for c in text if unicodedata.category(c) == "Cc" and c not in "\t\n\r")
+    # Unicode's Cc category is exactly two fixed ranges, U+0000-U+001F and
+    # U+007F-U+009F, so this needs no character-database lookup: deleting
+    # them with a translation table and measuring what went is the same
+    # test at C speed. It runs over every character of every line, which
+    # made the lookup version one of the costliest steps in a long book.
+    bad = len(text) - len(text.translate(_CONTROL_DELETE))
     return bad / len(text) > _GARBLE_THRESHOLD
 
 
@@ -383,6 +392,7 @@ def _repair_page(page: Page, pdf_page: "pymupdf.Page", lex: "spelling.Lexicon", 
             for si, span in enumerate(line.spans):
                 if old in span.text:
                     line.spans[si] = replace(span, text=span.text.replace(old, new, 1))
+                    line.invalidate_text()
                     repaired += 1
                     break
     return repaired
@@ -696,6 +706,7 @@ def extract(
     ocr_lang: str = "eng",
     dpi: int = 300,
     repair_ocr: bool = False,
+    page_cover: bool = True,
     progress=None,
 ) -> tuple[List[Page], dict]:
     """Return (pages, metadata) extracted from the PDF at *path*."""
@@ -704,7 +715,9 @@ def extract(
     meta = dict(doc.metadata or {})
     meta["_toc"] = doc.get_toc(simple=True) or []
     meta["_page_count"] = doc.page_count
-    meta["_cover_render"] = _render_cover(doc)
+    # Rasterizing page 1 costs real time on every conversion; skip it when
+    # the caller already knows it will supply a cover of its own.
+    meta["_cover_render"] = _render_cover(doc) if page_cover else None
 
     ocr_available = ocr_mod.is_available() if ocr_mode != "never" else False
     if ocr_mode == "force" and not ocr_available:
