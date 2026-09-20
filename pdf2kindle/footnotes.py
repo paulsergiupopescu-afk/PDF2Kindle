@@ -113,6 +113,23 @@ def find_markers(line: Line, body_size: float = 0.0) -> List[Tuple[int, str]]:
 _EMBEDDED_MARKER_RE = re.compile(r"(?<=[^\W\d_])(\d{1,3})(?=[\s.,;:)\]\"'”’]|$)")
 
 
+# A number the typesetter put in brackets ("[12]") is a reference marker
+# stated as one. That is the difference from a bare digit, which has to be
+# corroborated against labels already found on the page before it can be
+# believed: a delimiter nobody writes by accident is its own evidence, so
+# these are recognized wherever they appear, including in a document whose
+# notes are all gathered at the very end and whose citing pages therefore
+# have no footnote zone to corroborate against.
+_BRACKET_MARKER_RE = re.compile(r"\[(\d{1,3})\]")
+
+
+def find_bracket_markers(text: str) -> List[Tuple[int, int, str]]:
+    """Return (start, end, label) for bracketed reference markers in *text*."""
+    if not text:
+        return []
+    return [(m.start(), m.end(), m.group(1)) for m in _BRACKET_MARKER_RE.finditer(text)]
+
+
 def find_embedded_markers(text: str, known_labels: set) -> List[Tuple[int, int, str]]:
     """Return (start, end, label) for markers OCR fused into body text.
 

@@ -170,12 +170,38 @@ def _space_threshold(gaps: List[float]) -> Optional[float]:
     return (a + b) / 2.0
 
 
+def _reads_as_words(text: str) -> bool:
+    """Does this line look like words rather than scattered letters?
+
+    Prose has very few one-letter words. A line that comes out mostly made
+    of them has not been respaced, it has been shredded.
+    """
+    tokens = text.split()
+    if len(tokens) < 4:
+        return True
+    singles = sum(1 for t in tokens if len(t) == 1 and t.isalpha())
+    # Half is a wide margin on purpose. A shredded line is not marginal --
+    # every letter becomes a token, so it lands above 80% -- while ordinary
+    # prose can carry a surprising number of real one-letter words in a
+    # short span ("an ally, a friend, a foe"), and refusing those would
+    # leave a genuine defect unrepaired for nothing.
+    return singles <= 0.5 * len(tokens)
+
+
 def _respace_line(ld: dict) -> None:
     """Put the missing spaces back into one raw line, in place.
 
     Only ever inserts, and only where the glyphs are actually far apart, so
     a line that already carries its spaces is unchanged.
     """
+    # Set the plain reading first, so that every span carries its text no
+    # matter what follows. A raw span holds glyphs, not a string, and an
+    # early return that left the string unset dropped the whole line from
+    # the document -- silently, since a line with no text is indistinguishable
+    # from a line that was never there.
+    for sd in ld.get("spans", []):
+        sd["text"] = "".join(c.get("c", "") for c in sd.get("chars", []))
+
     chars = [(c, sd) for sd in ld.get("spans", []) for c in sd.get("chars", [])]
     gaps: List[float] = []
     prev_x1 = None
@@ -188,6 +214,7 @@ def _respace_line(ld: dict) -> None:
     if thr is None:
         return
     prev_x1 = None
+    rebuilt: List[str] = []
     for sd in ld.get("spans", []):
         size = float(sd.get("size", 0.0)) or 1.0
         out: List[str] = []
@@ -198,7 +225,16 @@ def _respace_line(ld: dict) -> None:
                     out.append(" ")
             out.append(ch)
             prev_x1 = float(c["bbox"][2])
-        sd["text"] = "".join(out)
+        rebuilt.append("".join(out))
+    # A line's gaps always fall into two clusters if you insist on two, even
+    # when the line is perfectly well spaced already and the "wider" cluster
+    # is just ordinary letter spacing -- and then a space goes in after every
+    # letter: "K . B a r t h , C h u r c h D o g m a t i c s". So the result
+    # has to look like words before it is allowed to stand.
+    if not _reads_as_words("".join(rebuilt)):
+        return
+    for sd, text in zip(ld.get("spans", []), rebuilt):
+        sd["text"] = text
 
 
 def _recover_spaces(page: "pymupdf.Page", d: dict) -> dict:

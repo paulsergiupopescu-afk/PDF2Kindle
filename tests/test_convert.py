@@ -1419,3 +1419,115 @@ def test_missing_word_spaces_are_recovered_from_glyph_positions():
     assert thr is not None and 0.09 < thr < 0.15
     # one evenly-set cluster yields nothing
     assert _space_threshold([0.09] * 16) is None
+
+
+# --------------------------------------------------------------------------- #
+# Bracketed notes, unheaded note lists, printed contents pages
+# --------------------------------------------------------------------------- #
+
+def test_bracketed_markers_are_found_without_corroboration():
+    from pdf2kindle.footnotes import find_bracket_markers
+    got = find_bracket_markers("a minority.[3] Later still[12] and on")
+    assert [(s, e, lab) for s, e, lab in got] == [(11, 14, "3"), (26, 30, "12")]
+    assert find_bracket_markers("no markers here") == []
+
+
+def test_bracketed_marker_keeps_its_brackets_as_link_text():
+    """An unresolved marker must still read as the document printed it."""
+    from pdf2kindle.model import Line, Span
+    from pdf2kindle.structure import _paragraph_runs
+    line = Line(spans=[Span(text="a minority.[3] and on", font="F", size=10.0,
+                            flags=0, color=0, bbox=(0, 0, 100, 10), origin=(0, 0))],
+                bbox=(0, 0, 100, 10))
+    runs = _paragraph_runs([line], "p1-")
+    marker = [r for r in runs if r.noteref]
+    assert len(marker) == 1
+    assert marker[0].text == "[3]"
+    assert marker[0].noteref == "p1-3"
+
+
+def test_numbered_body_paragraphs_are_not_mistaken_for_a_note_list():
+    """Decrees and encyclicals number their paragraphs; those are the text."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _unheaded_notes_start
+    els = [
+        Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text=f"{i}. A paragraph of the document itself.")])
+        for i in range(1, 8)
+    ]
+    assert _unheaded_notes_start(els) is None
+
+
+def test_unheaded_bracketed_note_list_is_found():
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _unheaded_notes_start
+    els = [
+        Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="The last paragraph of the text.")]),
+        Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="[1] A first citation.")]),
+        Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="[2] A second citation.")]),
+        Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="[3] A third citation.")]),
+        Element(kind=ElementKind.PARAGRAPH, runs=[InlineRun(text="[4] A fourth citation.")]),
+    ]
+    assert _unheaded_notes_start(els) == 1
+
+
+def test_respacing_that_shreds_a_line_is_refused():
+    from pdf2kindle.extract import _reads_as_words
+    assert not _reads_as_words("K . B a r t h , C h u r c h D o g m a t i c s")
+    assert _reads_as_words("The state is one of a series of concepts")
+    assert _reads_as_words("an ally, a friend, a pilgrim")  # real one-letter words
+
+
+def test_every_raw_span_gets_text_even_when_respacing_is_refused():
+    """A raw span holds glyphs, not a string; leaving it unset drops the line."""
+    from pdf2kindle.extract import _respace_line
+    chars = [{"c": c, "bbox": (i * 5.0, 0.0, i * 5.0 + 4.0, 10.0)}
+             for i, c in enumerate("K. Barth, Church Dogmatics, IV/1")]
+    ld = {"spans": [{"size": 10.0, "chars": chars}]}
+    _respace_line(ld)
+    assert ld["spans"][0]["text"] == "K. Barth, Church Dogmatics, IV/1"
+
+
+def test_printed_contents_page_is_dropped_when_it_duplicates_the_book():
+    from pdf2kindle.model import Chapter, Element, ElementKind, InlineRun
+    def ch(title, words):
+        c = Chapter(title=title)
+        if words:
+            c.elements = [Element(kind=ElementKind.PARAGRAPH,
+                                  runs=[InlineRun(text=" ".join(["word"] * words))])]
+        return c
+    from pdf2kindle.structure import _drop_printed_toc
+    chapters = [
+        ch("Table of Contents I. Introduction", 2),
+        ch("II. Post-Conciliar Developments", 3),
+        ch("I. Introduction", 400),
+        ch("II. Post-Conciliar Developments and its Sub-heading", 500),
+    ]
+    kept = [c.title for c in _drop_printed_toc(chapters)]
+    assert kept == ["I. Introduction", "II. Post-Conciliar Developments and its Sub-heading"]
+
+
+def test_a_genuinely_short_chapter_is_not_dropped():
+    from pdf2kindle.model import Chapter, Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _drop_printed_toc
+    def ch(title, words):
+        c = Chapter(title=title)
+        c.elements = [Element(kind=ElementKind.PARAGRAPH,
+                              runs=[InlineRun(text=" ".join(["word"] * words))])]
+        return c
+    chapters = [ch("Preface", 20), ch("Dedication", 5), ch("I. Introduction", 400)]
+    assert len(_drop_printed_toc(chapters)) == 3
+
+
+def test_a_chapter_head_does_not_absorb_its_first_subhead():
+    """Bold over bold-italic is two headings, not one wrapped heading."""
+    from pdf2kindle.model import Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _merge_split_headings
+    flat = [
+        (7, Element(kind=ElementKind.HEADING, level=1, size=12.8,
+                    runs=[InlineRun(text="II. Post-Conciliar Developments: enriched by successive Popes")])),
+        (7, Element(kind=ElementKind.HEADING, level=4, size=12.8,
+                    runs=[InlineRun(text="Pope Saint Paul VI")])),
+    ]
+    merged = _merge_split_headings(flat)
+    assert len(merged) == 2
+    assert merged[1][1].text == "Pope Saint Paul VI"

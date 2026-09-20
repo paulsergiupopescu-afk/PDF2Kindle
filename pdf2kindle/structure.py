@@ -17,7 +17,8 @@ from typing import Dict, List, Optional, Tuple
 
 from .analyze import Analyzed, PageContent
 from .extract import _column_count
-from .footnotes import find_embedded_markers, find_markers, parse_page_notes
+from .footnotes import (find_bracket_markers, find_embedded_markers, find_markers,
+                        parse_page_notes)
 from .text import drop_break_hyphen, ends_hyphenated, normalize
 from .model import (
     Chapter,
@@ -74,7 +75,7 @@ _REFS_HEAD_RE = re.compile(
     r"further\s+reading|sources)\s*$",
     re.IGNORECASE,
 )
-_NOTE_ENTRY_RE = re.compile(r"^\s*(\d{1,3})[\.\)]?\s+(.*)$", re.DOTALL)
+_NOTE_ENTRY_RE = re.compile(r"^\s*\[?(\d{1,3})\]?[\.\)]?\s+(.*)$", re.DOTALL)
 # A printed contents list and an index are page-number machinery for paper.
 # Reflowed, their numbers point nowhere and the reader has a real nav TOC.
 _PRINT_NAV_RE = re.compile(r"^\s*(contents|table\s+of\s+contents|index)\s*$", re.IGNORECASE)
@@ -115,6 +116,21 @@ def _tail_text(runs: List[InlineRun]) -> str:
     return runs[-1].text if runs else ""
 
 
+def _merge_cuts(bracketed, embedded):
+    """Marker positions in one span, brackets winning any overlap."""
+    out = list(bracketed)
+    taken = [(s, e) for s, e, _ in out]
+    for s, e, label in embedded:
+        if not any(s < te and e > ts for ts, te in taken):
+            out.append((s, e, label))
+    return sorted(out, key=lambda t: t[0])
+
+
+def _run_label(run) -> str:
+    """The note label a marker run refers to, with any brackets removed."""
+    return run.text.strip().strip("[]").strip()
+
+
 def _paragraph_runs(
     lines: List[Line],
     note_prefix: str,
@@ -140,14 +156,19 @@ def _paragraph_runs(
                 runs.append(InlineRun(text=label, noteref=f"{note_prefix}{label}"))
                 continue
             embedded = find_embedded_markers(span.text, known_labels) if known_labels else []
-            if not embedded:
+            cuts = _merge_cuts(find_bracket_markers(span.text), embedded)
+            if not cuts:
                 _append_text(runs, span.text, span.bold, span.italic)
                 continue
             pos = 0
-            for start, end, label in embedded:
+            for start, end, label in cuts:
                 if start > pos:
                     _append_text(runs, span.text[pos:start], span.bold, span.italic)
-                runs.append(InlineRun(text=label, noteref=f"{note_prefix}{label}"))
+                # The marker keeps the form the document printed it in, so a
+                # marker that never finds its note still reads as "[12]"
+                # rather than being silently restyled into a superscript.
+                runs.append(InlineRun(text=span.text[start:end],
+                                      noteref=f"{note_prefix}{label}"))
                 pos = end
             if pos < len(span.text):
                 _append_text(runs, span.text[pos:], span.bold, span.italic)
@@ -494,6 +515,11 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
     merged into the chapter before it.
     """
     out: List[Tuple[int, Element]] = []
+    # The level of the fragment most recently merged in, which is what a
+    # further fragment has to match -- not the merged heading's own level,
+    # which is the most prominent of its parts and so does not track the
+    # text a wrap continues from.
+    tail_level: Optional[int] = None
     for page_no, el in flat:
         if (
             out
@@ -526,8 +552,18 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
             # covers the one case where a bare number legitimately precedes
             # its title.
             new_numbered_section = bool(_NUM_HEAD_RE.match(cur)) and not numbered
+            # A wrapped heading is one heading, so both halves are set the
+            # same way and detected at the same level. Two *different* levels
+            # are two headings -- a chapter head followed straight away by its
+            # first sub-head ("...successive Popes" over "Pope Saint Paul VI",
+            # bold over bold-italic) -- and gluing those together loses the
+            # sub-head from the table of contents and leaves the chapter
+            # titled with someone else's section. The bare-number-over-title
+            # case, where the levels legitimately differ, is "numbered" above.
+            same_level = (tail_level or 0) == (el.level or 0)
             continues = (
                 same_size
+                and same_level
                 and not new_numbered_section
                 and not ptxt.endswith((".", "?", "!", ":", ";"))
                 and len(ptxt) < 160
@@ -542,8 +578,10 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
                 # compared against the number's size instead and rejected.
                 if el.size > 0:
                     prev.size = el.size
+                tail_level = el.level
                 continue
         out.append((page_no, el))
+        tail_level = el.level
     return out
 
 
@@ -601,7 +639,7 @@ def _rehome_endnotes(chapters: List[Chapter]) -> None:
         for el in ch.elements:
             for run in el.runs:
                 if run.noteref:
-                    label = run.text.strip()
+                    label = _run_label(run)
                     if label:
                         cites.setdefault(label, [])
                         if i not in cites[label]:
@@ -651,7 +689,7 @@ def _resolve_notes(chapter: Chapter) -> None:
                 continue
             if run.noteref in by_id:
                 continue  # already points at a note on the citing page
-            label = run.text.strip()
+            label = _run_label(run)
             target = by_label.get(label)
             if target is not None and label not in ambiguous:
                 run.noteref = target.note_id
@@ -780,6 +818,48 @@ def _split_by_headings(flat, notes_by_page) -> List[Chapter]:
 # Academic post-processing
 # --------------------------------------------------------------------------- #
 
+# How long a run of consecutively numbered entries has to be before it is
+# taken for a note list on its own evidence. Three is already far past
+# coincidence, and a document with only one or two notes still has them
+# found the ordinary way, under a heading.
+_UNHEADED_NOTES_MIN = 3
+# Only an explicitly delimited label can announce a note list by itself.
+_BRACKET_ENTRY_RE = re.compile(r"^\s*\[(\d{1,3})\]\s*(.*)$", re.DOTALL)
+
+
+def _unheaded_notes_start(els: List[Element]) -> Optional[int]:
+    """Where a note list begins that no heading announces.
+
+    A web page printed to PDF puts its notes at the foot of the document
+    with nothing but the numbering to mark them -- no "Notes" line, just
+    "[1]" following straight on from the last paragraph of the text.
+
+    With no heading to go on, the labels have to carry the whole claim, so
+    only the bracketed form counts here. A document that numbers its own
+    paragraphs -- as decrees, canons and encyclicals do -- opens paragraph
+    after paragraph with "1.", "2.", "3.", and reading those as a note list
+    swallows the text itself: the first five paragraphs of the document this
+    was written for went missing that way. "[1]" is never how a paragraph of
+    prose begins.
+    """
+    for i, el in enumerate(els):
+        if el.kind != ElementKind.PARAGRAPH:
+            continue
+        m = _BRACKET_ENTRY_RE.match(el.text)
+        if not m or m.group(1) != "1":
+            continue
+        want = 2
+        for nxt in els[i + 1:]:
+            if nxt.kind != ElementKind.PARAGRAPH:
+                break
+            m2 = _BRACKET_ENTRY_RE.match(nxt.text)
+            if m2 and m2.group(1) == str(want):
+                want += 1
+                if want > _UNHEADED_NOTES_MIN:
+                    return i
+    return None
+
+
 def _extract_endnotes(chapter: Chapter, idx: int) -> None:
     """Move a trailing 'Notes'/'Endnotes' section into pop-up notes and link them."""
     els = chapter.elements
@@ -788,16 +868,21 @@ def _extract_endnotes(chapter: Chapter, idx: int) -> None:
         if el.kind == ElementKind.HEADING and _NOTES_HEAD_RE.match(el.text.strip()):
             start = i
             break
-    if start is None:
-        return
+    if start is not None:
+        first, drop_from = start + 1, start
+    else:
+        found = _unheaded_notes_start(els)
+        if found is None:
+            return
+        first = drop_from = found
 
     prefix = f"en{idx}-"
     note_map: Dict[str, Element] = {}
     order: List[Element] = []
-    consumed_to = start
+    consumed_to = first - 1
     cur: Optional[Element] = None
 
-    for el in els[start + 1:]:
+    for el in els[first:]:
         if el.kind != ElementKind.PARAGRAPH:
             break  # a non-paragraph (e.g. the next heading) ends the notes block
         m = _NOTE_ENTRY_RE.match(el.text)
@@ -828,7 +913,7 @@ def _extract_endnotes(chapter: Chapter, idx: int) -> None:
 
     # Drop the "Notes" heading and its note-body paragraphs from the body;
     # the notes are re-emitted as the chapter's pop-up footnote section.
-    chapter.elements = els[:start] + els[consumed_to + 1:]
+    chapter.elements = els[:drop_from] + els[consumed_to + 1:]
 
     existing_ids = {f.note_id for f in chapter.footnotes}
     for note in order:
@@ -839,7 +924,7 @@ def _extract_endnotes(chapter: Chapter, idx: int) -> None:
     for el in chapter.elements:
         for run in el.runs:
             if run.noteref and run.noteref not in existing_ids:
-                label = run.text.strip()
+                label = _run_label(run)
                 if label in note_map:
                     run.noteref = note_map[label].note_id
 
@@ -896,6 +981,7 @@ def build_document(
 
     if not keep_print_nav:
         chapters = [c for c in chapters if not _PRINT_NAV_RE.match(c.title.strip())] or chapters
+        chapters = _drop_printed_toc(chapters) or chapters
 
     for i, ch in enumerate(chapters):
         if not keep_print_nav:
@@ -927,6 +1013,67 @@ def build_document(
                 break
 
     return doc
+
+
+# A contents entry carries a heading and nothing else; anything with real
+# text behind it is a chapter, however short.
+_TOC_ENTRY_MAX_WORDS = 60
+# A printed contents list sits at the front of the book, not in the middle.
+_TOC_SEARCH_DEPTH = 8
+
+
+def _head_key(title: str) -> str:
+    """A heading reduced to what it would match as a contents entry."""
+    t = re.sub(r"^\s*(table\s+of\s+contents|contents)\s*", "", title.strip(),
+               flags=re.IGNORECASE)
+    return " ".join(t.lower().split())
+
+
+def _same_heading(a: str, b: str) -> bool:
+    """Do these two headings name the same section?
+
+    Not always character for character: a chapter heading immediately
+    followed by its first sub-heading arrives as one title ("...successive
+    Popes Pope Saint Paul VI") while the contents page lists only the
+    chapter, so the entry is a prefix of the chapter rather than equal to
+    it. Short headings still have to match exactly, since a prefix of a few
+    characters means nothing.
+    """
+    if a == b:
+        return True
+    shorter, longer = sorted((a, b), key=len)
+    return len(shorter) >= 12 and longer.startswith(shorter)
+
+
+def _drop_printed_toc(chapters: List[Chapter]) -> List[Chapter]:
+    """Drop a printed contents list that the chapter split turned into chapters.
+
+    The book's own contents page is a list of the headings that follow it, and
+    heading detection cannot help reading it as headings -- that is exactly
+    what it is. Split on those, it becomes a run of chapters at the front
+    holding a line or two each, every one of them a duplicate of a real
+    chapter further on, so the reader meets each title twice and the first
+    five entries in the table of contents lead nowhere.
+
+    What identifies them is the duplication, not the wording: an entry with
+    no text of its own whose title reappears later on a chapter that does
+    have text. That also keeps a genuine short chapter safe, since nothing
+    later repeats its title. Page numbers are meaningless once text reflows,
+    so nothing of value is lost.
+    """
+    words = [sum(len(el.text.split()) for el in ch.elements) for ch in chapters]
+    keys = [_head_key(ch.title) for ch in chapters]
+    drop = set()
+    for i in range(min(len(chapters), _TOC_SEARCH_DEPTH)):
+        if words[i] > _TOC_ENTRY_MAX_WORDS or not keys[i]:
+            continue
+        if any(_same_heading(keys[i], keys[j]) and words[j] > words[i]
+               for j in range(i + 1, len(chapters))):
+            drop.add(i)
+    # One such chapter is a coincidence; a run of them is a contents page.
+    if len(drop) < 2:
+        return chapters
+    return [ch for i, ch in enumerate(chapters) if i not in drop]
 
 
 def _drop_front_matter_lists(chapter: Chapter) -> None:
