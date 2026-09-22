@@ -57,11 +57,11 @@ class DocumentStatistics:
 
 _WORDS = re.compile(r"\w+", re.UNICODE)
 _TOC_HEADING = re.compile(
-    r"^\\s*(contents|table\\s+of\\s+contents|list\\s+of\\s+(figures|tables|illustrations|maps)|"
-    r"cuprins|sumar|sommaire|inhalt|tabla\\s+de\\s+contenido|table\\s+des\\s+matières)\\s*$",
+    r"^\s*(contents|table\s+of\s+contents|list\s+of\s+(figures|tables|illustrations|maps)|"
+    r"cuprins|sumar|sommaire|inhalt|tabla\s+de\s+contenido|table\s+des\s+matières)\s*$",
     re.I,
 )
-_TOC_LEADER = re.compile(r"\\.{4,}|…{2,}")
+_TOC_LEADER = re.compile(r"\.{4,}|…{2,}")
 _COPYRIGHT = re.compile(r"\b(copyright|all rights reserved|isbn)\b", re.I)
 _INDEX = re.compile(r"^\s*index\s*$", re.I)
 _BIB = re.compile(r"^\s*(bibliography|references|works cited|sources)\s*$", re.I)
