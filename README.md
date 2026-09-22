@@ -1,3 +1,15 @@
+## Current reconstruction features
+
+The converter now performs document-level analysis before semantic reconstruction and supports:
+- academic heading hierarchy and nested navigation
+- conservative table reconstruction
+- bibliography/reference hanging indents
+- footnote and chapter-end endnote linking
+- optional source-page EPUB page-break landmarks (--preserve-page-breaks)
+- conservative intra-chapter section cross-reference links
+- EPUB quality auditing for malformed XML, missing images, dead note links, page furniture, page breaks, and dead internal links
+- regression tests and GitHub Actions CI
+
 # pdf2kindle
 
 Convert PDFs into clean, **reflowable Kindle-ready EPUBs** — not screenshots of
