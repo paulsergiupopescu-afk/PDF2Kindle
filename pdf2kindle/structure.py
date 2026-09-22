@@ -340,6 +340,72 @@ def _is_blockquote(lines: List[Line], body_left: float, body_size: float, page_w
 
 
 # --------------------------------------------------------------------------- #
+# Table reconstruction
+# --------------------------------------------------------------------------- #
+
+def _table_from_group(group: List[Line]) -> Optional[List[List[str]]]:
+    """Recognize a simple text table from repeated span x-positions.
+
+    PDF tables often expose each cell as a separate span. We deliberately use
+    conservative geometry here: at least three rows, at least two cells per
+    row, and stable column positions across rows. If the geometry is
+    ambiguous we keep the original paragraphs rather than manufacturing a
+    bad table.
+    """
+    if len(group) < 3:
+        return None
+    rows: List[List[Tuple[float, str]]] = []
+    for line in group:
+        cells = [(sp.bbox[0], sp.text.strip()) for sp in line.spans if sp.text.strip()]
+        if len(cells) < 2:
+            return None
+        rows.append(cells)
+
+    # A table should have a consistent number of columns. Allow one missing
+    # cell, which is common for a blank cell at the end of a row.
+    counts = [len(r) for r in rows]
+    columns = max(set(counts), key=counts.count)
+    if columns < 2 or sum(c == columns for c in counts) < len(rows) - 1:
+        return None
+
+    # Cluster x positions into columns. A cell beginning within this tolerance
+    # of a known column is treated as the same column.
+    tolerance = 8.0
+    centers: List[float] = []
+    for row in rows:
+        for x, _ in row:
+            if not any(abs(x - c) <= tolerance for c in centers):
+                centers.append(x)
+    centers.sort()
+    if len(centers) != columns:
+        return None
+
+    aligned: List[List[str]] = []
+    for row in rows:
+        out = [""] * columns
+        for x, text in row:
+            idx = min(range(columns), key=lambda i: abs(x - centers[i]))
+            if abs(x - centers[idx]) > tolerance or out[idx]:
+                return None
+            out[idx] = text
+        aligned.append(out)
+
+    # Require actual multi-column alignment, not merely styled text fragments.
+    # At least two columns must contain content on most rows.
+    populated = sum(sum(bool(c) for c in row) >= 2 for row in aligned)
+    if populated < len(aligned) - 1:
+        return None
+
+    # Long prose lines with stylistic spans are not tables. Tables tend to have
+    # short cells and stable row geometry.
+    nonempty = [c for row in aligned for c in row if c]
+    if not nonempty or sum(len(c.split()) <= 12 for c in nonempty) / len(nonempty) < 0.85:
+        return None
+
+    return aligned
+
+
+# --------------------------------------------------------------------------- #
 # Flow building
 # --------------------------------------------------------------------------- #
 
@@ -436,6 +502,14 @@ def _build_flow(
             ]
 
         for group in _group_paragraphs(page, analyzed.body_size, analyzed.line_height):
+            if academic:
+                table_rows = _table_from_group(group)
+                if table_rows is not None:
+                    flat.append((page.number, Element(
+                        kind=ElementKind.TABLE, table_rows=table_rows
+                    )))
+                    continue
+
             if len(group) == 1:
                 level = _is_heading(group[0], analyzed.body_size)
                 size = group[0].dominant_size if level else 0.0
