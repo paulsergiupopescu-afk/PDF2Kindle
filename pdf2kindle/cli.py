@@ -41,6 +41,11 @@ def _add_convert(sub: argparse._SubParsersAction) -> None:
              "wrong (needs Tesseract plus a hunspell dictionary for --ocr-lang)",
     )
     p.add_argument(
+        "--preserve-page-breaks",
+        action="store_true",
+        help="emit EPUB page-break landmarks at source PDF page boundaries",
+    )
+    p.add_argument(
         "--keep-print-nav",
         action="store_true",
         help="keep the book's printed Contents and Index chapters (dropped by "
@@ -112,6 +117,7 @@ def main(argv=None) -> int:
         repair_ocr=args.repair_ocr,
         profile=args.profile,
         keep_print_nav=args.keep_print_nav,
+        preserve_page_breaks=args.preserve_page_breaks,
     )
     try:
         result = convert_pdf(input_path, output_path, opts, progress=progress)
