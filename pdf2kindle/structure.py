@@ -907,17 +907,48 @@ def _style_references(chapter: Chapter) -> None:
 
 
 def _assign_nav(chapter: Chapter, idx: int) -> None:
-    """Anchor sub-headings and record them for a nested table of contents."""
+    """Anchor sub-headings, build the nested TOC, and link section references."""
     levels = [el.level for el in chapter.elements if el.kind == ElementKind.HEADING]
     if not levels:
         return
     top = min(levels)
     k = 0
+    targets: Dict[str, str] = {}
     for el in chapter.elements:
         if el.kind == ElementKind.HEADING and el.level > top:
             el.anchor = f"sec-{idx}-{k}"
             chapter.subheads.append(SubHead(anchor=el.anchor, title=el.text.strip(), level=el.level))
+            m = re.match(r"^\s*(\d+(?:\.\d+){0,3})\.?\s+", el.text.strip())
+            if m:
+                targets[m.group(1)] = el.anchor
             k += 1
+
+    # Only link references for which a concrete local target exists. This is
+    # intentionally conservative: a false hyperlink is worse than plain text.
+    ref_re = re.compile(r"\b(?:section|sec\.)\s+(\d+(?:\.\d+){0,3})\b", re.I)
+    for el in chapter.elements:
+        if el.kind not in (ElementKind.PARAGRAPH, ElementKind.BLOCKQUOTE, ElementKind.CAPTION):
+            continue
+        rebuilt: List[InlineRun] = []
+        for run in el.runs:
+            if run.href or run.noteref:
+                rebuilt.append(run)
+                continue
+            pos = 0
+            for m in ref_re.finditer(run.text):
+                target = targets.get(m.group(1))
+                if not target:
+                    continue
+                if m.start() > pos:
+                    rebuilt.append(InlineRun(text=run.text[pos:m.start()], bold=run.bold, italic=run.italic))
+                rebuilt.append(InlineRun(text=m.group(0), bold=run.bold, italic=run.italic, href=f"#{target}"))
+                pos = m.end()
+            if pos:
+                if pos < len(run.text):
+                    rebuilt.append(InlineRun(text=run.text[pos:], bold=run.bold, italic=run.italic))
+            else:
+                rebuilt.append(run)
+        el.runs = rebuilt
 
 
 # --------------------------------------------------------------------------- #
