@@ -350,7 +350,7 @@ def _render_element(
     if el.kind == ElementKind.PAGE_BREAK:
         page_no = el.level or ""
         ident = quoteattr(el.anchor or f"page-{page_no}")
-        return f'<span epub:type="pagebreak" role="doc-pagebreak" id={ident} title={quoteattr(str(page_no))}></span>\\n'
+        return f'<span epub:type="pagebreak" role="doc-pagebreak" id={ident} title={quoteattr(str(page_no))}></span>\n'
     if el.kind == ElementKind.HEADING:
         return _render_heading(el)
     if el.kind == ElementKind.IMAGE:
