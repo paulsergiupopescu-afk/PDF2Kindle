@@ -259,6 +259,9 @@ def _render_runs(runs: List[InlineRun]) -> str:
                 f'id="{ref_id}-ref" href="#{ref_id}">{escape(r.text)}</a></sup>'
             )
             continue
+        if r.href:
+            out.append(f'<a href={quoteattr(r.href)}>{escape(r.text)}</a>')
+            continue
         text = escape(r.text)
         if r.sup:
             out.append(f"<sup>{text}</sup>")
