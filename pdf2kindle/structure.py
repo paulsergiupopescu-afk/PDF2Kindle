@@ -19,7 +19,7 @@ from .analyze import Analyzed, PageContent
 from .extract import _column_count
 from .footnotes import find_embedded_markers, find_markers, parse_page_notes
 from .text import drop_break_hyphen, ends_hyphenated, normalize
-from .document_analysis import DocumentStatistics
+from .document_analysis import DocumentStatistics, PageType
 from .model import (
     Chapter,
     Document,
@@ -78,7 +78,11 @@ _REFS_HEAD_RE = re.compile(
 _NOTE_ENTRY_RE = re.compile(r"^\s*(\d{1,3})[\.\)]?\s+(.*)$", re.DOTALL)
 # A printed contents list and an index are page-number machinery for paper.
 # Reflowed, their numbers point nowhere and the reader has a real nav TOC.
-_PRINT_NAV_RE = re.compile(r"^\s*(contents|table\s+of\s+contents|index)\s*$", re.IGNORECASE)
+_PRINT_NAV_RE = re.compile(
+    r"^\s*(contents|table\s+of\s+contents|cuprins|sumar|sommaire|inhalt|"
+    r"tabla\s+de\s+contenido|table\s+des\s+matières)\s*$",
+    re.IGNORECASE,
+)
 # A "List of Illustrations" / "Maps" / "Tables" section is a caption ...... page#
 # tabular layout that print alone can lay out; reflowed, the page numbers are
 # meaningless and the caption/number pairing often garbles across lines. Drop
@@ -699,6 +703,26 @@ def _resolve_notes(chapter: Chapter) -> None:
     )
 
 
+def _drop_classified_print_nav(
+    flat: List[Tuple[int, Element]],
+    document_stats: Optional[DocumentStatistics],
+) -> List[Tuple[int, Element]]:
+    """Drop pages confidently classified as printed table-of-contents material.
+
+    The page number is retained in the flat stream until chapter splitting,
+    so global document analysis can remove a TOC even when it appears at the
+    back of a book rather than in the front matter.
+    """
+    if document_stats is None:
+        return flat
+    contents_pages = {
+        c.number for c in document_stats.classifications
+        if c.page_type == PageType.CONTENTS and c.confidence >= 0.80
+    }
+    if not contents_pages:
+        return flat
+    return [(page_no, el) for page_no, el in flat if page_no not in contents_pages]
+
 def _insert_page_breaks(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Element]]:
     """Insert semantic EPUB page-break markers at source PDF page boundaries."""
     out: List[Tuple[int, Element]] = []
@@ -970,6 +994,8 @@ def build_document(
 ) -> Document:
     academic = profile == "academic"
     flat, notes_by_page = _build_flow(analyzed, page_images, academic, keep_print_nav)
+    if not keep_print_nav:
+        flat = _drop_classified_print_nav(flat, document_stats)
     flat = _merge_split_headings(flat)
     flat = _merge_split_paragraphs(flat)
     if preserve_page_breaks:
