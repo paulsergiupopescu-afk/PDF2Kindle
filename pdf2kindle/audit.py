@@ -30,6 +30,7 @@ class Audit:
     words: int = 0
     noterefs: int = 0
     notes: int = 0
+    tables: int = 0
     dead_links: List[str] = field(default_factory=list)
     unlinked_markers: int = 0
     stylesheet_linked: bool = False
@@ -51,7 +52,7 @@ class Audit:
     def as_dict(self) -> Dict:
         return {
             "chapters": self.chapters, "words": self.words,
-            "noterefs": self.noterefs, "notes": self.notes,
+            "noterefs": self.noterefs, "notes": self.notes, "tables": self.tables,
             "dead_links": self.dead_links, "unlinked_markers": self.unlinked_markers,
             "stylesheet_linked": self.stylesheet_linked, "has_cover": self.has_cover,
             "malformed": self.malformed, "missing_images": self.missing_images,
@@ -83,6 +84,7 @@ def audit_epub(path: str) -> Audit:
             notes = set(_NOTE_RE.findall(c))
             a.noterefs += len(refs)
             a.notes += len(notes)
+            a.tables += len(re.findall(r"<table(?:\\s|>)", c, re.IGNORECASE))
             a.dead_links += [f"{n}#{r}" for r in sorted(refs - notes)]
             a.unlinked_markers += len(re.findall(r"<sup>(?!<a)", c))
 
@@ -106,6 +108,7 @@ def format_audit(a: Audit) -> str:
     lines = [
         f"  chapters   {a.chapters}",
         f"  words      {a.words:,}",
+        f"  tables     {a.tables}",
         f"  notes      {a.notes} bodies / {a.noterefs} linked markers"
         + (f", {a.unlinked_markers} unlinked" if a.unlinked_markers else ""),
         f"  stylesheet {'linked' if a.stylesheet_linked else 'MISSING'}",
