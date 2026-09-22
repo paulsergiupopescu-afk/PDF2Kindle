@@ -130,6 +130,8 @@ class InlineRun:
     sup: bool = False
     # If set, this run is a footnote reference marker with the given note id.
     noteref: Optional[str] = None
+    # Optional intra-EPUB hyperlink target (for reconstructed cross-references).
+    href: Optional[str] = None
 
 
 @dataclass
