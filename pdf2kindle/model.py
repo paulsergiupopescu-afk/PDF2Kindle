@@ -116,6 +116,7 @@ class ElementKind(str, Enum):
     REFERENCE = "reference"  # bibliography entry (hanging indent)
     TABLE = "table"  # reconstructed table with semantic rows/cells
     FOOTNOTE = "footnote"  # a collected note body (rendered at chapter end)
+    PAGE_BREAK = "page_break"  # optional source-page boundary for fixed pagination references
 
 
 @dataclass
