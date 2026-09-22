@@ -56,7 +56,12 @@ class DocumentStatistics:
         return dict(out)
 
 _WORDS = re.compile(r"\w+", re.UNICODE)
-_TOC = re.compile(r"\b(table of contents|contents|list of (figures|tables|illustrations|maps))\b", re.I)
+_TOC_HEADING = re.compile(
+    r"^\\s*(contents|table\\s+of\\s+contents|list\\s+of\\s+(figures|tables|illustrations|maps)|"
+    r"cuprins|sumar|sommaire|inhalt|tabla\\s+de\\s+contenido|table\\s+des\\s+matières)\\s*$",
+    re.I,
+)
+_TOC_LEADER = re.compile(r"\\.{4,}|…{2,}")
 _COPYRIGHT = re.compile(r"\b(copyright|all rights reserved|isbn)\b", re.I)
 _INDEX = re.compile(r"^\s*index\s*$", re.I)
 _BIB = re.compile(r"^\s*(bibliography|references|works cited|sources)\s*$", re.I)
@@ -114,8 +119,14 @@ def classify_pages(pages: List[Page], stats_seed: Optional[Tuple[float,float,flo
         if p.number == 0 and (len(p.images) or len(words) < 120):
             ev.append(Evidence("first-page-cover", 0.45))
 
-        if p.number < 4 and _TOC.search(txt):
+        toc_heading = any(_TOC_HEADING.match(line.text.strip()) for line in p.lines[:8])
+        toc_leaders = sum(1 for line in p.lines if _TOC_LEADER.search(line.text)) >= 2
+        if toc_heading:
             ev.append(Evidence("contents-keyword", 0.85))
+        elif toc_leaders and len(p.lines) >= 8:
+            # A heading can be lost by OCR/layout extraction. Require several
+            # dot-leader rows before treating the page as a printed TOC.
+            ev.append(Evidence("contents-shape", 0.65))
 
         if p.number < 6 and _COPYRIGHT.search(txt):
             ev.append(Evidence("copyright-keyword", 0.75))
@@ -141,8 +152,9 @@ def classify_pages(pages: List[Page], stats_seed: Optional[Tuple[float,float,flo
 
         candidates = [
             (PageType.COVER, sum(e.weight for e in ev if e.signal == "first-page-cover")),
-            (PageType.CONTENTS, sum(e.weight for e in ev if e.signal == "contents-keyword") +
-             (0.25 if "many-short-lines" in {e.signal for e in ev} else 0)),
+            (PageType.CONTENTS,
+             sum(e.weight for e in ev if e.signal in {"contents-keyword", "contents-shape"}) +
+             (0.15 if "many-short-lines" in {e.signal for e in ev} else 0)),
             (PageType.COPYRIGHT, sum(e.weight for e in ev if e.signal == "copyright-keyword")),
             (PageType.INDEX, sum(e.weight for e in ev if e.signal == "index-heading")),
             (PageType.BIBLIOGRAPHY, sum(e.weight for e in ev if e.signal == "bibliography-heading")),
