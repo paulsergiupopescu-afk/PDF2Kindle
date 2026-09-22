@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional
 
 from .analyze import analyze
+from .document_analysis import classify_pages
 from .epub import build_epub
 from .extract import extract
 from .model import ElementKind, ImageBlock
@@ -19,6 +20,7 @@ log = logging.getLogger("pdf2kindle")
 @dataclass
 class ConvertOptions:
     title: str = ""
+    preserve_page_breaks: bool = False
     author: str = ""
     language: str = "en"
     ocr: str = "auto"  # "auto" | "force" | "never"
@@ -71,6 +73,9 @@ def convert_pdf(
     page_images: Dict[int, List[ImageBlock]] = {p.number: p.images for p in pages}
     ocr_pages = sum(1 for p in pages if p.ocr)
 
+    report("Analyzing document", 0.57)
+    document_stats = classify_pages(pages)
+
     report("Analyzing layout", 0.6)
     analyzed = analyze(pages)
 
@@ -84,6 +89,8 @@ def convert_pdf(
         language=opts.language,
         profile=opts.profile,
         keep_print_nav=opts.keep_print_nav,
+        document_stats=document_stats,
+        preserve_page_breaks=opts.preserve_page_breaks,
     )
 
     report("Writing EPUB", 0.9)
