@@ -19,6 +19,7 @@ from .analyze import Analyzed, PageContent
 from .extract import _column_count
 from .footnotes import find_embedded_markers, find_markers, parse_page_notes
 from .text import drop_break_hyphen, ends_hyphenated, normalize
+from .document_analysis import DocumentStatistics
 from .model import (
     Chapter,
     Document,
@@ -698,6 +699,23 @@ def _resolve_notes(chapter: Chapter) -> None:
     )
 
 
+def _insert_page_breaks(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Element]]:
+    """Insert semantic EPUB page-break markers at source PDF page boundaries."""
+    out: List[Tuple[int, Element]] = []
+    previous_page: Optional[int] = None
+    for page_no, element in flat:
+        if previous_page is not None and page_no != previous_page:
+            marker = Element(
+                kind=ElementKind.PAGE_BREAK,
+                anchor=f"page-{page_no + 1}",
+            )
+            marker.level = page_no + 1
+            out.append((page_no, marker))
+        out.append((page_no, element))
+        previous_page = page_no
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # Chapter splitting
 # --------------------------------------------------------------------------- #
@@ -916,11 +934,15 @@ def build_document(
     language: str = "en",
     profile: str = "academic",
     keep_print_nav: bool = False,
+    document_stats: Optional[DocumentStatistics] = None,
+    preserve_page_breaks: bool = False,
 ) -> Document:
     academic = profile == "academic"
     flat, notes_by_page = _build_flow(analyzed, page_images, academic, keep_print_nav)
     flat = _merge_split_headings(flat)
     flat = _merge_split_paragraphs(flat)
+    if preserve_page_breaks:
+        flat = _insert_page_breaks(flat)
 
     toc = meta.get("_toc") or []
     chapters = _split_by_toc(flat, notes_by_page, toc) if toc else None
