@@ -347,6 +347,10 @@ def _render_opening_paragraph(el: Element) -> Optional[str]:
 def _render_element(
     el: Element, image_href_for: Callable[[Element], str], prev_heading: bool, prev_h1: bool
 ) -> str:
+    if el.kind == ElementKind.PAGE_BREAK:
+        page_no = el.level or ""
+        ident = quoteattr(el.anchor or f"page-{page_no}")
+        return f'<span epub:type="pagebreak" role="doc-pagebreak" id={ident} title={quoteattr(str(page_no))}></span>\\n'
     if el.kind == ElementKind.HEADING:
         return _render_heading(el)
     if el.kind == ElementKind.IMAGE:
