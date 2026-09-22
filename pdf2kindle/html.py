@@ -154,6 +154,26 @@ p.reference {
   hyphens: none;
 }
 
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 1.2em 0;
+  page-break-inside: avoid;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  text-align: left;
+}
+th, td {
+  border: 1px solid #aaa;
+  padding: 0.35em 0.45em;
+  vertical-align: top;
+}
+th {
+  font-weight: bold;
+}
 div.image {
   text-align: center;
   margin: 1.3em 0;
@@ -340,6 +360,13 @@ def _render_element(
         return f'<p class="caption">{_render_runs(el.runs)}</p>\n'
     if el.kind == ElementKind.REFERENCE:
         return f'<p class="reference">{_render_runs(el.runs)}</p>\n'
+    if el.kind == ElementKind.TABLE:
+        rows = []
+        for ri, row in enumerate(el.table_rows):
+            tag = "th" if ri == 0 else "td"
+            cells = "".join(f"<{tag}>{escape(cell)}</{tag}>" for cell in row)
+            rows.append(f"<tr>{cells}</tr>")
+        return '<div class="table-wrap"><table>\\n' + "\\n".join(rows) + '\\n</table></div>\\n'
     # paragraph
     if prev_h1:
         rendered = _render_opening_paragraph(el)
