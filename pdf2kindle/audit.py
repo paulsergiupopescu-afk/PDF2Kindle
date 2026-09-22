@@ -38,6 +38,9 @@ class Audit:
     malformed: List[str] = field(default_factory=list)
     missing_images: List[str] = field(default_factory=list)
     furniture: List[str] = field(default_factory=list)
+    pagebreaks: int = 0
+    internal_links: int = 0
+    dead_internal_links: List[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -87,6 +90,11 @@ def audit_epub(path: str) -> Audit:
             a.tables += len(re.findall(r"<table(?:\\s|>)", c, re.IGNORECASE))
             a.dead_links += [f"{n}#{r}" for r in sorted(refs - notes)]
             a.unlinked_markers += len(re.findall(r"<sup>(?!<a)", c))
+            a.pagebreaks += len(re.findall(r'epub:type="pagebreak"', c))
+            links = re.findall(r'<a[^>]+href="#([^"]+)"', c)
+            a.internal_links += len(links)
+            ids = set(re.findall(r'\bid="([^"]+)"', c))
+            a.dead_internal_links += [f"{n}#{target}" for target in links if target not in ids and target not in notes]
 
             body = c[: c.find("<section")] if "<section" in c else c
             for p in _PARA_RE.findall(body):
@@ -109,6 +117,8 @@ def format_audit(a: Audit) -> str:
         f"  chapters   {a.chapters}",
         f"  words      {a.words:,}",
         f"  tables     {a.tables}",
+        f"  pagebreaks {a.pagebreaks}",
+        f"  int. links {a.internal_links}",
         f"  notes      {a.notes} bodies / {a.noterefs} linked markers"
         + (f", {a.unlinked_markers} unlinked" if a.unlinked_markers else ""),
         f"  stylesheet {'linked' if a.stylesheet_linked else 'MISSING'}",
@@ -119,6 +129,7 @@ def format_audit(a: Audit) -> str:
         ("malformed XML", a.malformed),
         ("missing images", a.missing_images),
         ("page furniture left in text", a.furniture),
+        ("dead internal links", a.dead_internal_links),
     ):
         if items:
             lines.append(f"  ! {len(items)} {label}: {', '.join(items[:3])}"
