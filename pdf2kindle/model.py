@@ -114,6 +114,7 @@ class ElementKind(str, Enum):
     IMAGE = "image"
     CAPTION = "caption"  # figure/table caption ("Figure 1.2 …")
     REFERENCE = "reference"  # bibliography entry (hanging indent)
+    TABLE = "table"  # reconstructed table with semantic rows/cells
     FOOTNOTE = "footnote"  # a collected note body (rendered at chapter end)
 
 
@@ -139,6 +140,8 @@ class Element:
     anchor: str = ""  # id for intra-chapter navigation (headings)
     # image payload
     image: Optional[ImageBlock] = None
+    # table payload: each inner list is one row, each string one cell.
+    table_rows: List[List[str]] = field(default_factory=list)
     # footnote payload
     note_id: Optional[str] = None
     note_label: str = ""
