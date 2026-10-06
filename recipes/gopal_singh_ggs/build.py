@@ -18,6 +18,7 @@ per-page notes turned into pop-up footnotes.
 from __future__ import annotations
 
 import argparse
+import difflib
 import datetime as dt
 import html
 import os
@@ -90,9 +91,9 @@ SECTIONS: List[Section] = [
     Section("preface", "Preface", 9, None, kind="prose"),
     Section("introduction", "Introduction", 11, None, kind="prose"),
     Section("opinions", "Some Opinions", 14, None, kind="prose"),
-    Section("compilation", "On the Compilation of the Guru Granth", 18, None, kind="prose"),
-    Section("philosophy", "On the Philosophy of Sikh Religion", 20, None, kind="prose"),
-    Section("story", "The Story of the Sikh Gurus", 35, None, kind="prose"),
+    Section("compilation", "On the Compilation of the Guru Granth", 18, None, kind="prose", label="I"),
+    Section("philosophy", "On the Philosophy of Sikh Religion", 20, None, kind="prose", label="II"),
+    Section("story", "The Story of the Sikh Gurus", 35, None, kind="prose", label="III"),
     Section("japu", "Japu", 49, None, label="Meditations"),
     Section("sodaru", "So-Daru", 60, r"So.?Dar"),
     Section("sohila", "Sohilā", 63, r"Sohil"),
@@ -259,7 +260,7 @@ def marker_html(mk: str) -> str:
 def heading_html(t: str) -> str:
     """Hymn title (already rendered HTML): 'Gauri Guareri M. 3' → name in
     small caps, the mahala ("M. 3": the Guru's number) in italic."""
-    m = re.match(r"^(.*?)(,?\s*M\.\s*\d+.*)$", t)
+    m = re.match(r"^(.*?)(,?\s*M\.\s*(?:<a [^>]*><sup>\d+</sup></a>)?\s*\d+.*)$", t)
     if m and m.group(1).strip():
         return f'{m.group(1).strip()} <span class="mah">{m.group(2).strip(", ")}</span>'
     return t
@@ -571,8 +572,19 @@ def render_chapter(ch: Chapter, pages: Dict[int, Page], angs: List[Tuple[int, st
             out.append('<div class="qverse">' + "".join(qverse) + "</div>")
             qverse = []
 
+    def repeats_opener(b: Block) -> bool:
+        """A prose chapter's printed number ("II") or title, already set by the opener."""
+        t = re.sub("\u2063[\\d:]+\u2063", "", b.text or "").strip(" .")
+        if re.fullmatch(r"[IVXL]+", t):
+            return True
+        a = re.sub(r"[^a-z]", "", fold(t).lower())
+        z = re.sub(r"[^a-z]", "", fold(s.title).lower())
+        return bool(a) and difflib.SequenceMatcher(None, a, z).ratio() > 0.85
+
     for pg, b in prepare_blocks(ch):
         page_notes = {n.num: n for n in pages[pg].notes} if pg in pages else {}
+        if s.kind == "prose" and not first_text_done and b.kind in ("head", "para", "centre") and repeats_opener(b):
+            continue
         fix_heading_ = lambda t: t                 # applied in prepare_blocks
         if b.kind == "qv":
             if stanza:
