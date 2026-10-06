@@ -72,6 +72,23 @@ def _is_raised(span: Span, line: Line) -> bool:
     return span.origin[1] <= base - dom * 0.12
 
 
+def _is_marker_type(span: Span, line: Line) -> bool:
+    """Is this span set the way a note marker is: raised, or smaller than its line?
+
+    A producer can flag a whole stretch of ordinary text as superscript (a run
+    of italic transliteration whose baseline sits a couple of points off the
+    rest of the line) -- and the digits in it, "GGS: 432-434", come out flagged
+    too. They are the same size as the words beside them and on their baseline,
+    so they are a page range, not a marker.
+    """
+    if not span.superscript:
+        return _is_raised(span, line)
+    if not any(s is not span and s.text.strip() for s in line.spans):
+        return True  # nothing else on the line to compare it against
+    dom, base = _line_metrics(line)
+    return span.size <= dom - 0.5 or span.origin[1] <= base - dom * 0.12
+
+
 def _in_fraction(line: Line, idx: int) -> bool:
     """Is this raised digit the numerator of a fraction (5 1/2), not a marker?"""
     nxt = next((s.text.strip() for s in line.spans[idx + 1:] if s.text.strip()), "")
@@ -94,7 +111,7 @@ def find_markers(line: Line, body_size: float = 0.0) -> List[Tuple[int, str]]:
         is_symbol = t in ("*", "†", "‡", "§", "¶")
         if not (has_digit or is_symbol):
             continue
-        if not (span.superscript or _is_raised(span, line)):
+        if not _is_marker_type(span, line):
             continue
         if has_digit and _in_fraction(line, idx):
             continue

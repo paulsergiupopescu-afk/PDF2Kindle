@@ -683,19 +683,26 @@ def _resolve_notes(chapter: Chapter) -> None:
         else:
             by_label[label] = f
 
+    linked: set = set()
     for el in chapter.elements:
         for run in el.runs:
             if not run.noteref:
                 continue
-            if run.noteref in by_id:
-                continue  # already points at a note on the citing page
-            label = run.text.strip()
-            target = by_label.get(label)
-            if target is not None and label not in ambiguous:
-                run.noteref = target.note_id
-            else:
+            if run.noteref not in by_id:  # else: a note on the citing page
+                label = run.text.strip()
+                target = by_label.get(label)
+                run.noteref = (
+                    target.note_id if target is not None and label not in ambiguous else None
+                )
+            # A note has one return anchor, so only the first marker can bind
+            # to it. A later one with the same label is something else that
+            # merely looks like a marker -- the verse number closing a quotation,
+            # say -- and linking it would show the wrong note.
+            if run.noteref is None or run.noteref in linked:
                 run.noteref = None
                 run.sup = True
+            else:
+                linked.add(run.noteref)
 
     # Present the notes in reading order rather than page-discovery order.
     chapter.footnotes.sort(

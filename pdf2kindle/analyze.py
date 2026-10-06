@@ -120,6 +120,18 @@ def _is_debris(line: Line) -> bool:
     return not any(c.isdigit() or ("a" <= c.lower() <= "z") for c in txt)
 
 
+def _opens_text_block(line: Line, neighbour: Optional[Line], line_height: float) -> bool:
+    """Is *line* the first line of a block of same-size text, not a lone head?
+
+    The next line is in the same type and follows at ordinary leading.
+    """
+    if neighbour is None:
+        return False
+    if abs(neighbour.dominant_size - line.dominant_size) > 0.3:
+        return False
+    return (neighbour.y0 - line.y1) <= line_height * 0.75
+
+
 def _is_furniture(
     line: Line,
     neighbour: Optional[Line],
@@ -167,7 +179,16 @@ def _is_furniture(
     # both the repeat count below and the word-count gap check after it -- a
     # real risk on a noisily-scanned page, where the same printed header can
     # come out as a different garbled string each time.
-    if at_top and line.dominant_size <= body_size - 1.5:
+    #
+    # But a page that carries nothing except notes or references is small type
+    # all the way up: its first entry sits right under the head, in the same
+    # type as the entry after it. That is the top of a text block, not a head
+    # (a head is smaller than, or spaced away from, what follows it).
+    if (
+        at_top
+        and line.dominant_size <= body_size - 1.5
+        and not _opens_text_block(line, neighbour, line_height)
+    ):
         return True
 
     # Repeats elsewhere in the margins → running head/foot. This catches

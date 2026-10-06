@@ -47,6 +47,13 @@ NOTES = [
 
 LABEL_X, CONT_X = 72.0, 88.0
 
+# Enough 11pt prose that body text, not the 9pt notes, is the dominant size --
+# as in a real book, where the notes are a small fraction of the characters.
+FILLER = "".join(
+    "<p>" + ("Further discussion of the argument proceeds at some length here. " * 6) + "</p>"
+    for _ in range(3)
+)
+
 
 def draw_notes(page, notes, y):
     """Hanging indent: labels right-aligned into the gutter, text at CONT_X."""
@@ -60,9 +67,12 @@ def draw_notes(page, notes, y):
     return y
 
 
-def main(out="tests/endnotes.pdf"):
+def main(out="tests/endnotes.pdf", tight_top=False):
+    """*tight_top* sets the notes list the way a printed book often does: the
+    continuation page carries a folio and a tiny running head, and the first
+    note sits directly beneath them, inside the page's top margin band."""
     doc = pymupdf.open()
-    for html in BODY:
+    for html in BODY + ([FILLER] if tight_top else []):
         pg = doc.new_page()
         pg.insert_htmlbox(pymupdf.Rect(72, 80, pg.rect.width - 72, pg.rect.height - 90),
                           html, css=CSS)
@@ -75,8 +85,13 @@ def main(out="tests/endnotes.pdf"):
     draw_notes(p1, NOTES[:6], 130)
 
     p2 = doc.new_page()
-    p2.insert_text((72, 48), "The Argument", fontsize=9, fontname="times-roman")
-    draw_notes(p2, NOTES[6:], 100)
+    if tight_top:
+        p2.insert_text((300, 40), "47", fontsize=11, fontname="times-roman")
+        p2.insert_text((250, 40), "THE ARGUMENT", fontsize=6.3, fontname="times-roman")
+        draw_notes(p2, NOTES[6:], 62)
+    else:
+        p2.insert_text((72, 48), "The Argument", fontsize=9, fontname="times-roman")
+        draw_notes(p2, NOTES[6:], 100)
 
     doc.set_metadata({"title": "The Argument", "author": "E. Noter"})
     doc.save(out)
