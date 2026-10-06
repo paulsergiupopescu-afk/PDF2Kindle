@@ -550,6 +550,9 @@ def _build_flow(
 
 
 _SENT_END = (".", "!", "?", '"', "\u201d", "\u2019", "'", ")", ":", ";", "\u2014")
+# A sentence cut by a page turn can resume with a parenthesis: "Fauja Singh" /
+# "(b. 1911) became well known...".
+_OPENING_BRACKETS = ("(", "[")
 
 
 def _join_runs(prev: Element, sep: str) -> None:
@@ -646,7 +649,9 @@ def _merge_split_paragraphs(flat: List[Tuple[int, Element]]) -> List[Tuple[int, 
         if out and el.kind == ElementKind.PARAGRAPH and out[-1][1].kind == ElementKind.PARAGRAPH:
             prev = out[-1][1]
             ptxt, ctxt = prev.text.rstrip(), el.text.lstrip()
-            if ptxt and ctxt and not ptxt.endswith(_SENT_END) and ctxt[:1].islower():
+            if ptxt and ctxt and not ptxt.endswith(_SENT_END) and (
+                ctxt[:1].islower() or ctxt[:1] in _OPENING_BRACKETS
+            ):
                 if ends_hyphenated(ptxt):
                     if prev.runs[-1].noteref is None and not prev.runs[-1].sup:
                         prev.runs[-1].text = drop_break_hyphen(prev.runs[-1].text)

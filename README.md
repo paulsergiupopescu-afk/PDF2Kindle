@@ -7,6 +7,7 @@ The converter now performs document-level analysis before semantic reconstructio
 - footnote and chapter-end endnote linking
 - optional source-page EPUB page-break landmarks (--preserve-page-breaks)
 - conservative intra-chapter section cross-reference links
+- transliteration accents (macrons, dots) set as separate glyphs are folded back onto their letters (`pan.ı` + stray `- -` lines → `pāṇī`), so they neither print as stray paragraphs nor split sentences
 - EPUB quality auditing for malformed XML, missing images, dead note links, page furniture, page breaks, and dead internal links
 - regression tests and GitHub Actions CI
 

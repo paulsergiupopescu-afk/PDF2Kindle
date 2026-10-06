@@ -11,11 +11,13 @@ import difflib
 import logging
 import re
 import unicodedata
+from collections import Counter
 from dataclasses import replace
 from typing import Dict, List, Optional
 
 import pymupdf
 
+from .accents import fold_accents
 from .model import ImageBlock, Line, Page, Span
 from . import ocr as ocr_mod
 from . import spelling
@@ -32,6 +34,11 @@ _GARBLE_THRESHOLD = 0.04
 # A page whose largest image covers more than this fraction of the page area
 # is a photograph of the whole page -- see _is_scanned_page().
 _SCAN_IMAGE_RATIO = 0.85
+# Fragments of one row closer together than this fraction of the font size
+# are two halves of a word, not two words -- see _merge_same_row_lines().
+_WORD_GAP_EM = 0.12
+# Two lines whose baselines differ by no more than this (points) are one row.
+_SAME_BASELINE = 0.8
 # A line scoring below this fraction of real dictionary words is enough to
 # buy the page an OCR second opinion -- see _repair_page(). Set high on
 # purpose: a badly mangled line is usually *mostly* right ("teologia şi
@@ -81,7 +88,9 @@ def _is_garbled(text: str) -> bool:
 def _line_from_dict(ld: dict) -> Optional[Line]:
     spans: List[Span] = []
     for sd in ld.get("spans", []):
-        text = sd.get("text", "")
+        text = sd.get("text")
+        if text is None:  # a "rawdict" span carries its characters, not its text
+            text = "".join([c["c"] for c in sd.get("chars", ())])
         if text == "":
             continue
         spans.append(
@@ -104,9 +113,10 @@ def _line_from_dict(ld: dict) -> Optional[Line]:
 
 
 def _extract_text_page(page: "pymupdf.Page", number: int) -> Page:
-    d = page.get_text("dict")
+    d = page.get_text("rawdict")
     out = Page(number=number, width=float(d.get("width", page.rect.width)),
                height=float(d.get("height", page.rect.height)))
+    text_blocks = []
     for block in d.get("blocks", []):
         if block.get("type") == 1:  # image block
             img = block.get("image")
@@ -121,13 +131,44 @@ def _extract_text_page(page: "pymupdf.Page", number: int) -> Page:
                     )
                 )
             continue
+        text_blocks.append(block.get("lines", []))
+
+    # An accent glyph is often filed in a different block from its letter, so
+    # they are matched across the whole page.
+    kept = {id(ld) for ld in fold_accents([ld for lines in text_blocks for ld in lines])}
+    for lines in text_blocks:
         block_lines: List[Line] = []
-        for ld in block.get("lines", []):
-            line = _line_from_dict(ld)
+        for ld in lines:
+            line = _line_from_dict(ld) if id(ld) in kept else None
             if line is not None:
                 block_lines.append(line)
         out.lines.extend(_merge_same_row_lines(block_lines))
     return out
+
+
+def _row_baseline(line: Line) -> Optional[float]:
+    """The baseline most of the line's text sits on."""
+    ys = Counter()
+    for s in line.spans:
+        if s.text.strip():
+            ys[round(s.origin[1], 1)] += len(s.text.strip())
+    return ys.most_common(1)[0][0] if ys else None
+
+
+def _same_row(a: Line, b: Line) -> bool:
+    """Do two lines sit on one printed row?
+
+    Tops that agree say so, but a fragment holding an accented letter has a
+    taller box than its neighbours and tops that differ by several points.
+    Baselines are what rows really share.
+    """
+    dy = abs(a.y0 - b.y0)
+    if dy <= 1.5:
+        return True
+    if dy > min(a.height, b.height):
+        return False  # a whole row apart: the usual case, and the cheap one
+    ya, yb = _row_baseline(a), _row_baseline(b)
+    return ya is not None and yb is not None and abs(ya - yb) <= _SAME_BASELINE
 
 
 def _merge_same_row_lines(lines: List[Line]) -> List[Line]:
@@ -144,7 +185,7 @@ def _merge_same_row_lines(lines: List[Line]) -> List[Line]:
         return lines
     groups: List[List[Line]] = []
     for ln in lines:
-        if groups and abs(groups[-1][0].y0 - ln.y0) <= 1.5:
+        if groups and _same_row(groups[-1][0], ln):
             groups[-1].append(ln)
         else:
             groups.append([ln])
@@ -159,8 +200,20 @@ def _merge_same_row_lines(lines: List[Line]) -> List[Line]:
         for i, ln in enumerate(group):
             frag_spans = list(ln.spans)
             if i > 0 and frag_spans and spans:
-                if not spans[-1].text.endswith((" ", "\t")) and not frag_spans[0].text.startswith((" ", "\t")):
+                # Fragments that abut ("ﬁ" | "re") are one word that something
+                # drawn between them in the file split in two; only a real gap
+                # is a word space.
+                em = max(spans[-1].size, 1.0)
+                gap = ln.x0 - group[i - 1].x1
+                if (gap > _WORD_GAP_EM * em
+                        and not spans[-1].text.endswith((" ", "\t"))
+                        and not frag_spans[0].text.startswith((" ", "\t"))):
                     spans[-1] = replace(spans[-1], text=spans[-1].text + " ")
+                elif -gap > _WORD_GAP_EM * 2 * em and spans[-1].text.endswith(" "):
+                    # The row-end space the producer appends ("sā " | "hib")
+                    # lies over the next fragment: a real word space ends
+                    # where the next word begins, so this one is an artefact.
+                    spans[-1] = replace(spans[-1], text=spans[-1].text.rstrip(" "))
             spans.extend(frag_spans)
         x0 = min(ln.x0 for ln in group)
         y0 = min(ln.y0 for ln in group)
