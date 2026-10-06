@@ -191,3 +191,20 @@ it could not resolve rather than leaving you to find it on the device.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Partial runs and optional AI cleanup
+
+```bash
+pdf2kindle convert book.pdf --page-range 5-40      # only pages 5..40 (1-based)
+pdf2kindle convert book.pdf --max-pages 10         # quick smoke test
+
+pip install "pdf2kindle[ai]" && export ANTHROPIC_API_KEY=...
+pdf2kindle convert scan.pdf --ai-refine --ai-max-cost 2 --confirm-cost
+```
+
+`--ai-refine` is opt-in and runs *after* structure reconstruction, so it works
+on whole paragraphs (not page fragments). It only fixes clear OCR damage, skips
+paragraphs that carry footnote markers, links or mixed styling, and discards
+any rewrite that drifts from the original text. The cost is estimated up front;
+`--ai-max-cost` aborts before any request is sent and `--confirm-cost` asks
+first. Your text is sent to the Anthropic API.

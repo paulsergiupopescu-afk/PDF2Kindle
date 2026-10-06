@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 from .analyze import analyze
 from .document_analysis import classify_pages
@@ -29,6 +29,12 @@ class ConvertOptions:
     repair_ocr: bool = False  # re-read badly-OCR'd lines of a scanned PDF
     profile: str = "academic"  # "academic" | "general"
     keep_print_nav: bool = False  # keep the printed Contents/Index chapters
+    page_range: Optional[Tuple[int, int]] = None  # 1-based inclusive (first, last)
+    max_pages: Optional[int] = None  # cap pages processed after page_range
+    ai_refine: bool = False  # LLM pass fixing OCR errors (needs ANTHROPIC_API_KEY)
+    ai_model: str = ""  # default: ai_refine.DEFAULT_MODEL
+    ai_max_cost: Optional[float] = None  # abort if estimated USD cost exceeds this
+    ai_confirm: Optional[Callable[[float], bool]] = None  # veto after cost estimate
 
 
 @dataclass
@@ -41,6 +47,7 @@ class ConvertResult:
     footnotes: int = 0
     images: int = 0
     ocr_pages: int = 0
+    ai_cost_usd: float = 0.0
     warnings: List[str] = field(default_factory=list)
 
 
@@ -67,6 +74,8 @@ def convert_pdf(
         ocr_lang=opts.ocr_lang,
         dpi=opts.dpi,
         repair_ocr=opts.repair_ocr,
+        page_range=opts.page_range,
+        max_pages=opts.max_pages,
         progress=lambda done, total: report("Extracting pages", 0.05 + 0.45 * done / max(total, 1)),
     )
 
@@ -93,6 +102,21 @@ def convert_pdf(
         preserve_page_breaks=opts.preserve_page_breaks,
     )
 
+    ai_cost = 0.0
+    if opts.ai_refine:
+        from . import ai_refine
+
+        report("AI cleanup", 0.8)
+        stats = ai_refine.refine_document(
+            doc,
+            model=opts.ai_model or ai_refine.DEFAULT_MODEL,
+            language=opts.language,
+            max_cost=opts.ai_max_cost,
+            confirm=opts.ai_confirm,
+            progress=lambda d, t: report("AI cleanup", 0.8 + 0.1 * d / max(t, 1)),
+        )
+        ai_cost = stats.cost_usd
+
     report("Writing EPUB", 0.9)
     build_epub(doc, output_path)
 
@@ -118,6 +142,7 @@ def convert_pdf(
         footnotes=num_footnotes,
         images=num_images,
         ocr_pages=ocr_pages,
+        ai_cost_usd=ai_cost,
         warnings=warnings,
     )
     log.info(

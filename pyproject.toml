@@ -21,9 +21,11 @@ dependencies = [
 
 [project.optional-dependencies]
 ocr = ["pytesseract>=0.3.10"]
+ai = ["anthropic>=0.40"]
 server = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "python-multipart>=0.0.9"]
 all = [
     "pytesseract>=0.3.10",
+    "anthropic>=0.40",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
     "python-multipart>=0.0.9",

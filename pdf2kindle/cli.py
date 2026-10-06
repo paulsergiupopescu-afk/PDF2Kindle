@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import re
 import sys
 
 from . import __version__
@@ -51,7 +52,31 @@ def _add_convert(sub: argparse._SubParsersAction) -> None:
         help="keep the book's printed Contents and Index chapters (dropped by "
         "default: their page numbers are meaningless once text reflows)",
     )
+    p.add_argument("--page-range", metavar="A-B", help="convert only pages A..B (1-based, inclusive)")
+    p.add_argument("--max-pages", type=int, help="cap the number of pages processed (smoke tests)")
+    p.add_argument(
+        "--ai-refine",
+        action="store_true",
+        help="fix OCR errors in prose with an LLM (needs ANTHROPIC_API_KEY and "
+        "`pip install pdf2kindle[ai]`); conservative, per-paragraph, opt-in",
+    )
+    p.add_argument("--ai-model", default="", help="model for --ai-refine (default: Claude Haiku 4.5)")
+    p.add_argument("--ai-max-cost", type=float, metavar="USD", help="abort if the estimated AI cost exceeds this")
+    p.add_argument("--confirm-cost", action="store_true", help="show the AI cost estimate and ask before spending")
     p.add_argument("-q", "--quiet", action="store_true", help="Suppress progress output")
+
+
+def _parse_page_range(text: str):
+    m = re.fullmatch(r"\s*(\d+)\s*-\s*(\d+)\s*", text or "")
+    if not m or int(m.group(1)) < 1 or int(m.group(2)) < int(m.group(1)):
+        raise argparse.ArgumentTypeError(f"invalid --page-range {text!r}; expected A-B with 1 <= A <= B")
+    return int(m.group(1)), int(m.group(2))
+
+
+def _confirm_cost(estimate: float) -> bool:
+    sys.stderr.write(f"\nEstimated AI cost: ${estimate:.2f}. Continue? [y/N] ")
+    sys.stderr.flush()
+    return sys.stdin.readline().strip().lower() in ("y", "yes")
 
 
 def _add_audit(sub: argparse._SubParsersAction) -> None:
@@ -96,6 +121,11 @@ def main(argv=None) -> int:
         level=logging.WARNING if args.quiet else logging.INFO,
         format="%(message)s",
     )
+    try:
+        page_range = _parse_page_range(args.page_range) if args.page_range else None
+    except argparse.ArgumentTypeError as exc:
+        sys.stderr.write(f"error: {exc}\n")
+        return 2
     input_path = args.input
     output_path = args.output or (os.path.splitext(input_path)[0] + ".epub")
 
@@ -118,6 +148,12 @@ def main(argv=None) -> int:
         profile=args.profile,
         keep_print_nav=args.keep_print_nav,
         preserve_page_breaks=args.preserve_page_breaks,
+        page_range=page_range,
+        max_pages=args.max_pages,
+        ai_refine=args.ai_refine,
+        ai_model=args.ai_model,
+        ai_max_cost=args.ai_max_cost,
+        ai_confirm=_confirm_cost if args.confirm_cost else None,
     )
     try:
         result = convert_pdf(input_path, output_path, opts, progress=progress)
@@ -135,6 +171,8 @@ def main(argv=None) -> int:
         f"{result.footnotes} footnotes, {result.images} images"
         + (f", {result.ocr_pages} OCR pages" if result.ocr_pages else "")
     )
+    if result.ai_cost_usd:
+        print(f"  AI cleanup cost: ${result.ai_cost_usd:.4f}")
     for w in result.warnings:
         print(f"  warning: {w}")
 

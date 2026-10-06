@@ -533,6 +533,8 @@ def extract(
     ocr_lang: str = "eng",
     dpi: int = 300,
     repair_ocr: bool = False,
+    page_range: Optional[tuple] = None,  # 1-based inclusive (first, last)
+    max_pages: Optional[int] = None,
     progress=None,
 ) -> tuple[List[Page], dict]:
     """Return (pages, metadata) extracted from the PDF at *path*."""
@@ -561,8 +563,15 @@ def extract(
                 lex = None
     repaired_lines = 0
 
+    first = max(1, page_range[0]) if page_range else 1
+    last = min(doc.page_count, page_range[1]) if page_range else doc.page_count
+    indices = list(range(first - 1, last))
+    if max_pages is not None:
+        indices = indices[:max_pages]
+    total = len(indices)
+
     pages: List[Page] = []
-    for i in range(doc.page_count):
+    for n, i in enumerate(indices, 1):
         page = doc[i]
         p = _extract_text_page(page, i)
 
@@ -575,7 +584,7 @@ def extract(
             p.images = [_rasterize_page(page)]
             pages.append(p)
             if progress:
-                progress(i + 1, doc.page_count)
+                progress(n, total)
             continue
 
         needs_ocr = False
@@ -610,7 +619,7 @@ def extract(
 
         pages.append(p)
         if progress:
-            progress(i + 1, doc.page_count)
+            progress(n, total)
 
     doc.close()
     if repair_ocr:
