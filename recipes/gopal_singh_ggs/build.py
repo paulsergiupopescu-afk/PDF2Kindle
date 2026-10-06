@@ -39,20 +39,20 @@ SUBTITLE = "English Version · Volume I"
 TRANSLATOR = "Dr. Gopal Singh"
 
 # -------------------------------------------------------------------- layout of the scan
-FRONT_PAGES = range(7, 48)        # PDF pages with the prose front matter (roman-numbered)
+FRONT_PAGES = range(7, 49)        # PDF pages with the prose front matter (roman-numbered, VII-XLVIII)
 VERSE_PAGES = range(49, 385)      # scripture: printed page = pdf index - 48
 GLOSSARY_PAGES = range(385, 393)  # glossary, printed i..viii
 
 INVOCATION_LONG = ("By the Grace of the One Supreme Being, the Eternal, the All-pervading Purusha, "
-                   "the Creator, Without Fear, Without Hate, the Being Beyond Time, Non-incarnated, "
+                   "the Creator, Without Fear, Without Hate, the Being Beyond Time, Not-incarnated, "
                    "Self-existent, the Enlightener.")
 INVOCATION_SHORT = "By the Grace of the One Supreme Being, the Eternal, the Enlightener."
 # where the Japu's six notes on the Mool Mantar attach
-INVOCATION_LONG_NOTE_AT = ["Being,", "Eternal,", "All-pervading", "Purusha,", "Non-incarnated,", "Enlightener."]
+INVOCATION_LONG_NOTE_AT = ["Being,", "Eternal,", "All-pervading", "Purusha,", "Not-incarnated,", "Enlightener."]
 
 
 def printed_page(pdf_index: int) -> str:
-    if pdf_index in VERSE_PAGES or pdf_index == 48:
+    if pdf_index in VERSE_PAGES:
         return str(pdf_index - 48)
     if pdf_index in GLOSSARY_PAGES:
         return roman(pdf_index - 384).lower()
@@ -95,7 +95,7 @@ SECTIONS: List[Section] = [
     Section("story", "The Story of the Sikh Gurus", 35, None, kind="prose"),
     Section("japu", "Japu", 49, None, label="Meditations"),
     Section("sodaru", "So-Daru", 60, r"So.?Dar"),
-    Section("sohila", "Sohilā", 63, None),
+    Section("sohila", "Sohilā", 63, r"Sohil"),
     Section("srirag", "Sri Rāg", 66, None, label="Rāg"),
     Section("srirag-asht", "Ashtapadis", 99, r"Ashtapadi", 2),
     Section("srirag-pahre", "Pahre", 116, r"Pahre", 2),
@@ -123,23 +123,33 @@ SECTIONS: List[Section] = [
 # -------------------------------------------------------------------- parsing (cached)
 
 def parse_all(pdf: str, ocr: Optional[str], cache: str) -> Dict[int, Page]:
-    if os.path.exists(cache) and os.path.getmtime(cache) > max(
-            os.path.getmtime(os.path.join(HERE, f)) for f in ("parse.py", "lexicon.py")):
-        with open(cache, "rb") as f:
-            return pickle.load(f)
-    P = Parser(pdf, ocr)
     pages: Dict[int, Page] = {}
-    for i in list(FRONT_PAGES) + list(VERSE_PAGES):
-        mode = "prose" if i in FRONT_PAGES else "verse"
-        pages[i] = P.parse(i, mode)
-        if i % 25 == 0:
-            print(f"  parsed page {i}", flush=True)
-    from glossary import parse_glossary
-    pages.update(parse_glossary(P, GLOSSARY_PAGES))
-    with open(cache, "wb") as f:
-        pickle.dump(pages, f)
+    if os.path.exists(cache) and os.path.getmtime(cache) > max(
+            os.path.getmtime(os.path.join(HERE, f)) for f in ("parse.py", "lexicon.py", "headings.py", "glossary.py")):
+        with open(cache, "rb") as f:
+            pages = pickle.load(f)
+    wanted = list(FRONT_PAGES) + list(VERSE_PAGES)
+    missing = [i for i in wanted if i not in pages]
+    if missing or not any(i in pages for i in GLOSSARY_PAGES):
+        P = Parser(pdf, ocr)
+        for i in missing:
+            pages[i] = P.parse(i, "prose" if i in FRONT_PAGES else "verse")
+            if i % 25 == 0:
+                print(f"  parsed page {i}", flush=True)
+        if not any(i in pages for i in GLOSSARY_PAGES):
+            from glossary import parse_glossary
+            pages.update(parse_glossary(P, GLOSSARY_PAGES))
+        with open(cache, "wb") as f:
+            pickle.dump(pages, f)
     return pages
 
+
+# pages replaced by hand-corrected text (corrections.py); their headings are
+# taken verbatim, and every page's notes are reachable for references that a
+# paragraph carries across a page break
+CORRECTED: set = set()
+PAGE_NOTES: Dict[int, Dict[int, Note]] = {}
+PB_MARK = "\u2064"
 
 # -------------------------------------------------------------------- rendering helpers
 
@@ -159,7 +169,7 @@ def indic_spans(s: str) -> str:
         elif re.match(r"[ऀ-ॿ]", run):
             out.append(f'<span class="dv" lang="hi">{esc(run.rstrip())}</span>' + (" " if run.endswith(" ") else ""))
         else:
-            out.append(typo(esc(run)))
+            out.append(typo(esc(run)).replace("\ue000", "<i>").replace("\ue001", "</i>"))
     return "".join(out)
 
 
@@ -206,17 +216,27 @@ class Notes:
 
 def text_with_refs(text: str, refs: List[int], page_notes: Dict[int, Note], notes: Notes) -> str:
     """Render text with U+2063-delimited footnote placeholders as noterefs."""
-    parts = re.split(r"⁣(\d+)⁣", text)
+    parts = re.split("\u2063((?:\\d+:)?\\d+)\u2063", text)
     out = []
     placed = set()
     for k, part in enumerate(parts):
         if k % 2:
-            num = int(part)
-            if num not in placed:
-                placed.add(num)
-                out.append(notes.ref(page_notes.get(num)))
+            if ":" in part:
+                pg, num = (int(x) for x in part.split(":"))
+                note = PAGE_NOTES.get(pg, {}).get(num)
+                key = (pg, num)
+            else:
+                num = int(part)
+                note, key = page_notes.get(num), num
+            if key not in placed:
+                placed.add(key)
+                out.append(notes.ref(note))
         else:
-            out.append((indic_spans(part)))
+            for j, seg in enumerate(part.split(PB_MARK)):
+                if j % 2:
+                    out.append(f'<span class="pb" epub:type="pagebreak" id="pg-{esc(seg)}" title="{esc(seg)}" role="doc-pagebreak"></span>')
+                else:
+                    out.append(indic_spans(seg))
     html_ = "".join(out)
     html_ = re.sub(r"\s+(<a class=\"nr\")", r"\1", html_)
     for num in refs:  # references not tied to a position (fallback)
@@ -472,6 +492,50 @@ def render_letter(ch: "Chapter") -> str:
 """ + DOC_TAIL
 
 
+def prepare_blocks(ch: "Chapter") -> List[Tuple[int, Block]]:
+    """The chapter's blocks, ready to render: note placeholders qualified
+    with their page (so a paragraph may carry them across a page break), and
+    paragraphs that run over a page joined, with the page break kept inside."""
+    import copy
+    items: List[Tuple[int, Block]] = []
+    pending: List[Tuple[int, Block]] = []
+    last_para: Optional[Block] = None
+    para_pages: set = set()
+    for pg, b in ch.blocks:
+        if b.kind == "pb":
+            pending.append((pg, b))
+            continue
+        b = copy.copy(b)
+        if b.kind in ("head", "label", "sub") and pg not in CORRECTED:
+            b.text = fix_heading(b.text)        # before placeholders gain their page
+        if b.kind != "inv" and b.text is not None:
+            b.text = re.sub("\u2063(\\d+)\u2063", lambda m: f"\u2063{pg}:{m.group(1)}\u2063", b.text)
+            placed = {int(x) for x in re.findall(f"\u2063{pg}:(\\d+)\u2063", b.text)}
+            b.text += "".join(f"\u2063{pg}:{r}\u2063" for r in b.refs if r not in placed)
+            b.refs = []
+        cont = b.kind == "para" and (b.cont if pg in CORRECTED else (pg not in para_pages and not b.indent))
+        if b.kind == "para":
+            para_pages.add(pg)
+        if cont and last_para is not None:
+            marks = "".join(f"{PB_MARK}{p.text}{PB_MARK}" for _, p in pending)
+            pending = []
+            if re.search(r"[A-Za-z]-$", last_para.text) and b.text[:1].islower():
+                word, _, rest = b.text.partition(" ")
+                last_para.text = last_para.text[:-1] + word + marks + (" " + rest if rest else "")
+            else:
+                last_para.text = last_para.text + marks + " " + b.text
+            continue
+        items.extend(pending)
+        pending = []
+        items.append((pg, b))
+        if b.kind == "para":
+            last_para = b
+        elif b.kind != "ang":
+            last_para = None
+    items.extend(pending)
+    return items
+
+
 def render_chapter(ch: Chapter, pages: Dict[int, Page], angs: List[Tuple[int, str, str]]) -> str:
     s = ch.sec
     if s.key in LETTERS:
@@ -494,19 +558,37 @@ def render_chapter(ch: Chapter, pages: Dict[int, Page], angs: List[Tuple[int, st
         out.append('<p class="fleuron small">☙ ❦ ❧</p>')
 
     stanza: List[str] = []
-    in_shabad = False
+    qverse: List[str] = []
     first_text_done = False
 
     def close_stanza(pause=False):
-        nonlocal stanza
+        nonlocal stanza, qverse
         if stanza:
             cls = "stanza pause" if pause else "stanza"
             out.append(f'<div class="{cls}">' + "".join(stanza) + "</div>")
             stanza = []
+        if qverse:
+            out.append('<div class="qverse">' + "".join(qverse) + "</div>")
+            qverse = []
 
-    pending_pause = False
-    for pg, b in ch.blocks:
+    for pg, b in prepare_blocks(ch):
         page_notes = {n.num: n for n in pages[pg].notes} if pg in pages else {}
+        fix_heading_ = lambda t: t                 # applied in prepare_blocks
+        if b.kind == "qv":
+            if stanza:
+                close_stanza()
+            qverse.append(f'<p class="v">{text_with_refs(b.text, [], page_notes, notes)}</p>')
+            continue
+        if qverse and b.kind not in ("pb",):
+            close_stanza()
+        if b.kind == "bq":
+            close_stanza()
+            out.append(f'<blockquote><p>{text_with_refs(b.text, [], page_notes, notes)}</p></blockquote>')
+            continue
+        if b.kind == "right":
+            close_stanza()
+            out.append(f'<p class="right">{text_with_refs(b.text, [], page_notes, notes)}</p>')
+            continue
         if b.kind == "pb":
             pb = f'<span class="pb" epub:type="pagebreak" id="pg-{esc(b.text)}" title="{esc(b.text)}" role="doc-pagebreak"></span>'
             if stanza:
@@ -529,7 +611,7 @@ def render_chapter(ch: Chapter, pages: Dict[int, Page], angs: List[Tuple[int, st
             continue
         if b.kind == "head":
             close_stanza()
-            t = fix_heading(b.text)
+            t = fix_heading_(b.text)
             if len(re.findall(r"[A-Za-z]", t)) < 3:
                 continue
             if s.kind == "prose":
@@ -537,7 +619,7 @@ def render_chapter(ch: Chapter, pages: Dict[int, Page], angs: List[Tuple[int, st
                     continue  # repeats the chapter title
                 out.append(f'<h3 class="prose-head">{text_with_refs(t, b.refs, page_notes, notes)}</h3>')
             else:
-                if re.fullmatch(re.escape(fix_heading(s.title)), t, re.I):
+                if re.fullmatch(re.escape(fix_heading(s.title)), fold(t), re.I) or fold(t).lower() == fold(s.title).lower():
                     continue
                 if len(re.findall(r"[A-Za-z]", t)) < 3:
                     continue
@@ -545,7 +627,7 @@ def render_chapter(ch: Chapter, pages: Dict[int, Page], angs: List[Tuple[int, st
             continue
         if b.kind == "sub":
             close_stanza()
-            out.append(f'<p class="measure">{text_with_refs(fix_heading(b.text), b.refs, page_notes, notes)}</p>')
+            out.append(f'<p class="measure">{text_with_refs(fix_heading_(b.text), b.refs, page_notes, notes)}</p>')
             continue
         if b.kind == "centre":
             close_stanza()
@@ -554,7 +636,7 @@ def render_chapter(ch: Chapter, pages: Dict[int, Page], angs: List[Tuple[int, st
             continue
         if b.kind == "label":
             close_stanza()
-            t = fix_heading(b.text)
+            t = fix_heading_(b.text)
             out.append(f'<p class="label">{heading_html(text_with_refs(t, b.refs, page_notes, notes))}</p>')
             continue
         if b.kind == "para":
@@ -792,11 +874,21 @@ def opf(uid: str, manifest: List[Tuple[str, str, str, str]], spine: List[str]) -
 """
 
 
-def build(pdf: str, out: str, ocr: Optional[str], fonts_dir: Optional[str], work: str) -> None:
+def build(pdf: str, out: str, ocr: Optional[str], fonts_dir: Optional[str], work: str,
+          corrections_dir: Optional[str] = None) -> None:
     os.makedirs(work, exist_ok=True)
     pages = parse_all(pdf, ocr, os.path.join(work, "pages.pkl"))
     fix_angs(pages)
     print(f"  recovered {recover_angs(pdf, pages, work)} margin page numbers")
+    from corrections import load_dir
+    fixed, problems = load_dir(corrections_dir)
+    for p in problems:
+        print("  ! " + p)
+    pages.update(fixed)
+    CORRECTED.update(fixed)
+    if fixed:
+        print(f"  {len(fixed)} hand-corrected pages from {corrections_dir}")
+    PAGE_NOTES.update({i: {n.num: n for n in p.notes} for i, p in pages.items()})
     chapters = assign_blocks(pages)
     for ch in chapters:
         pb = next((b for _, b in ch.blocks if b.kind == "pb"), None)
@@ -884,8 +976,9 @@ def main() -> None:
     ap.add_argument("--ocr", help="directory of Tesseract TSVs from ocr_pass.py")
     ap.add_argument("--fonts", help="directory with the OFL font files")
     ap.add_argument("--work", default=os.path.join(HERE, ".work"))
+    ap.add_argument("--corrections", help="directory of hand-corrected pages (pNNN.txt, see corrections.py)")
     a = ap.parse_args()
-    build(a.pdf, a.out, a.ocr, a.fonts, a.work)
+    build(a.pdf, a.out, a.ocr, a.fonts, a.work, a.corrections)
 
 
 if __name__ == "__main__":

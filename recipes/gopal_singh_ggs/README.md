@@ -52,6 +52,27 @@ python qa.py ggs-vol1.epub --headings            # well-formedness, links, OCR d
 The output passes EPUBCheck 5.1 with no errors or warnings. Send it to Kindle with
 *Send to Kindle* (EPUB is accepted directly); the embedded fonts appear as "Publisher Font".
 
+## Hand-corrected pages and the coherency test
+
+Machine repair leaves errors a reader will notice, so pages can be corrected by hand
+against the scan. `corrections.py` defines a plain-text, line-per-element format
+(`pNNN.txt` per PDF page: `v:` verse lines with `{1-Pause}` stanza numbers, `p:`/`p+:`
+paragraphs, `h:` titles, `ang:` margin numbers, `n3:` notes, `[^3]` references,
+`*italics*`). Any page present in the corrections directory replaces the OCR parse:
+
+```bash
+python build.py SCAN.pdf out.epub --ocr ocr --fonts fonts --corrections corrections/
+python coherency.py corrections/ --from 20 --to 63
+```
+
+`coherency.py` checks every corrected page and the joins between pages: syntax, notes
+numbered 1..n and each referenced once, stanza numbers in the translator's grammar
+with the running hymn count advancing, the Japu's pauris 1..38, Ang numbers increasing,
+paragraphs carried across page breaks, OCR debris, and unknown words.
+
+The corrected transcriptions are the book's (copyrighted) text, so they are kept out
+of this public repository.
+
 ## How the text is repaired
 
 1. Lines are rebuilt from the OCR layer by baseline; border debris is dropped.

@@ -315,3 +315,10 @@ section.letter p.letter-sig { text-align: right; margin-top: 1.2em; }
 section.letter div.letter-sig { text-align: right; margin: 1.2em 0 0 0; }
 section.letter div.letter-sig img { width: 45%; max-width: 14em; }
 section.letter p.letter-place { margin-top: 1.6em; font-size: 0.95em; }
+
+/* ------------------------------------------------------------ quotations inside prose */
+blockquote { margin: 0.8em 1.6em; font-size: 0.95em; }
+section.prose blockquote p { text-indent: 0; }
+div.qverse { margin: 0.7em 0 0.8em 2em; font-size: 0.95em; }
+section.prose div.qverse p.v { text-align: left; text-indent: -1.4em; padding-left: 1.4em; hyphens: none; -webkit-hyphens: none; }
+p.right, section.prose p.right { text-align: right; text-indent: 0; margin: 0.3em 0 0.8em 0; }
