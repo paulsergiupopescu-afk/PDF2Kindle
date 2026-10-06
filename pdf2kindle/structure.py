@@ -550,6 +550,9 @@ def _build_flow(
 
 
 _SENT_END = (".", "!", "?", '"', "\u201d", "\u2019", "'", ")", ":", ";", "\u2014")
+# A sentence cut by a page turn can resume with a parenthesis: "Fauja Singh" /
+# "(b. 1911) became well known...".
+_OPENING_BRACKETS = ("(", "[")
 
 
 def _join_runs(prev: Element, sep: str) -> None:
@@ -646,7 +649,9 @@ def _merge_split_paragraphs(flat: List[Tuple[int, Element]]) -> List[Tuple[int, 
         if out and el.kind == ElementKind.PARAGRAPH and out[-1][1].kind == ElementKind.PARAGRAPH:
             prev = out[-1][1]
             ptxt, ctxt = prev.text.rstrip(), el.text.lstrip()
-            if ptxt and ctxt and not ptxt.endswith(_SENT_END) and ctxt[:1].islower():
+            if ptxt and ctxt and not ptxt.endswith(_SENT_END) and (
+                ctxt[:1].islower() or ctxt[:1] in _OPENING_BRACKETS
+            ):
                 if ends_hyphenated(ptxt):
                     if prev.runs[-1].noteref is None and not prev.runs[-1].sup:
                         prev.runs[-1].text = drop_break_hyphen(prev.runs[-1].text)
@@ -683,19 +688,26 @@ def _resolve_notes(chapter: Chapter) -> None:
         else:
             by_label[label] = f
 
+    linked: set = set()
     for el in chapter.elements:
         for run in el.runs:
             if not run.noteref:
                 continue
-            if run.noteref in by_id:
-                continue  # already points at a note on the citing page
-            label = run.text.strip()
-            target = by_label.get(label)
-            if target is not None and label not in ambiguous:
-                run.noteref = target.note_id
-            else:
+            if run.noteref not in by_id:  # else: a note on the citing page
+                label = run.text.strip()
+                target = by_label.get(label)
+                run.noteref = (
+                    target.note_id if target is not None and label not in ambiguous else None
+                )
+            # A note has one return anchor, so only the first marker can bind
+            # to it. A later one with the same label is something else that
+            # merely looks like a marker -- the verse number closing a quotation,
+            # say -- and linking it would show the wrong note.
+            if run.noteref is None or run.noteref in linked:
                 run.noteref = None
                 run.sup = True
+            else:
+                linked.add(run.noteref)
 
     # Present the notes in reading order rather than page-discovery order.
     chapter.footnotes.sort(

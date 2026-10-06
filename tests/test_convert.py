@@ -238,6 +238,31 @@ def test_endnotes_all_linked(endnotes_epub):
     assert not (refs - notes)
 
 
+@pytest.fixture(scope="module")
+def tight_endnotes_epub(tmp_path_factory):
+    src = tmp_path_factory.mktemp("data") / "endnotes_tight.pdf"
+    make_endnotes(str(src), tight_top=True)
+    out = tmp_path_factory.mktemp("out") / "endnotes_tight.epub"
+    convert_pdf(str(src), str(out), ConvertOptions(ocr="never"))
+    return str(out)
+
+
+def test_first_endnote_under_the_running_head_is_not_stripped(tight_endnotes_epub):
+    """On a page that carries nothing but notes, the first note sits right under
+    the folio and running head, in the top margin band, in type no bigger than
+    the head's neighbours. It is text, not furniture: dropping it loses the note
+    and leaves its marker in the body unlinked."""
+    with zipfile.ZipFile(tight_endnotes_epub) as z:
+        body = _read(z, "chap_000.xhtml")
+    refs = set(re.findall(r'epub:type="noteref"[^>]*href="#([^"]+)"', body))
+    notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', body))
+    assert len(notes) == 10, f"expected 10 endnotes, got {sorted(notes)}"
+    assert refs == notes
+    assert "Ibid., p. 28." in re.sub(r"<[^>]+>", "", body)
+    assert not re.search(r"<sup>(?!<a)", body)  # no marker left unlinked
+    assert "THE ARGUMENT" not in body  # the running head itself is still removed
+
+
 def test_endnote_continuation_lines_are_joined(endnotes_epub):
     """A hanging-indent continuation belongs to the note above it, and a word
     split across the line break is rejoined."""
@@ -301,6 +326,48 @@ def test_real_superscript_is_still_a_marker():
     ln = _line([("authority.", 10.5, 200.7, False), ("7", 7.0, 197.1, True),
                 (" One might", 10.5, 200.7, False)])
     assert [lbl for _, lbl in find_markers(ln, body_size=10.5)] == ["7"]
+
+
+def test_superscript_flag_on_ordinary_sized_text_is_not_a_marker():
+    """A producer can flag a whole run of body-size text as superscript. Digits
+    inside it ("GGS: 432-434") match the words around them in size and baseline,
+    so they are a page range rather than a note marker."""
+    from pdf2kindle.footnotes import find_markers
+
+    ln = _line([("Writing on the Board, GGS:", 10.5, 281.0, True), (" ", 10.5, 281.0, True),
+                ("432", 10.5, 281.0, True), ("\u2013434).", 10.5, 281.0, True),
+                (" Alphabet acrostics for Arabic", 10.5, 283.0, False)])
+    assert find_markers(ln, body_size=10.5) == []
+
+
+def test_flagged_marker_smaller_than_its_line_is_kept():
+    from pdf2kindle.footnotes import find_markers
+
+    ln = _line([("hukam is understood as order.", 10.5, 328.9, False), ("6", 7.4, 328.9, True),
+                (" Such interpretations", 10.5, 328.9, False)])
+    assert [lbl for _, lbl in find_markers(ln, body_size=10.5)] == ["6"]
+
+
+def test_second_marker_for_the_same_note_is_not_linked():
+    """Each note has a single return anchor. A later marker repeating a label that
+    is already linked (a verse number closing a quotation) stays a plain
+    superscript instead of duplicating the id and showing the wrong note."""
+    from pdf2kindle.model import Chapter, Element, ElementKind, InlineRun
+    from pdf2kindle.structure import _resolve_notes
+
+    note1 = Element(kind=ElementKind.FOOTNOTE, runs=[InlineRun(text="First.")],
+                    note_id="n5-1", note_label="1")
+    note2 = Element(kind=ElementKind.FOOTNOTE, runs=[InlineRun(text="Second.")],
+                    note_id="n5-2", note_label="2")
+    para = Element(kind=ElementKind.PARAGRAPH, runs=[
+        InlineRun(text="a"), InlineRun(text="1", noteref="n3-1"),
+        InlineRun(text="b"), InlineRun(text="2", noteref="n3-2"),
+        InlineRun(text="c"), InlineRun(text="2", noteref="n4-2"),
+    ])
+    ch = Chapter(title="T", elements=[para], footnotes=[note1, note2])
+    _resolve_notes(ch)
+    marks = [(r.text, r.noteref, r.sup) for r in para.runs if r.text in ("1", "2")]
+    assert marks == [("1", "n5-1", False), ("2", "n5-2", False), ("2", None, True)]
 
 
 def test_superscript_detection_is_line_relative():
