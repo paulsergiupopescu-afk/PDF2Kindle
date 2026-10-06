@@ -70,13 +70,18 @@ def build_epub(doc: Document, out_path: str) -> str:
     epub_chapters = []
     toc = []
     for i, chapter in enumerate(doc.chapters):
+        rendered = render_chapter(chapter, image_href_for, doc.language or "en")
+        # A chapter whose body is empty (e.g. a list of illustrations with no
+        # surviving text) crashes ebooklib's nav generation, so drop it.
+        if re.search(r"<body[^>]*>\s*</body>", rendered):
+            continue
         fname = f"chap_{i:03d}.xhtml"
         item = epub.EpubHtml(
             title=chapter.title or f"Chapter {i + 1}",
             file_name=fname,
             lang=doc.language or "en",
         )
-        item.content = render_chapter(chapter, image_href_for, doc.language or "en").encode("utf-8")
+        item.content = rendered.encode("utf-8")
         # ebooklib regenerates <head>, discarding any <link> we wrote ourselves,
         # so the stylesheet must be attached through its own API.
         item.add_item(css)
