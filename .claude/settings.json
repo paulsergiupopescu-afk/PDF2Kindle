@@ -1,0 +1,6 @@
+{
+  "extraKnownMarketplaces": {
+    "severity1-marketplace": { "source": { "source": "github", "repo": "severity1/severity1-marketplace" } }
+  },
+  "enabledPlugins": { "prompt-improver@severity1-marketplace": true }
+}
