@@ -71,14 +71,16 @@ def test_a_spaced_hyphen_between_words_is_a_dash_but_a_range_is_not():
 
 
 def test_a_bare_hyphen_into_a_function_word_is_a_dash():
-    doc = _doc("Capacity for work-that is to say, life-the gift of God-can be welcomed")
+    doc = _doc("Capacity for work-that is to say, life-the gift of God-can be welcomed",
+               "society's weakest members-such as the elderly")
     repair_hyphens(doc)
-    assert _texts(doc) == ["Capacity for work—that is to say, life—the gift of God—can be welcomed"]
+    assert _texts(doc) == ["Capacity for work—that is to say, life—the gift of God—can be welcomed",
+                           "society's weakest members—such as the elderly"]
 
 
 def test_real_compounds_ending_in_a_small_word_are_kept():
     text = ("an unheard-of number, a built-in flaw, an up-to-date list, "
-            "a well-known so-called self-evident non-existent add-on")
+            "a well-known so-called self-evident non-existent add-on, a go-between")
     doc = _doc(text)
     repair_hyphens(doc)
     assert _texts(doc) == [text]

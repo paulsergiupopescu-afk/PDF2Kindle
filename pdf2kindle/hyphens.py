@@ -71,6 +71,8 @@ _DASH_FOLLOWERS = frozenset("""
     has have had do does did not no on at by for from of to with into upon
     even especially particularly namely indeed also above all both either
     neither everything everyone nothing anything something
+    such there perhaps sometimes nevertheless however therefore thus already
+    every between without along ought
 """.split())
 
 # "pre- and post-war": a hyphen deliberately left hanging before a conjunction.
@@ -84,7 +86,8 @@ _UNSPACED_RE = re.compile(rf"(?<![\w{_HYPHENS}])({_WORD})-({_WORD})(?![\w{_HYPHE
 _PARTICLES = frozenset({"in", "on", "by", "up", "off", "out", "be", "been"})
 _SET_PHRASES = frozenset("""
     unheard-of lean-to set-to how-to would-be make-do to-do can-do so-so no-one
-    yes-no either-or cure-all catch-all be-all break-even
+    yes-no either-or cure-all catch-all be-all break-even go-between
+    sing-along tag-along
 """.split())
 
 
