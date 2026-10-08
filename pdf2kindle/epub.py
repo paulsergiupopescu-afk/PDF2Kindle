@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import shutil
@@ -45,30 +46,34 @@ def build_epub(doc: Document, out_path: str) -> str:
     )
     book.add_item(css)
 
-    # Register every image up front so the renderer can resolve hrefs.
+    # Register every image up front so the renderer can resolve hrefs. The
+    # same picture used on several pages (an ornament, a logo) is stored once.
     href_map: Dict[int, str] = {}
-    img_index = 0
+    by_content: Dict[bytes, str] = {}
     for chapter in doc.chapters:
         for el in chapter.elements:
             if el.kind == ElementKind.IMAGE and el.image is not None:
-                ext = el.image.ext or "png"
-                fname = f"images/img_{img_index}.{ext}"
-                book.add_item(
-                    epub.EpubImage(
-                        uid=f"img_{img_index}",
-                        file_name=fname,
-                        media_type=_media_type(ext),
-                        content=el.image.data,
+                key = hashlib.sha1(el.image.data).digest()
+                if key not in by_content:
+                    img_index = len(by_content)
+                    ext = el.image.ext or "png"
+                    fname = f"images/img_{img_index}.{ext}"
+                    book.add_item(
+                        epub.EpubImage(
+                            uid=f"img_{img_index}",
+                            file_name=fname,
+                            media_type=_media_type(ext),
+                            content=el.image.data,
+                        )
                     )
-                )
-                href_map[id(el)] = fname
-                img_index += 1
+                    by_content[key] = fname
+                href_map[id(el)] = by_content[key]
 
     def image_href_for(el: Element) -> str:
         return href_map.get(id(el), "")
 
     epub_chapters = []
-    toc = []
+    toc = []  # (item, children) for each top-level chapter
     for i, chapter in enumerate(doc.chapters):
         fname = f"chap_{i:03d}.xhtml"
         item = epub.EpubHtml(
@@ -83,21 +88,23 @@ def build_epub(doc: Document, out_path: str) -> str:
         book.add_item(item)
         epub_chapters.append(item)
 
-        # Nested table of contents: sub-headings become child links.
-        if chapter.subheads:
-            children = [
-                epub.Link(f"{fname}#{sh.anchor}", sh.title, f"{fname}-{sh.anchor}")
-                for sh in chapter.subheads
-            ]
-            toc.append((item, children))
+        # Nested table of contents: sub-headings become child links, and a
+        # chapter inside a Part becomes a child of that Part's entry.
+        children = [
+            epub.Link(f"{fname}#{sh.anchor}", sh.title, f"{fname}-{sh.anchor}")
+            for sh in chapter.subheads
+        ]
+        if chapter.depth > 0 and toc:
+            toc[-1][1].append((item, children) if children else item)
         else:
-            toc.append(item)
+            toc.append((item, children))
 
     if doc.cover is not None:
         ext = doc.cover.ext or "jpg"
         book.set_cover(f"cover.{ext}", doc.cover.data, create_page=False)
 
-    book.toc = tuple(toc)
+    # A top-level entry with nothing nested under it is a plain link.
+    book.toc = tuple(item if not children else (item, children) for item, children in toc)
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
     book.spine = ["nav"] + epub_chapters

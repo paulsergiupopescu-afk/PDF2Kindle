@@ -12,13 +12,22 @@ and hanging-indent bibliography entries.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from typing import Dict, List, Optional, Tuple
 
 from .analyze import Analyzed, PageContent
 from .extract import _column_count
 from .footnotes import find_embedded_markers, find_markers, parse_page_notes
-from .text import drop_break_hyphen, ends_hyphenated, normalize
+from .text import (
+    BREAK_MARK,
+    CHAPTER_LABEL_RE,
+    drop_break_hyphen,
+    ends_hyphenated,
+    normalize,
+    resolve_break_hyphens,
+    word_forms,
+)
 from .document_analysis import DocumentStatistics, PageType
 from .model import (
     Chapter,
@@ -80,7 +89,11 @@ _NOTE_ENTRY_RE = re.compile(r"^\s*(\d{1,3})[\.\)]?\s+(.*)$", re.DOTALL)
 # Reflowed, their numbers point nowhere and the reader has a real nav TOC.
 _PRINT_NAV_RE = re.compile(
     r"^\s*(contents|table\s+of\s+contents|cuprins|sumar|sommaire|inhalt|"
-    r"tabla\s+de\s+contenido|table\s+des\s+matières)\s*$",
+    r"tabla\s+de\s+contenido|table\s+des\s+matières|"
+    # An index, however qualified: "Index", "Subject Index", "Index of
+    # Scripture References", "Indexes", "Indice", "Register".
+    r"(?:(?:general|subject|name|author|scripture|biblical)\s+)?"
+    r"(?:index|indexes|indices|indice|register)(?:\s+of\s+[\w\s,]{1,60})?)\s*$",
     re.IGNORECASE,
 )
 # A "List of Illustrations" / "Maps" / "Tables" section is a caption ...... page#
@@ -219,6 +232,10 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
     # required to be larger than it, on the strength of the word alone.
     if _CHAPTER_RE.match(text) and ratio >= 0.98:
         return 1
+    # A bare "CHAPTER FOUR" label is often set *smaller* than body text;
+    # _merge_split_headings joins it to the title that follows.
+    if CHAPTER_LABEL_RE.match(text):
+        return 1
 
     # Numbered sections: depth of the number sets the level. Guard against body
     # sentences that merely start with a number by requiring shortness + weight.
@@ -303,6 +320,8 @@ def _group_paragraphs(page: PageContent, body_size: float, line_height: float) -
     indent_min = max(6.0, text_width * 0.02)
     gap_threshold = line_height * 0.6
 
+    hanging = _is_hanging_indent(lines, indent_min, right_edge, text_width)
+
     groups: List[List[Line]] = []
     cur: List[Line] = []
     prev: Optional[Line] = None
@@ -316,6 +335,23 @@ def _group_paragraphs(page: PageContent, body_size: float, line_height: float) -
             prev_short = prev.x1 < right_edge - text_width * 0.18
             if gap > gap_threshold:
                 start_new = True
+            elif cur and _CAPTION_RE.match(cur[0].text) and _continues_caption(cur[0], ln):
+                start_new = False
+            elif _BULLET_RE.match(ln.text):
+                start_new = True
+            elif (cur and _BULLET_RE.match(cur[0].text) and 0 < ln.x0 - cur[0].x0 <= 30
+                  and not (prev_short and ln.text[:1].isupper())):
+                # A bulleted item's wrapped lines hang under its text; after
+                # the item's short last line, an indented line is the next
+                # paragraph.
+                start_new = False
+            elif hanging:
+                # Inverted: the indented lines continue an entry, and the
+                # one back at the margin opens the next.
+                start_new = ln.x0 < prev.x0 - indent_min or (
+                    not first_line_indent and ln.x0 <= left_margin + indent_min / 2
+                    and prev.x0 <= left_margin + indent_min / 2
+                )
             elif first_line_indent:
                 start_new = True
             elif prev_short and ln.text[:1].isupper():
@@ -328,6 +364,85 @@ def _group_paragraphs(page: PageContent, body_size: float, line_height: float) -
     if cur:
         groups.append(cur)
     return groups
+
+
+# An index entry line ends in its page references ("cooperation 29, 48-49,")
+# or a cross-reference ("pain see suffering").
+_INDEX_LINE_RE = re.compile(r"(\d+(?:\s*[-–]\s*\d+)?(?:ff?\.)?[,;]?|\bsee(?:\s+also)?\s+.+)\s*$")
+
+
+def _is_index_page(page: PageContent) -> bool:
+    """A page of a back-of-book index: nearly every line an entry."""
+    lines = [ln for ln in page.body_lines if ln.text.strip()]
+    if len(lines) < 8:
+        return False
+    hits = sum(1 for ln in lines if _INDEX_LINE_RE.search(ln.text.strip()))
+    return hits >= 0.7 * len(lines)
+
+
+def _group_index_entries(page: PageContent) -> List[List[Line]]:
+    """One group per index entry: a line indented under the one before it, or
+    opening with a page number, continues that entry's page list (or is its
+    sub-entry); anything else --
+    including the top of the next column -- starts a new entry."""
+    groups: List[List[Line]] = []
+    prev: Optional[Line] = None
+    for ln in page.body_lines:
+        if not ln.text.strip():
+            continue
+        continues = (
+            prev is not None and groups
+            and ln.y0 > prev.y0  # not the jump to the top of the next column
+            and (ln.x0 > groups[-1][0].x0 + 3 or ln.text.strip()[:1].isdigit())
+        )
+        if continues:
+            groups[-1].append(ln)
+        else:
+            groups.append([ln])
+        prev = ln
+    return groups
+
+
+_BULLET_RE = re.compile(r"^\s*[•▪◦‣●■]\s")
+
+
+def _continues_caption(first: Line, ln: Line) -> bool:
+    """Is *ln* a wrapped line of the caption opened by *first*? A caption
+    set as "Figure 10.1   The composite origin of…" wraps its text under
+    the text, not under the label -- an indent that would otherwise read as
+    the start of a new paragraph."""
+    starts = [sp.bbox[0] for sp in first.spans if sp.text.strip()]
+    return ln.x0 >= first.x0 - 1 and any(abs(ln.x0 - x) <= 3 for x in starts)
+
+
+_HANGING_MIN_SHARE = 0.25
+
+
+def _is_hanging_indent(lines: List[Line], indent_min: float, right_edge: float,
+                       text_width: float) -> bool:
+    """Is this page set with hanging indents (a bibliography, a glossary)?
+
+    In ordinary prose an indented line opens a paragraph, so it follows the
+    *short* last line of the paragraph before. Under a hanging indent it is
+    the second line of an entry, so it follows a *full* line -- the entry's
+    first, set out at the margin. When nearly every indented line on the
+    page follows a full line at the margin -- and there are many of them --
+    the page is a hanging list.
+    """
+    if len(lines) < 4:
+        return False
+    left_margin = min(ln.x0 for ln in lines)
+    indented = after_full = 0
+    for prev, ln in zip(lines, lines[1:]):
+        if ln.x0 > prev.x0 + indent_min:
+            indented += 1
+            if (prev.x1 >= right_edge - text_width * 0.18
+                    and prev.x0 <= left_margin + indent_min / 2):
+                after_full += 1
+    # Prose indents only each paragraph's first line, a small share of the
+    # page; a hanging list indents every continuation line.
+    return (indented >= 3 and indented >= _HANGING_MIN_SHARE * len(lines)
+            and after_full >= 0.8 * indented)
 
 
 def _is_blockquote(lines: List[Line], body_left: float, body_size: float, page_width: float) -> bool:
@@ -479,6 +594,35 @@ def _is_headless_toc_page(page: PageContent) -> bool:
     return bool(_TOC_KEYWORDS_RE.search(combined))
 
 
+# The same picture on this many different pages is a publisher's logo stamped
+# on every blank verso, or a recurring ornament -- decoration, not a figure.
+_REPEATED_IMAGE_PAGES = 3
+# A cover carries a title, a subtitle and author names -- a page-one picture
+# with more text than this around it is a real first page with a big figure.
+_COVER_MAX_WORDS = 60
+
+
+def _repeated_images(page_images: Dict[int, List[ImageBlock]]) -> set:
+    """Content hashes of images that recur on many pages."""
+    pages_of: Dict[bytes, set] = {}
+    for pno, images in page_images.items():
+        for im in images:
+            pages_of.setdefault(hashlib.sha1(im.data).digest(), set()).add(pno)
+    return {h for h, pages in pages_of.items() if len(pages) >= _REPEATED_IMAGE_PAGES}
+
+
+def _image_position(im: ImageBlock, boxes: List[Tuple[float, float, float]]) -> int:
+    """Index among a page's elements at which an image belongs: before the
+    first element in reading order that starts below the image's middle in
+    the same column. An image beside or below everything goes last."""
+    x0, y0, x1, y1 = im.bbox
+    mid = (y0 + y1) / 2
+    for i, (top, left, right) in enumerate(boxes):
+        if top >= mid and left < x1 and right > x0:
+            return i
+    return len(boxes)
+
+
 def _build_flow(
     analyzed: Analyzed,
     page_images: Dict[int, List[ImageBlock]],
@@ -487,9 +631,16 @@ def _build_flow(
 ) -> Tuple[List[Tuple[int, Element]], Dict[int, List[Element]]]:
     flat: List[Tuple[int, Element]] = []
     notes_by_page: Dict[int, List[Element]] = {}
+    repeated = _repeated_images(page_images)
 
     for page in analyzed.pages:
         if not keep_print_nav and _is_headless_toc_page(page):
+            continue
+        if (page.number == 0
+                and any(_covers_page(im, page) for im in page_images.get(0, []))
+                and sum(len(ln.text.split()) for ln in page.body_lines) <= _COVER_MAX_WORDS):
+            # The cover: its art is already the EPUB cover, and any title
+            # text drawn over it would only open the book as stray headings.
             continue
         note_prefix = f"n{page.number}-"
 
@@ -506,13 +657,28 @@ def _build_flow(
                 for nb in page_notes
             ]
 
-        for group in _group_paragraphs(page, analyzed.body_size, analyzed.line_height):
+        page_start = len(flat)
+        # (top, left, right) of each element added for this page, so images
+        # can be placed among them at their real reading position.
+        boxes: List[Tuple[float, float, float]] = []
+
+        def emit(el: Element, group: List[Line]) -> None:
+            flat.append((page.number, el))
+            boxes.append((group[0].y0, min(ln.x0 for ln in group), max(ln.x1 for ln in group)))
+
+        index_page = _is_index_page(page)
+        groups = (_group_index_entries(page) if index_page
+                  else _group_paragraphs(page, analyzed.body_size, analyzed.line_height))
+        for group in groups:
+            if index_page and not (len(group) == 1 and _is_heading(group[0], analyzed.body_size)):
+                runs = _paragraph_runs(group, note_prefix)
+                if runs:
+                    emit(Element(kind=ElementKind.REFERENCE, runs=runs), group)
+                continue
             if academic:
                 table_rows = _table_from_group(group)
                 if table_rows is not None:
-                    flat.append((page.number, Element(
-                        kind=ElementKind.TABLE, table_rows=table_rows
-                    )))
+                    emit(Element(kind=ElementKind.TABLE, table_rows=table_rows), group)
                     continue
 
             if len(group) == 1:
@@ -523,8 +689,7 @@ def _build_flow(
                 size = group[0].dominant_size if level else 0.0
             if level:
                 runs = _paragraph_runs(group, note_prefix, analyzed.body_size, known_labels)
-                flat.append((page.number, Element(kind=ElementKind.HEADING, runs=runs,
-                                                  level=level, size=size)))
+                emit(Element(kind=ElementKind.HEADING, runs=runs, level=level, size=size), group)
                 continue
 
             runs = _paragraph_runs(group, note_prefix, analyzed.body_size, known_labels)
@@ -535,16 +700,25 @@ def _build_flow(
             if academic:
                 if _CAPTION_RE.match(group[0].text):
                     kind = ElementKind.CAPTION
+                elif (len(group) >= 2 and group[0].x0 < min(ln.x0 for ln in group[1:]) - 3
+                      and not _BULLET_RE.match(group[0].text)):
+                    # First line out at the margin, the rest indented: a
+                    # hanging-indent entry (see _is_hanging_indent).
+                    kind = ElementKind.REFERENCE
                 elif _is_blockquote(group, analyzed.body_left, analyzed.body_size, page.width):
                     kind = ElementKind.BLOCKQUOTE
-            flat.append((page.number, Element(kind=kind, runs=runs)))
+            emit(Element(kind=kind, runs=runs), group)
 
-        for im in _select_images(page_images.get(page.number, [])):
-            if _is_scan_background(im, page):
-                continue  # the scan itself, not a figure -- see _is_scan_background
-            if page.number == 0 and _covers_page(im, page):
-                continue  # full-page art on page 1 is the cover, already used
-            flat.append((page.number, Element(kind=ElementKind.IMAGE, image=im)))
+        images = [
+            im for im in _select_images(page_images.get(page.number, []))
+            # The scan itself (see _is_scan_background), or a logo or
+            # ornament (see _REPEATED_IMAGE_PAGES): not figures.
+            if not _is_scan_background(im, page) and hashlib.sha1(im.data).digest() not in repeated
+        ]
+        # Bottom-most first, so earlier insertions don't shift later positions.
+        for im in sorted(images, key=lambda im: im.bbox[1], reverse=True):
+            at = _image_position(im, boxes)
+            flat.insert(page_start + at, (page.number, Element(kind=ElementKind.IMAGE, image=im)))
 
     return flat, notes_by_page
 
@@ -605,10 +779,15 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
             # covers the one case where a bare number legitimately precedes
             # its title.
             new_numbered_section = bool(_NUM_HEAD_RE.match(cur)) and not numbered
+            # A colon normally closes a heading ("Methods:") -- unless the
+            # next line carries on in lowercase, which is a title wrapped
+            # after its colon ("The Genesis cosmogony disproven:" over "the
+            # universe is ancient and large").
+            colon_wrap = ptxt.endswith(":") and cur[:1].islower()
             continues = (
                 same_size
                 and not new_numbered_section
-                and not ptxt.endswith((".", "?", "!", ":", ";"))
+                and (colon_wrap or not ptxt.endswith((".", "?", "!", ":", ";")))
                 and len(ptxt) < 160
             )
             if numbered or continues:
@@ -627,7 +806,7 @@ def _merge_split_headings(flat: List[Tuple[int, Element]]) -> List[Tuple[int, El
 
 
 def _merge_split_paragraphs(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Element]]:
-    """Rejoin a paragraph that was broken in two.
+    """Rejoin a paragraph (or block quote) that was broken in two.
 
     A page turn is the usual cause: page furniture used to interrupt these,
     and now that it is stripped a sentence broken by the turn should read as
@@ -643,16 +822,28 @@ def _merge_split_paragraphs(flat: List[Tuple[int, Element]]) -> List[Tuple[int, 
     """
     out: List[Tuple[int, Element]] = []
     for page_no, el in flat:
-        if out and el.kind == ElementKind.PARAGRAPH and out[-1][1].kind == ElementKind.PARAGRAPH:
+        # A hanging-indent entry's continuation at the top of the next page
+        # has no hanging first line of its own, so it reads as a paragraph
+        # or (being indented) a block quote.
+        continues_entry = (out and out[-1][1].kind == ElementKind.REFERENCE
+                           and el.kind in (ElementKind.PARAGRAPH, ElementKind.BLOCKQUOTE))
+        if (out and el.kind in (ElementKind.PARAGRAPH, ElementKind.BLOCKQUOTE, ElementKind.REFERENCE)
+                and (out[-1][1].kind == el.kind or continues_entry)):
             prev = out[-1][1]
             ptxt, ctxt = prev.text.rstrip(), el.text.lstrip()
-            if ptxt and ctxt and not ptxt.endswith(_SENT_END) and ctxt[:1].islower():
+            # The continuation's first letter, past any opening bracket or
+            # quote: "(thereby losing something) somewhat as follows".
+            first_letter = next((c for c in ctxt[:4] if c.isalpha()), "")
+            if ptxt and ctxt and not ptxt.endswith(_SENT_END) and first_letter.islower():
                 if ends_hyphenated(ptxt):
                     if prev.runs[-1].noteref is None and not prev.runs[-1].sup:
                         prev.runs[-1].text = drop_break_hyphen(prev.runs[-1].text)
                     prev.runs.extend(el.runs)
                     continue
-                if page_no != out[-1][0]:
+                # Within a page too for a block quote: an epigraph's lines
+                # can be set ragged or right-aligned, and its last line then
+                # looks indented like a new paragraph's.
+                if page_no != out[-1][0] or el.kind == ElementKind.BLOCKQUOTE:
                     _join_runs(prev, " ")
                     prev.runs.extend(el.runs)
                     continue
@@ -747,6 +938,113 @@ def _insert_page_breaks(flat: List[Tuple[int, Element]]) -> List[Tuple[int, Elem
 _BARE_NUM_RE = re.compile(r"^\d{1,3}$")
 
 
+# An outline entry for a *grouping* division rather than a chapter: "Part
+# One", "Book II", "Partea întâi". Its children in the outline are the actual
+# chapters, and are split on in their own right (see _split_by_toc).
+_PART_TITLE_RE = re.compile(
+    r"^\s*(parts?|books?|partea|cartea|teil|partie|parte|livre|deel)\b", re.IGNORECASE
+)
+
+
+def _outline_boundaries(entries: List[Tuple[int, str, int]]) -> List[Tuple[int, str, int]]:
+    """Pick the outline entries to split chapters on, as (page, title, depth).
+
+    Top-level entries always split. A top-level entry that is a *Part* also
+    contributes its direct children: a book organized as Part > Chapter
+    otherwise ends up as one enormous file per Part, with every chapter
+    title missing from the table of contents. Children of an ordinary
+    chapter are its sections and stay inside it.
+    """
+    top_level = min(e[0] for e in entries)
+    out: List[Tuple[int, str, int]] = []
+    in_part = False
+    for level, title, page in entries:
+        if level == top_level:
+            in_part = bool(_PART_TITLE_RE.match(title))
+            out.append((page, title, 0))
+        elif in_part and level == top_level + 1:
+            out.append((page, title, 1))
+    return out
+
+
+_SECTION_NUM_RE = re.compile(r"^\s*(\d+(?:\.\d+)+)\.?\s")
+# A section heading is never longer than this, even one phrased as a whole
+# question and wrapped over five lines.
+_SECTION_MAX_WORDS = 70
+
+
+def _mark_outline_sections(flat: List[Tuple[int, Element]], toc) -> None:
+    """Make every section the PDF outline lists a heading in the text.
+
+    Font size finds a section heading set larger than body text, but many
+    books set them barely apart from it -- bold at body size, or italic --
+    and one that wraps onto a second line never qualifies at all. The
+    outline names each section and its page, which is far more reliable:
+    the paragraph on that page opening with the section's number (or, for
+    an unnumbered one, its title) is the heading. Its level follows its
+    depth below the chapter it belongs to.
+    """
+    entries = [(int(l), str(t).strip(), int(p) - 1) for l, t, p in toc if int(p) >= 1]
+    if not entries:
+        return
+    top = min(e[0] for e in entries)
+    chapter_level = top
+    in_part = False
+    for level, title, page in entries:
+        if level == top:
+            in_part = bool(_PART_TITLE_RE.match(title))
+            chapter_level = top + 1 if in_part else top
+            continue
+        if level <= chapter_level:
+            continue  # a chapter itself: it is split on, not marked
+        m = _SECTION_NUM_RE.match(title)
+        key = m.group(1) if m else _fold(title)[:24]
+        for pno, el in flat:
+            if pno < page or pno > page + 1:
+                continue
+            if el.kind not in (ElementKind.PARAGRAPH, ElementKind.HEADING, ElementKind.BLOCKQUOTE):
+                continue
+            text = el.text.strip()
+            if len(text.split()) > _SECTION_MAX_WORDS:
+                continue
+            hit = (re.match(re.escape(key) + r"\.?\s", text) if m
+                   else _fold(text).startswith(key))
+            if hit:
+                el.kind = ElementKind.HEADING
+                el.level = min(1 + level - chapter_level, 4)
+                el.runs = [InlineRun(text=" ".join(text.split()))]
+                # The outline's wording is the publisher's own short form
+                # for the table of contents.
+                el.nav_title = title
+                break
+
+
+def _fold(text: str) -> str:
+    return " ".join(re.findall(r"\w+", text.casefold()))
+
+
+def _join_title_headings(elements: List[Element], title: str) -> List[Element]:
+    """Join the chapter's opening headings when together they are its
+    outline title. A title set as a question over a subtitle ("Are we going
+    anywhere?" / "A static or cyclic universe…") ends in punctuation that
+    _merge_split_headings rightly treats as the end of a heading, but the
+    outline proves the two lines are one title."""
+    want = _fold(re.sub(r"^\s*\d+(?:\.\d+)*\.?\s+", "", title))
+    heads = []
+    for el in elements[:5]:
+        if el.kind != ElementKind.HEADING or el.level != 1:
+            break
+        heads.append(el)
+    for n in range(len(heads), 1, -1):
+        for start in range(len(heads) - n + 1):
+            group = heads[start:start + n]
+            joined = " ".join(h.text.strip() for h in group)
+            if _fold(joined).endswith(want) and want:
+                group[0].runs = [InlineRun(text=joined)]
+                return [el for el in elements if not any(el is h for h in group[1:])]
+    return elements
+
+
 def _split_by_toc(flat, notes_by_page, toc) -> Optional[List[Chapter]]:
     entries = [(int(l), str(t).strip(), int(p) - 1) for l, t, p in toc if int(p) >= 1]
     if len(entries) < 2:
@@ -763,17 +1061,28 @@ def _split_by_toc(flat, notes_by_page, toc) -> Optional[List[Chapter]]:
     # better. Reject the outline outright when every entry is this bare.
     if all(_BARE_NUM_RE.match(t) for _, t, _ in tops):
         return None
-    boundaries = sorted((t[2], t[1]) for t in tops)
+    # Outline order, not page order, decides nesting; a stable sort by page
+    # keeps a Part ahead of a first chapter that starts on the same page.
+    boundaries = sorted(_outline_boundaries(entries), key=lambda b: b[0])
 
     chapters: List[Chapter] = []
-    for i, (start_page, title) in enumerate(boundaries):
+    for i, (start_page, title, depth) in enumerate(boundaries):
         end_page = boundaries[i + 1][0] if i + 1 < len(boundaries) else 10 ** 9
-        ch = Chapter(title=title or f"Chapter {i + 1}")
-        ch.elements = [el for pno, el in flat if start_page <= pno < end_page]
+        ch = Chapter(title=title or f"Chapter {i + 1}", depth=depth)
+        ch.elements = _join_title_headings(
+            [el for pno, el in flat if start_page <= pno < end_page], title
+        )
         for pno, notes in notes_by_page.items():
             if start_page <= pno < end_page:
                 ch.footnotes.extend(notes)
         if ch.elements:
+            chapters.append(ch)
+        elif depth == 0 and i + 1 < len(boundaries) and boundaries[i + 1][2] == 1:
+            # A Part whose chapter starts on its own page (or one whose
+            # divider page was blank) still needs an entry of its own for
+            # its chapters to nest under.
+            ch.elements = [Element(kind=ElementKind.HEADING, level=1,
+                                   runs=[InlineRun(text=ch.title)])]
             chapters.append(ch)
 
     first = boundaries[0][0]
@@ -941,7 +1250,8 @@ def _assign_nav(chapter: Chapter, idx: int) -> None:
     for el in chapter.elements:
         if el.kind == ElementKind.HEADING and el.level > top:
             el.anchor = f"sec-{idx}-{k}"
-            chapter.subheads.append(SubHead(anchor=el.anchor, title=el.text.strip(), level=el.level))
+            chapter.subheads.append(SubHead(anchor=el.anchor, title=el.nav_title or el.text.strip(),
+                                            level=el.level))
             m = re.match(r"^\s*(\d+(?:\.\d+){0,3})\.?\s+", el.text.strip())
             if m:
                 targets[m.group(1)] = el.anchor
@@ -1002,12 +1312,17 @@ def build_document(
         flat = _insert_page_breaks(flat)
 
     toc = meta.get("_toc") or []
+    if toc:
+        _mark_outline_sections(flat, toc)
     chapters = _split_by_toc(flat, notes_by_page, toc) if toc else None
     if not chapters:
         chapters = _split_by_headings(flat, notes_by_page)
 
     if not keep_print_nav:
         chapters = [c for c in chapters if not _PRINT_NAV_RE.match(c.title.strip())] or chapters
+
+    # Before navigation is built, so a byline never becomes a TOC entry.
+    _mark_bylines(chapters, author or (meta.get("author") or ""))
 
     for i, ch in enumerate(chapters):
         if not keep_print_nav:
@@ -1018,6 +1333,8 @@ def build_document(
             _assign_nav(ch, i)
         ch.footnotes = [f for f in ch.footnotes if f.text.strip()]
         _resolve_notes(ch)
+
+    _settle_break_hyphens(chapters)
 
     doc = Document(chapters=chapters, language=language)
     doc.title = title or (meta.get("title") or "").strip() or _guess_title(chapters)
@@ -1036,6 +1353,46 @@ def build_document(
                 break
 
     return doc
+
+
+def _mark_bylines(chapters: List[Chapter], authors: str) -> None:
+    """Turn an author's name set under a chapter or part title -- which,
+    being large or alone on its line, reads as a heading or as the
+    chapter's opening paragraph -- into a byline."""
+    names = {
+        re.sub(r"\s+", " ", n).strip().casefold()
+        for n in re.split(r",|;|&|\band\b", authors) if n.strip()
+    }
+    if not names:
+        return
+    for ch in chapters:
+        for el in ch.elements[:4]:
+            if (el.kind in (ElementKind.HEADING, ElementKind.PARAGRAPH)
+                    and re.sub(r"\s+", " ", el.text).strip().casefold() in names):
+                el.kind = ElementKind.BYLINE
+                el.level = 0
+
+
+def _settle_break_hyphens(chapters: List[Chapter]) -> None:
+    """Decide every line-break hyphen held back by drop_break_hyphen, now
+    that the whole book is available to show how each word is spelled."""
+    elements = [el for ch in chapters for el in ch.elements + ch.footnotes]
+    forms = word_forms(r.text for el in elements for r in el.runs)
+    for el in elements:
+        runs = el.runs
+        for i, run in enumerate(runs):
+            # A break at the very end of a run continues into the next one
+            # (the continuation was set in a different style).
+            if run.text.endswith(BREAK_MARK) and i + 1 < len(runs):
+                left = re.search(r"[^\W\d_]*$", run.text[:-1]).group(0)
+                right = re.match(r"[^\W\d_]*", runs[i + 1].text).group(0)
+                settled = resolve_break_hyphens(f"{left}{BREAK_MARK}{right}", forms)
+                run.text = run.text[:-1] + ("-" if settled[len(left):len(left) + 1] == "-" else "")
+            run.text = resolve_break_hyphens(run.text, forms).replace(BREAK_MARK, "")
+    for ch in chapters:
+        ch.title = resolve_break_hyphens(ch.title, forms).replace(BREAK_MARK, "")
+        for sh in ch.subheads:
+            sh.title = resolve_break_hyphens(sh.title, forms).replace(BREAK_MARK, "")
 
 
 def _drop_front_matter_lists(chapter: Chapter) -> None:

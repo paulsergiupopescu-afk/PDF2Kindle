@@ -18,6 +18,7 @@ from typing import Callable, List, Optional
 from xml.sax.saxutils import escape, quoteattr
 
 from .model import Chapter, Element, ElementKind, InlineRun
+from .text import NUMBER_WORDS
 
 # Kindle's renderer honours a conservative subset of CSS. Justification plus
 # automatic hyphenation gives the clean "book" look; we avoid absolute units,
@@ -135,6 +136,15 @@ blockquote {
 }
 blockquote p { text-indent: 0; }
 
+p.byline {
+  text-indent: 0;
+  text-align: center;
+  font-style: italic;
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  margin: -0.4em 0 1.6em 0;
+}
+
 p.caption {
   text-indent: 0;
   text-align: center;
@@ -224,7 +234,8 @@ _DOC_HEAD = (
 # overview", "Chapter 3: The Aims of Law". Captures the number/label and the
 # remaining title text separately so they can be set as two visual tiers.
 _CHAPTER_SPLIT_RE = re.compile(
-    r"^\s*(chapter|part|book)\s+([\divxlc]+)\s*[:.\-–]?\s*(.*)$", re.IGNORECASE
+    r"^\s*(chapter|part|book)\s+([\divxlc]+|" + NUMBER_WORDS + r")\b\s*[:.\-–]?\s*(.*)$",
+    re.IGNORECASE,
 )
 _NUM_SPLIT_RE = re.compile(r"^\s*(\d+(?:\.\d+){0,3})\.?\s+(\S.*)$")
 
@@ -240,7 +251,11 @@ def _split_chapter_heading(text: str) -> Optional[tuple]:
     """
     m = _CHAPTER_SPLIT_RE.match(text)
     if m:
-        label = f"{m.group(1).title()} {m.group(2)}"
+        number = m.group(2)
+        # "FOUR" reads as "Four"; a roman numeral keeps its capitals.
+        if not re.fullmatch(r"[ivxlc]+", number, re.IGNORECASE):
+            number = number.title()
+        label = f"{m.group(1).title()} {number}"
         title = m.group(3).strip()
         return (label, title) if title else None
     m = _NUM_SPLIT_RE.match(text)
@@ -363,6 +378,8 @@ def _render_element(
         return f'<div class="image"><img src={quoteattr(href)} alt="figure"/></div>\n'
     if el.kind == ElementKind.BLOCKQUOTE:
         return f"<blockquote><p>{_render_runs(el.runs)}</p></blockquote>\n"
+    if el.kind == ElementKind.BYLINE:
+        return f'<p class="byline">{_render_runs(el.runs)}</p>\n'
     if el.kind == ElementKind.CAPTION:
         return f'<p class="caption">{_render_runs(el.runs)}</p>\n'
     if el.kind == ElementKind.REFERENCE:
@@ -373,7 +390,7 @@ def _render_element(
             tag = "th" if ri == 0 else "td"
             cells = "".join(f"<{tag}>{escape(cell)}</{tag}>" for cell in row)
             rows.append(f"<tr>{cells}</tr>")
-        return '<div class="table-wrap"><table>\\n' + "\\n".join(rows) + '\\n</table></div>\\n'
+        return '<div class="table-wrap"><table>\n' + "\n".join(rows) + '\n</table></div>\n'
     # paragraph
     if prev_h1:
         rendered = _render_opening_paragraph(el)
@@ -409,6 +426,8 @@ def render_chapter(chapter: Chapter, image_href_for: Callable[[Element], str], l
     prev_h1 = False
     for el in chapter.elements:
         body.append(_render_element(el, image_href_for, prev_heading, prev_h1))
+        if el.kind == ElementKind.BYLINE:
+            continue  # the paragraph after a byline still opens the chapter
         prev_h1 = el.kind == ElementKind.HEADING and min(max(el.level, 1), 4) == 1
         prev_heading = el.kind == ElementKind.HEADING
     body.append(render_footnotes(chapter))

@@ -17,6 +17,7 @@ break the reader's search and dictionary lookup:
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 _LIGATURES = {
     "ﬀ": "ff", "ﬁ": "fi", "ﬂ": "fl",
@@ -53,10 +54,72 @@ def ends_hyphenated(text: str) -> bool:
     return text.rstrip().endswith(_BREAK_HYPHENS)
 
 
+# A chapter or part label standing alone over its title: "CHAPTER FOUR",
+# "Part II", "Chapter 12". Set small and at the top of the page, it has the
+# look of a running head, but it is part of the title.
+NUMBER_WORDS = (
+    "one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|"
+    "fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty"
+)
+CHAPTER_LABEL_RE = re.compile(
+    r"^\s*(chapter|part|book)\s+(\d{1,3}|[ivxlc]{1,7}|" + NUMBER_WORDS + r")\s*$",
+    re.IGNORECASE,
+)
+
+
+# Stands in for a hard hyphen at a line break until the whole book has been
+# read: "self-" over "interest" is the compound "self-interest", while "evo-"
+# over "lution" is one word broken for the line. Only the book's own usage
+# elsewhere can tell them apart -- see resolve_break_hyphens.
+BREAK_MARK = "\ue000"
+
+_MARKED_RE = re.compile(r"([^\W\d_]*)" + BREAK_MARK + r"([^\W\d_]*)(?=([-‐‑][^\W\d_])?)")
+_WORD_RE = re.compile(r"[^\W\d_]+(?:[-‐‑][^\W\d_]+)*")
+# "self-" compounds keep their hyphen; these few words are written solid.
+_SELF_SOLID = {"ish", "ishly", "ishness", "less", "lessly", "lessness", "hood", "same"}
+
+
 def drop_break_hyphen(text: str) -> str:
-    """Strip a trailing line-break hyphen, to rejoin the word it split."""
+    """Strip a trailing line-break hyphen, to rejoin the word it split.
+
+    A soft hyphen only ever marks a break, so it simply goes. A hard one is
+    replaced by BREAK_MARK, because it may belong to the word.
+    """
     stripped = text.rstrip()
-    return stripped[:-1] if stripped.endswith(_BREAK_HYPHENS) else stripped
+    if not stripped.endswith(_BREAK_HYPHENS):
+        return stripped
+    return stripped[:-1] + ("" if stripped.endswith("\xad") else BREAK_MARK)
+
+
+def word_forms(texts) -> Counter:
+    """Count how each word is written across *texts*, ignoring marked breaks."""
+    counts: Counter = Counter()
+    for t in texts:
+        counts.update(w.lower() for w in _WORD_RE.findall(_MARKED_RE.sub(" ", t)))
+    return counts
+
+
+def resolve_break_hyphens(text: str, forms: Counter) -> str:
+    """Settle each BREAK_MARK in *text*: keep the hyphen where the book
+    itself writes the word hyphenated more often than solid."""
+    if BREAK_MARK not in text:
+        return text
+
+    def repl(m: re.Match) -> str:
+        left, right = m.group(1), m.group(2)
+        hyphenated = forms.get(f"{left}-{right}".lower(), 0)
+        solid = forms.get(f"{left}{right}".lower(), 0)
+        if m.group(3):
+            keep = True  # one hyphen of several: "brother-" / "in-law"
+        elif hyphenated > solid:
+            keep = True
+        elif hyphenated == solid == 0:
+            keep = left.lower() == "self" and right.lower() not in _SELF_SOLID
+        else:
+            keep = False
+        return f"{left}-{right}" if keep else f"{left}{right}"
+
+    return _MARKED_RE.sub(repl, text)
 
 
 def _fractions(text: str) -> str:

@@ -975,7 +975,10 @@ def test_paragraphs_split_by_a_hyphenated_word_merge_on_the_same_page():
     hyphen must rejoin its continuation even when both sit on the same page
     -- no paragraph ever legitimately ends that way."""
     from pdf2kindle.model import Element, ElementKind, InlineRun
+    from collections import Counter
+
     from pdf2kindle.structure import _merge_split_paragraphs
+    from pdf2kindle.text import resolve_break_hyphens
 
     flat = [
         (5, Element(kind=ElementKind.PARAGRAPH,
@@ -985,7 +988,10 @@ def test_paragraphs_split_by_a_hyphenated_word_merge_on_the_same_page():
     ]
     merged = _merge_split_paragraphs(flat)
     assert len(merged) == 1
-    assert merged[0][1].text == "o traiectorie istorică destul de complicată, în care elementul uman a fost evident."
+    # The hyphen is held as a mark until the whole book is read (see
+    # resolve_break_hyphens); with no other spelling of the word, it goes.
+    text = resolve_break_hyphens(merged[0][1].text, Counter())
+    assert text == "o traiectorie istorică destul de complicată, în care elementul uman a fost evident."
 
 
 def test_ordinary_paragraph_break_on_the_same_page_is_kept():

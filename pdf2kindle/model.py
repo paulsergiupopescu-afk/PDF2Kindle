@@ -116,7 +116,8 @@ class ElementKind(str, Enum):
     REFERENCE = "reference"  # bibliography entry (hanging indent)
     TABLE = "table"  # reconstructed table with semantic rows/cells
     FOOTNOTE = "footnote"  # a collected note body (rendered at chapter end)
-    PAGE_BREAK = "page_break"  # optional source-page boundary for fixed pagination references
+    PAGE_BREAK = "page_break"
+    BYLINE = "byline"  # an author's name under a chapter or part title  # optional source-page boundary for fixed pagination references
 
 
 @dataclass
@@ -141,6 +142,7 @@ class Element:
     level: int = 0  # heading level (1..6)
     size: float = 0.0  # source font size, for headings -- see _merge_split_headings
     anchor: str = ""  # id for intra-chapter navigation (headings)
+    nav_title: str = ""  # a heading's table-of-contents wording, if not its own text
     # image payload
     image: Optional[ImageBlock] = None
     # table payload: each inner list is one row, each string one cell.
@@ -169,6 +171,10 @@ class Chapter:
     elements: List[Element] = field(default_factory=list)
     footnotes: List[Element] = field(default_factory=list)
     subheads: List[SubHead] = field(default_factory=list)
+    # Nesting in the table of contents: 0 for a top-level entry, 1 for a
+    # chapter inside a "Part" (it nests under the nearest depth-0 chapter
+    # before it).
+    depth: int = 0
 
 
 @dataclass

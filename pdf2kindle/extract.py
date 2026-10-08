@@ -498,6 +498,140 @@ def _looks_like_map(lines: List[Line]) -> bool:
     return avg_words < 2.5 and median_len < 25 and _column_count(lines) > 10
 
 
+# A vector figure must cover at least this fraction of the page, and be built
+# from at least this many drawn strokes, to be rendered as a picture.
+_FIGURE_MIN_AREA = 0.03
+_FIGURE_MIN_PATHS = 3
+# Labels inside a figure are short; a line longer than this inside the drawn
+# area means it is a box around prose (a sidebar), not a diagram.
+_FIGURE_LABEL_WORDS = 10
+# A diagram explains itself with labels; a decorative ornament has none.
+_FIGURE_MIN_LABELS = 3
+# How far outside the drawn strokes a label may sit (points).
+_FIGURE_LABEL_REACH = 18.0
+_CAPTION_START = re.compile(r"^\s*(figure|fig\.|table|plate|map|chart|diagram)\s*\d", re.IGNORECASE)
+
+
+def _is_rule(rect: "pymupdf.Rect", page_width: float) -> bool:
+    """A thin horizontal/vertical stroke: a footnote separator, an underline,
+    a table rule -- typographic furniture, not part of any figure."""
+    return rect.height < 2 and rect.width > 0 or rect.width < 2 and rect.height > 0 and rect.height > 100
+
+
+def _vector_figures(page: "pymupdf.Page", lines: List[Line]) -> List["pymupdf.Rect"]:
+    """Regions of the page that are vector diagrams (boxes, arrows, curves).
+
+    Like a map (see _looks_like_map) a diagram's shapes are invisible to the
+    text extractor, but its labels are not -- they land in the text as a run
+    of meaningless fragments ("COMMON ORIGIN", "(evolution)", "FREE WILL").
+    Unlike a map, a diagram usually shares its page with prose, so the page
+    cannot be rendered whole. Only the drawn region is.
+
+    A drawing qualifies when it contains something other than straight
+    horizontal/vertical strokes -- a curve or a diagonal -- since a ruled
+    table is drawn from those alone and its text is worth keeping as text.
+    """
+    try:
+        drawings = page.get_drawings()
+    except Exception:  # pragma: no cover - malformed content stream
+        return []
+    width = page.rect.width
+    shapes = []
+    for d in drawings:
+        r = pymupdf.Rect(d.get("rect"))
+        if r.is_empty and r.width == 0 and r.height == 0:
+            continue
+        if _is_rule(r, width) and len(d.get("items", [])) <= 1:
+            continue
+        if d.get("color") is None and d.get("fill") in ((1.0, 1.0, 1.0), (1, 1, 1)):
+            continue  # white on white: invisible, whatever its size
+        if d.get("fill") is not None and r.width > width * 0.9:
+            continue  # a page-wide background tint
+        organic = any(
+            it[0] in ("c", "qu") or (it[0] == "l" and abs(it[1].x - it[2].x) > 1 and abs(it[1].y - it[2].y) > 1)
+            for it in d.get("items", [])
+        )
+        shapes.append((r, organic, len(d.get("items", []))))
+
+    # Cluster nearby shapes into figures.
+    clusters: List[list] = []
+    for r, organic, items in shapes:
+        grown = r + (-12, -12, 12, 12)
+        hit = [c for c in clusters if c[0].intersects(grown)]
+        merged = [pymupdf.Rect(r), organic, items]
+        for c in hit:
+            merged[0] |= c[0]
+            merged[1] = merged[1] or c[1]
+            merged[2] += c[2]
+            clusters.remove(c)
+        clusters.append(merged)
+
+    # Grow each cluster by the labels around it. A diagram's strokes are
+    # often just short arrows strung between its labels, so the labels are
+    # what joins them into one figure.
+    grown = []
+    for rect, organic, strokes in clusters:
+        if any(len(ln.text.split()) > _FIGURE_LABEL_WORDS for ln in lines if rect.contains(_center(ln))):
+            continue  # a box around prose (a sidebar), not a diagram
+        rect, labels = _take_labels(rect, lines)
+        grown.append([rect, organic, strokes, labels])
+    merged: List[list] = []
+    for g in grown:
+        for m in [m for m in merged if m[0].intersects(g[0])]:
+            g = [g[0] | m[0], g[1] or m[1], g[2] + m[2], g[3] | m[3]]
+            merged.remove(m)
+        merged.append(g)
+
+    page_area = width * page.rect.height
+    regions = []
+    for rect, organic, strokes, labels in merged:
+        if not organic or strokes < _FIGURE_MIN_PATHS or len(labels) < _FIGURE_MIN_LABELS:
+            continue
+        if rect.width * rect.height < page_area * _FIGURE_MIN_AREA:
+            continue
+        if any(len(ln.text.split()) > _FIGURE_LABEL_WORDS for ln in lines if rect.contains(_center(ln))):
+            continue
+        regions.append(rect + (-4, -4, 4, 4))
+    return regions
+
+
+def _take_labels(rect: "pymupdf.Rect", lines: List[Line]) -> tuple:
+    """Extend *rect* over the short lines in and around it -- a diagram's
+    labels, which sit just outside the strokes they annotate and are often
+    stacked ("COMMON ORIGIN" over "OF LIFE") -- until no more are in reach."""
+    rect = pymupdf.Rect(rect)
+    taken: set = set()
+    while True:
+        r = _FIGURE_LABEL_REACH
+        reach = rect + (-r, -r, r, r)
+        near = [i for i, ln in enumerate(lines)
+                if i not in taken and reach.intersects(pymupdf.Rect(ln.bbox))
+                and len(ln.text.split()) <= _FIGURE_LABEL_WORDS
+                and not _CAPTION_START.match(ln.text)]
+        if not near:
+            return rect, frozenset(taken)
+        for i in near:
+            rect |= pymupdf.Rect(lines[i].bbox)
+            taken.add(i)
+
+
+def _center(line: Line) -> "pymupdf.Point":
+    x0, y0, x1, y1 = line.bbox
+    return pymupdf.Point((x0 + x1) / 2, (y0 + y1) / 2)
+
+
+def _render_figures(page: "pymupdf.Page", p: Page) -> None:
+    """Replace each vector figure's scattered labels with a picture of it."""
+    for rect in _vector_figures(page, p.lines):
+        rect &= page.rect
+        p.lines = [ln for ln in p.lines if not rect.contains(_center(ln))]
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(2.5, 2.5), clip=rect, alpha=False)
+        p.images.append(ImageBlock(
+            data=pix.tobytes("png"), ext="png", bbox=tuple(rect),
+            width=pix.width, height=pix.height,
+        ))
+
+
 def _rasterize_page(page: "pymupdf.Page") -> ImageBlock:
     """Render a full page to a PNG, for a map/diagram whose vector content
     (borders, rivers, roads) has no text/image representation to extract."""
@@ -577,6 +711,8 @@ def extract(
             if progress:
                 progress(i + 1, doc.page_count)
             continue
+
+        _render_figures(page, p)
 
         needs_ocr = False
         if ocr_mode == "force":

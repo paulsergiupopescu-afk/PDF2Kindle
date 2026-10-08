@@ -71,7 +71,10 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
   otherwise detects headings from font-size clustering — including a heading
   wrapped over two or three lines, and one numbered without a space after its
   dot ("1.Literature overview") — and splits the book into one navigable
-  chapter per section with a full EPUB3 + NCX table of contents. A printed
+  chapter per section with a full EPUB3 + NCX table of contents. A book
+  organized as Part → Chapter gets one file per chapter, nested under its
+  Part in the TOC, and every section the PDF outline lists becomes a heading
+  and a TOC entry even when it is set at body size. A printed
   Contents page's dot-leader rows ("Introduction .......... 4") are never
   mistaken for real headings, however boldly Word styled them.
 - **Typographic nuance** — preserves **bold** / *italic* runs, small-caps and
@@ -89,7 +92,12 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
   rivers, a chart's lines) has nothing for a text/image extractor to find but
   the scatter of labels drawn on top; such pages are rendered as one picture
   instead of scattering "50", "I", "C" through the surrounding chapter as
-  bogus paragraphs.
+  bogus paragraphs. A diagram sharing its page with prose (boxes, arrows and
+  labels) is rendered as a picture of just its own region, above its caption.
+- **Publisher furniture** — running heads that carry their folio ("Classic
+  teaching on original sin 13") are recognized from the book's page numbering
+  even in chapters too short for them to repeat, and a logo stamped on every
+  blank page is dropped rather than embedded as a "figure".
 - **Typography repair** — folds ligature glyphs (`ﬁ`→`fi`) so Kindle search and
   dictionary lookup work, converts `` ``quoted'' `` to real curly quotes,
   rebuilds split fractions (`51⁄2` → `5½`), and collapses the padding spaces

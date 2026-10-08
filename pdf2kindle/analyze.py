@@ -16,9 +16,11 @@ from statistics import median
 from typing import List, Optional
 
 from .model import Line, Page
+from .text import CHAPTER_LABEL_RE
 
 _NOTE_START = re.compile(r"^\s*(?:[\*†‡§¶]|\(?\d{1,3}\)?[.\)]?)(?:\s|$)")
 _ENDNOTE_HEAD = re.compile(r"^\s*(notes|endnotes|notes to chapter\s*\d*)\s*$", re.IGNORECASE)
+_CAPTION_START = re.compile(r"^\s*(figure|fig\.|table|plate|map|chart)\s*\d", re.IGNORECASE)
 _DIGITS_ONLY = re.compile(r"^[\dIVXLCivxlc\s\.\-–—\[\]]+$")
 
 # How far into the page counts as the header/footer band.
@@ -81,6 +83,76 @@ def _normalize_running(text: str) -> str:
     return re.sub(r"\s+", " ", t)
 
 
+_EDGE_ARABIC = re.compile(r"^(\d{1,4})\s+\S|\S\s+(\d{1,4})$")
+_EDGE_ROMAN = re.compile(r"^([ivxlc]{1,7})\s+\S|\S\s+([ivxlc]{1,7})$")
+_ROMAN_VALUES = {"i": 1, "v": 5, "x": 10, "l": 50, "c": 100}
+# Margin lines carrying a folio needed to trust a page-number offset.
+_FOLIO_MIN = 3
+
+
+def _roman_value(text: str) -> int:
+    total = 0
+    for i, ch in enumerate(text):
+        v = _ROMAN_VALUES[ch]
+        nxt = _ROMAN_VALUES[text[i + 1]] if i + 1 < len(text) else 0
+        total += -v if v < nxt else v
+    return total
+
+
+def _edge_folios(text: str) -> List[tuple]:
+    """("arabic"|"roman", value) for a number at either end of a margin line."""
+    t = text.strip()
+    found = []
+    if _DIGITS_ONLY.match(t):
+        t = t.strip("[]().-–— ")
+        if t.isdigit():
+            return [("arabic", int(t))]
+        if t and all(c in _ROMAN_VALUES for c in t.lower()):
+            return [("roman", _roman_value(t.lower()))]
+        return []
+    m = _EDGE_ARABIC.search(t)
+    if m:
+        found.append(("arabic", int(m.group(1) or m.group(2))))
+    m = _EDGE_ROMAN.search(t)
+    if m:
+        found.append(("roman", _roman_value(m.group(1) or m.group(2))))
+    return found
+
+
+def _folio_offsets(pages: List[Page]) -> dict:
+    """The constant (PDF page index - printed page number), per numbering style.
+
+    A running head that carries its page's folio ("Classic teaching on
+    original sin 13") is the same text on at most a page or two when its
+    chapter is short, so counting repeats never catches it. Its folio,
+    though, follows the book's page numbering exactly -- and that numbering,
+    learned from every folio in the margins, identifies it with certainty.
+    """
+    counts: dict = {"arabic": Counter(), "roman": Counter()}
+    for p in pages:
+        if not p.lines or p.height <= 0:
+            continue
+        top, bot = p.height * _TOP_BAND, p.height * _BOT_BAND
+        for line in p.lines:
+            if line.y1 <= top or line.y0 >= bot:
+                for style, value in _edge_folios(line.text):
+                    counts[style][p.number - value] += 1
+    offsets = {}
+    for style, counter in counts.items():
+        if counter:
+            offset, n = counter.most_common(1)[0]
+            if n >= _FOLIO_MIN:
+                offsets[style] = offset
+    return offsets
+
+
+def _carries_folio(text: str, page_number: int, offsets: dict) -> bool:
+    return any(
+        style in offsets and page_number - offsets[style] == value
+        for style, value in _edge_folios(text)
+    )
+
+
 def _margin_repeats(pages: List[Page]) -> Counter:
     """Count normalized text appearing in the top/bottom bands across the book."""
     counter: Counter = Counter()
@@ -129,6 +201,8 @@ def _is_furniture(
     body_size: float,
     line_height: float,
     repeats: Counter,
+    page_number: int = -1,
+    folio_offsets: Optional[dict] = None,
 ) -> bool:
     """Is this margin line a running head / folio rather than real content?"""
     txt = line.text.strip()
@@ -138,6 +212,14 @@ def _is_furniture(
     in_band = line.y1 <= height * _TOP_BAND if at_top else line.y0 >= height * _BOT_BAND
     if not in_band:
         return False
+
+    # A short line holding exactly this page's printed number at one end is
+    # a running head with its folio -- see _folio_offsets. Not when larger
+    # than body text: a chapter title can end in a number too.
+    if (folio_offsets and len(txt.split()) <= 12
+            and line.dominant_size <= body_size + 0.3
+            and _carries_folio(txt, page_number, folio_offsets)):
+        return True
 
     # A bare folio ("12", "xiv", "[3]") -- checked before the "larger than
     # body text" guard below, because a page number is routinely set a
@@ -157,6 +239,12 @@ def _is_furniture(
     if line.dominant_size > body_size + 0.3:
         return False
 
+    # A "CHAPTER FOUR" label over a chapter title is small, short and set
+    # apart at the top of the page -- everything a running head is, except
+    # repeated from page to page.
+    if CHAPTER_LABEL_RE.match(txt) and repeats.get(_normalize_running(txt), 0) < _REPEAT_MIN:
+        return False
+
     # Set noticeably smaller than body text, at the *top* margin: a running
     # head's defining trait, and one no genuine heading shares (a heading is
     # never smaller than body text). Top only -- the bottom margin is exactly
@@ -167,7 +255,14 @@ def _is_furniture(
     # both the repeat count below and the word-count gap check after it -- a
     # real risk on a noisily-scanned page, where the same printed header can
     # come out as a different garbled string each time.
-    if at_top and line.dominant_size <= body_size - 1.5:
+    # Unless the line opens a block of equally small type right below it:
+    # that is the top of a page of endnotes, not a head over body text.
+    small_block = (
+        neighbour is not None
+        and abs(neighbour.dominant_size - line.dominant_size) < 0.5
+        and neighbour.y0 - line.y1 < line_height
+    )
+    if at_top and line.dominant_size <= body_size - 1.5 and not small_block:
         return True
 
     # Repeats elsewhere in the margins → running head/foot. This catches
@@ -175,8 +270,9 @@ def _is_furniture(
     if repeats.get(_normalize_running(txt), 0) >= _REPEAT_MIN:
         return True
 
-    # Otherwise: short, and set off from the text block by a clear gap.
-    if neighbour is not None and len(txt.split()) <= 10:
+    # Otherwise: short, and set off from the text block by a clear gap --
+    # but a figure caption set at the foot of the page is that shape too.
+    if neighbour is not None and len(txt.split()) <= 10 and not _CAPTION_START.match(txt):
         gap = (neighbour.y0 - line.y1) if at_top else (line.y0 - neighbour.y1)
         if gap >= line_height * 1.4:
             return True
@@ -184,14 +280,16 @@ def _is_furniture(
 
 
 def _strip_furniture(
-    lines: List[Line], height: float, body_size: float, line_height: float, repeats: Counter
+    lines: List[Line], height: float, body_size: float, line_height: float, repeats: Counter,
+    page_number: int = -1, folio_offsets: Optional[dict] = None,
 ) -> List[Line]:
     kept = sorted(lines, key=lambda ln: ln.y0)
     for _ in range(_MAX_STRIP):
         if len(kept) < 2:
             break
         if _is_furniture(kept[0], kept[1], at_top=True, height=height, body_size=body_size,
-                         line_height=line_height, repeats=repeats):
+                         line_height=line_height, repeats=repeats,
+                         page_number=page_number, folio_offsets=folio_offsets):
             kept = kept[1:]
         else:
             break
@@ -199,7 +297,8 @@ def _strip_furniture(
         if len(kept) < 2:
             break
         if _is_furniture(kept[-1], kept[-2], at_top=False, height=height, body_size=body_size,
-                         line_height=line_height, repeats=repeats):
+                         line_height=line_height, repeats=repeats,
+                         page_number=page_number, folio_offsets=folio_offsets):
             kept = kept[:-1]
         else:
             break
@@ -210,9 +309,71 @@ def _strip_furniture(
 # Reading order
 # --------------------------------------------------------------------------- #
 
+# A gutter between two columns is at least this wide (points), and both
+# columns hold at least this many lines.
+_GUTTER_MIN = 8.0
+_COLUMN_MIN_LINES = 4
+
+
+def _find_gutter(lines: List[Line], width: float) -> Optional[float]:
+    """x-position of an empty vertical channel splitting the page in two.
+
+    Measured on the spans themselves, not on whole lines: where two columns
+    of short entries (an index) sit at the same height, the extractor joins
+    the left and right entries into one line, and only the run of empty
+    space between their spans still shows the columns apart.
+    """
+    if width <= 0:
+        return None
+    covered = bytearray(int(width) + 1)
+    for ln in lines:
+        for sp in ln.spans:
+            if not sp.text.strip():
+                continue
+            a, b = max(0, int(sp.bbox[0])), min(int(width), int(sp.bbox[2]))
+            covered[a:b + 1] = b"\x01" * max(0, b + 1 - a)
+    # The widest uncovered run in the middle of the page.
+    best, best_len, run_start = None, 0.0, None
+    lo, hi = int(width * 0.3), int(width * 0.7)
+    for x in range(lo, hi + 2):
+        empty = x <= hi and not covered[x]
+        if empty and run_start is None:
+            run_start = x
+        elif not empty and run_start is not None:
+            if x - run_start > best_len:
+                best, best_len = (run_start + x) / 2.0, x - run_start
+            run_start = None
+    if best is None or best_len < _GUTTER_MIN:
+        return None
+    left = sum(1 for ln in lines if any(sp.bbox[2] <= best for sp in ln.spans if sp.text.strip()))
+    right = sum(1 for ln in lines if any(sp.bbox[0] >= best for sp in ln.spans if sp.text.strip()))
+    if left < _COLUMN_MIN_LINES or right < _COLUMN_MIN_LINES:
+        return None
+    return best
+
+
+def _split_at(line: Line, x: float) -> List[Line]:
+    """Split a line into its parts either side of *x* (spans never cross it)."""
+    parts = []
+    for side in ([sp for sp in line.spans if sp.bbox[2] <= x],
+                 [sp for sp in line.spans if sp.bbox[2] > x]):
+        if any(sp.text.strip() for sp in side):
+            bbox = (min(sp.bbox[0] for sp in side), min(sp.bbox[1] for sp in side),
+                    max(sp.bbox[2] for sp in side), max(sp.bbox[3] for sp in side))
+            parts.append(Line(spans=side, bbox=bbox))
+    return parts
+
+
 def _order_lines(lines: List[Line], width: float) -> List[Line]:
     if len(lines) < 6:
         return sorted(lines, key=lambda ln: (round(ln.y0, 1), ln.x0))
+    gutter = _find_gutter(lines, width)
+    if gutter is not None:
+        parts = [part for ln in lines for part in _split_at(ln, gutter)]
+        left = [ln for ln in parts if ln.x1 <= gutter]
+        right = [ln for ln in parts if ln.x0 >= gutter]
+        return (sorted(left, key=lambda ln: (round(ln.y0, 1), ln.x0))
+                + sorted(right, key=lambda ln: (round(ln.y0, 1), ln.x0)))
     mid = width / 2.0
     left = [ln for ln in lines if ln.x1 <= mid + width * 0.03]
     right = [ln for ln in lines if ln.x0 >= mid - width * 0.03]
@@ -237,10 +398,16 @@ def _starts_with_marker(line: Line, body_size: float) -> bool:
     first = next((s for s in line.spans if s.text.strip()), None)
     if first is None:
         return False
-    # A raised/smaller leading number is a note label even without a space.
+    # A raised/smaller leading number is a note label even without a space --
+    # but not a number that runs on into a bracket, dash or comma: that is
+    # the tail of a reference broken over the line ("Amos 9:1–" / "16] are
+    # not even about God"), in a block quote set at note size.
+    text = line.text.strip()
+    digits = len(text) - len(text.lstrip("0123456789"))
     return (
         (first.superscript or first.size <= body_size - 1.0)
-        and first.text.strip()[:1].isdigit()
+        and digits > 0
+        and text[digits:digits + 1] not in tuple("]–-,:;/)")
     )
 
 
@@ -250,7 +417,9 @@ def _split_body_notes(
     """Peel a trailing smaller-type footnote block off the bottom of the page."""
     if not lines:
         return [], []
-    ordered = sorted(lines, key=lambda ln: ln.y0)
+    # Already in reading order (see _order_lines). Re-sorting by height here
+    # would interleave the two columns of a two-column page line by line.
+    ordered = list(lines)
 
     notes: List[Line] = []
     i = len(ordered) - 1
@@ -292,14 +461,17 @@ def _mark_endnote_sections(contents: List[PageContent], body_size: float) -> Non
     reconstruct (a label line looks like a continuation of the indented line
     above it). Capturing them here, as lines, lets the note parser pair labels
     with their bodies directly. A section runs from the "Notes" heading until a
-    heading-sized line -- normally the start of the next chapter.
+    heading-sized line or a chapter label -- normally the start of the next
+    chapter.
     """
     in_notes = False
     for pc in contents:
         if in_notes and pc.body_lines:
             cut = len(pc.body_lines)
             for i, ln in enumerate(pc.body_lines):
-                if ln.dominant_size > body_size + 0.5:
+                # The next chapter: its title, or the small "CHAPTER FOUR"
+                # label set above it.
+                if ln.dominant_size > body_size + 0.5 or CHAPTER_LABEL_RE.match(ln.text.strip()):
                     cut, in_notes = i, False
                     break
             pc.note_lines = pc.body_lines[:cut] + pc.note_lines
@@ -323,11 +495,13 @@ def analyze(pages: List[Page]) -> Analyzed:
     line_height = _median_line_height(pages)
     body_left = _dominant_left(pages, body_size)
     repeats = _margin_repeats(pages)
+    folio_offsets = _folio_offsets(pages)
 
     out = Analyzed(body_size=body_size, line_height=line_height, body_left=body_left)
     for p in pages:
         lines = [ln for ln in p.lines if ln.text.strip() and not _is_debris(ln)]
-        kept = _strip_furniture(lines, p.height, body_size, line_height, repeats)
+        kept = _strip_furniture(lines, p.height, body_size, line_height, repeats,
+                                page_number=p.number, folio_offsets=folio_offsets)
         ordered = _order_lines(kept, p.width)
         body_lines, note_lines = _split_body_notes(ordered, body_size, p.height, line_height)
         out.pages.append(
