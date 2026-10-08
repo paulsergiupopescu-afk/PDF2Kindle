@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Tuple
 from .analyze import Analyzed, PageContent
 from .extract import _column_count
 from .footnotes import find_embedded_markers, find_markers, parse_page_notes
+from .hyphens import repair_hyphens
 from .text import drop_break_hyphen, ends_hyphenated, normalize
 from .document_analysis import DocumentStatistics, PageType
 from .model import (
@@ -1020,6 +1021,7 @@ def build_document(
         _resolve_notes(ch)
 
     doc = Document(chapters=chapters, language=language)
+    repair_hyphens(doc)
     doc.title = title or (meta.get("title") or "").strip() or _guess_title(chapters)
     doc.author = author or (meta.get("author") or "").strip() or _guess_author(chapters)
 
