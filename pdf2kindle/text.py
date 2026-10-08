@@ -44,8 +44,10 @@ _MULTISPACE_RE = re.compile(r"  +")
 # the break actually happens, so typesetting sprinkles it through a paragraph
 # and PDF extraction hands it back at the line end exactly where a plain
 # hyphen would be. Code that only looks for "-" rejoins none of those, and
-# leaves "Litur ghia" and "Dumne zeu" scattered through the text.
-_BREAK_HYPHENS = ("-", "\xad", "‐", "‑")
+# leaves "Litur ghia" and "Dumne zeu" scattered through the text. ABBYY's
+# OCR -- behind every Internet Archive scan -- marks a line-end hyphen with
+# the "not" sign instead, which would otherwise leave "reli¬ gion" behind.
+_BREAK_HYPHENS = ("-", "\xad", "‐", "‑", "¬")
 
 
 def ends_hyphenated(text: str) -> bool:

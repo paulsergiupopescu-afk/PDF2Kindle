@@ -1047,3 +1047,11 @@ def test_a_genuinely_large_bare_number_heading_is_not_mistaken_for_a_folio():
     neighbour = _scan_line("Some Chapter Title", size=30.0)
     assert not _is_furniture(big_number, neighbour, at_top=True, height=800.0,
                              body_size=11.0, line_height=11.2, repeats=Counter())
+
+
+def test_ocr_not_sign_is_a_break_hyphen():
+    # ABBYY OCR (Internet Archive scans) marks a line-end hyphen with "¬".
+    from pdf2kindle.text import drop_break_hyphen, ends_hyphenated
+
+    assert ends_hyphenated("between science and reli¬ ")
+    assert drop_break_hyphen("between science and reli¬ ") + "gion" == "between science and religion"
