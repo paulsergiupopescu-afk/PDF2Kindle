@@ -167,7 +167,7 @@ def _is_furniture(
     # both the repeat count below and the word-count gap check after it -- a
     # real risk on a noisily-scanned page, where the same printed header can
     # come out as a different garbled string each time.
-    if at_top and line.dominant_size <= body_size - 1.5:
+    if at_top and line.dominant_size <= body_size - 1.5 and not _is_smallcaps_subhead(line, neighbour, line_height):
         return True
 
     # Repeats elsewhere in the margins → running head/foot. This catches
@@ -181,6 +181,21 @@ def _is_furniture(
         if gap >= line_height * 1.4:
             return True
     return False
+
+
+def _is_smallcaps_subhead(line: Line, neighbour: Optional[Line], line_height: float) -> bool:
+    """A small-caps subheading ("THE VRATYAS") opening a page's text.
+
+    Small caps are set smaller than body text, so size alone makes one look
+    like a running head. What tells them apart is spacing: a running head is
+    set off from the text block by a clear gap, while a subheading sits on
+    the text it introduces. Requires an all-capitals line, which a scan's
+    garbled mixed-case running head never is.
+    """
+    letters = [c for c in line.text if c.isalpha()]
+    if len(letters) < 4 or sum(c.isupper() for c in letters) < 0.85 * len(letters):
+        return False
+    return neighbour is not None and neighbour.y0 - line.y1 < line_height
 
 
 def _strip_furniture(
