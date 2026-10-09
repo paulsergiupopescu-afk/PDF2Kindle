@@ -1047,3 +1047,125 @@ def test_a_genuinely_large_bare_number_heading_is_not_mistaken_for_a_folio():
     neighbour = _scan_line("Some Chapter Title", size=30.0)
     assert not _is_furniture(big_number, neighbour, at_top=True, height=800.0,
                              body_size=11.0, line_height=11.2, repeats=Counter())
+
+
+def _ocr_line(text, y0, *, x0=98.0, x1=406.0, size=8.5):
+    """A line as an OCR text layer reports it: box exactly as tall as the type."""
+    from pdf2kindle.model import Line, Span
+    return Line(spans=[Span(text=text, font="Constantia", size=size, flags=0, color=0,
+                            bbox=(x0, y0, x1, y0 + size), origin=(x0, y0 + size))],
+                bbox=(x0, y0, x1, y0 + size))
+
+
+def test_ocr_leading_is_not_mistaken_for_paragraph_breaks():
+    """An OCR layer's line boxes are only as tall as the glyphs, so the
+    whitespace between lines of one paragraph (here ~5pt at 8.5pt type) is
+    bigger than a threshold derived from box height alone. The lines must
+    still group into paragraphs, broken only by the first-line indent."""
+    from pdf2kindle.analyze import PageContent
+    from pdf2kindle.structure import _group_paragraphs
+
+    ys = [231.9, 245.5, 258.9, 272.5, 286.1, 299.5, 312.9]
+    lines = [_ocr_line(f"justified body text line number {k} of the paragraph", y)
+             for k, y in enumerate(ys)]
+    # Second paragraph: indented first line, then full-measure lines.
+    lines.append(_ocr_line("A new paragraph opens with an indent here", 326.5, x0=110.0))
+    lines.append(_ocr_line("and carries on at the margin", 340.1))
+    page = PageContent(number=9, width=450, height=600, ocr=False, body_lines=lines)
+    groups = _group_paragraphs(page, body_size=8.5, line_height=8.5)
+    assert [len(g) for g in groups] == [7, 2]
+
+
+def test_real_vertical_paragraph_gap_still_splits_on_tight_boxes():
+    """Raising the gap threshold to the page's own leading must not swallow a
+    genuine blank-line break between two paragraphs."""
+    from pdf2kindle.analyze import PageContent
+    from pdf2kindle.structure import _group_paragraphs
+
+    ys = [100.0, 113.4, 126.8, 140.2, 170.0, 183.4, 196.8]  # ~25pt gap before 170
+    lines = [_ocr_line(f"justified body text line number {k} of the page", y)
+             for k, y in enumerate(ys)]
+    page = PageContent(number=9, width=450, height=600, ocr=False, body_lines=lines)
+    groups = _group_paragraphs(page, body_size=8.5, line_height=8.5)
+    assert [len(g) for g in groups] == [4, 3]
+
+
+def test_block_quotes_are_measured_against_the_pages_own_margin():
+    """A scan's verso pages can be cropped ~60pt to the right of its rectos.
+    Body text on such a page is not a block quote just because it starts
+    right of the book-wide margin, while a genuinely indented quote on the
+    same page still is one."""
+    from pdf2kindle.analyze import PageContent
+    from pdf2kindle.structure import _is_blockquote, _page_left
+
+    body = [_ocr_line("full measure body text on a verso page of the scan", 100 + 13.4 * k)
+            for k in range(8)]
+    quote = [_ocr_line("an indented quotation set inside the body", 220 + 13.4 * k,
+                       x0=128.0, x1=380.0) for k in range(3)]
+    page = PageContent(number=10, width=450, height=600, ocr=False, body_lines=body + quote)
+    left = _page_left(page, fallback=36.0)
+    assert left == 98.0
+    assert not _is_blockquote(body[:4], left, 8.5, 450)
+    assert _is_blockquote(quote, left, 8.5, 450)
+
+
+def test_small_caps_subheading_at_page_top_is_not_a_running_head():
+    """A small-caps subheading opening a page is set smaller than body text,
+    just like a running head; it sits on the text it introduces, while a
+    running head is set off by a gap -- that spacing decides."""
+    from collections import Counter
+    from pdf2kindle.analyze import _is_furniture
+
+    subhead = _ocr_line("T H E VRATYAS", 52.0, x0=58.0, x1=116.0, size=7.0)
+    text_below = _ocr_line("Apart from the Kesins, Book 15 of the Atharva Veda", 64.0)
+    assert not _is_furniture(subhead, text_below, at_top=True, height=600.0,
+                             body_size=8.5, line_height=8.5, repeats=Counter())
+
+    # The same small-caps line set off by a running head's gap is furniture...
+    far_below = _ocr_line("Apart from the Kesins, Book 15 of the Atharva Veda", 80.0)
+    assert _is_furniture(subhead, far_below, at_top=True, height=600.0,
+                         body_size=8.5, line_height=8.5, repeats=Counter())
+    # ...and a small mixed-case running head stays furniture however close.
+    head = _ocr_line("Yoga and rc nun dation", 52.0, size=7.0)
+    assert _is_furniture(head, text_below, at_top=True, height=600.0,
+                         body_size=8.5, line_height=8.5, repeats=Counter())
+
+
+def test_outline_chapter_emptied_by_dropping_its_list_is_omitted(tmp_path):
+    """An outline entry pointing at nothing but a List of Illustrations leaves
+    an empty chapter once that print-only list is dropped. It must be left
+    out, not written as an empty (invalid) XHTML document."""
+    import fitz
+
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 120), "A Book Title", fontsize=24)
+    page = doc.new_page()
+    page.insert_text((72, 100), "Illustrations", fontsize=16)
+    page.insert_text((72, 130), "Plates", fontsize=13)
+    page.insert_text((72, 160), "Unless otherwise stated, the author is responsible for the plates.",
+                     fontsize=11)
+    for k in range(6):
+        page.insert_text((72, 180 + 16 * k),
+                         f"{k + 1} A temple gateway photographed in Tamilnadu, seventh century",
+                         fontsize=11)
+    for n in (1, 2):
+        page = doc.new_page()
+        page.insert_text((72, 100), f"Chapter {n}", fontsize=18)
+        for k in range(20):
+            page.insert_text((72, 140 + 16 * k),
+                             "Ordinary body text fills the chapter page from margin to margin.",
+                             fontsize=11)
+    doc.set_toc([[1, "Title", 1], [1, "List of Illustrations", 2],
+                 [1, "Chapter 1", 3], [1, "Chapter 2", 4]])
+    src = tmp_path / "outline.pdf"
+    doc.save(str(src))
+
+    out = tmp_path / "outline.epub"
+    convert_pdf(str(src), str(out), ConvertOptions(ocr="never"))
+    with zipfile.ZipFile(out) as z:
+        bodies = [z.read(n).decode("utf-8") for n in z.namelist()
+                  if re.search(r"chap_\d+\.xhtml$", n)]
+    assert bodies
+    assert all(re.search(r"<body>\s*\S", b) for b in bodies)
+    assert not any("temple gateway" in b for b in bodies)

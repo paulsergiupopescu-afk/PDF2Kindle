@@ -286,6 +286,45 @@ def _is_wrapped_heading(group: List[Line], body_size: float) -> Optional[int]:
 # Paragraph grouping
 # --------------------------------------------------------------------------- #
 
+def _typical_gap(lines: List[Line], line_height: float) -> float:
+    """Median whitespace between consecutive lines on a page.
+
+    ``line_height`` is a median line-box *height*, which only stands in for
+    the leading when boxes include ascenders and descenders. An OCR text
+    layer (ABBYY FineReader and similar) reports boxes no taller than the
+    glyphs, so ordinary leading between two lines of one paragraph can
+    exceed a threshold derived from box height alone, and every other line
+    would start a new paragraph. The page's own typical gap is the baseline
+    a paragraph break has to stand out from.
+    """
+    gaps = sorted(
+        b.y0 - a.y1 for a, b in zip(lines, lines[1:])
+        if 0 < b.y0 - a.y1 < line_height * 2
+    )
+    return gaps[len(gaps) // 2] if len(gaps) >= 4 else 0.0
+
+
+def _page_left(page: PageContent, fallback: float) -> float:
+    """Left margin of this page's text block, from its full-measure lines.
+
+    A scanned book's recto and verso pages are routinely cropped
+    differently, so the text block can start tens of points apart on
+    facing pages; against a single book-wide margin, every line on the
+    shifted pages reads as indented. Full-measure (justified) lines are body
+    text by construction -- a block quote is narrower because it is
+    indented -- so they mark where this page's body text starts.
+    """
+    lines = [ln for ln in page.body_lines if ln.text.strip()]
+    if len(lines) < 8:
+        return fallback
+    left = min(ln.x0 for ln in lines)
+    right = max(ln.x1 for ln in lines)
+    full = sorted(ln.x0 for ln in lines if ln.x1 - ln.x0 >= 0.85 * (right - left))
+    if len(full) < 4:
+        return fallback
+    return full[len(full) // 2]
+
+
 def _group_paragraphs(page: PageContent, body_size: float, line_height: float) -> List[List[Line]]:
     """Split a page's body lines into paragraph groups.
 
@@ -301,7 +340,7 @@ def _group_paragraphs(page: PageContent, body_size: float, line_height: float) -
     left_margin = min(ln.x0 for ln in lines)
     text_width = max(1.0, right_edge - left_margin)
     indent_min = max(6.0, text_width * 0.02)
-    gap_threshold = line_height * 0.6
+    gap_threshold = max(line_height * 0.6, _typical_gap(lines, line_height) * 1.6)
 
     groups: List[List[Line]] = []
     cur: List[Line] = []
@@ -506,6 +545,7 @@ def _build_flow(
                 for nb in page_notes
             ]
 
+        page_left = _page_left(page, analyzed.body_left)
         for group in _group_paragraphs(page, analyzed.body_size, analyzed.line_height):
             if academic:
                 table_rows = _table_from_group(group)
@@ -535,7 +575,7 @@ def _build_flow(
             if academic:
                 if _CAPTION_RE.match(group[0].text):
                     kind = ElementKind.CAPTION
-                elif _is_blockquote(group, analyzed.body_left, analyzed.body_size, page.width):
+                elif _is_blockquote(group, page_left, analyzed.body_size, page.width):
                     kind = ElementKind.BLOCKQUOTE
             flat.append((page.number, Element(kind=kind, runs=runs)))
 
@@ -1018,6 +1058,10 @@ def build_document(
             _assign_nav(ch, i)
         ch.footnotes = [f for f in ch.footnotes if f.text.strip()]
         _resolve_notes(ch)
+    # A chapter that held nothing but a printed list of illustrations (an
+    # outline entry of its own) is empty once that list is dropped; an
+    # empty XHTML body is not a valid EPUB document.
+    chapters = [c for c in chapters if c.elements or c.footnotes] or chapters
 
     doc = Document(chapters=chapters, language=language)
     doc.title = title or (meta.get("title") or "").strip() or _guess_title(chapters)
