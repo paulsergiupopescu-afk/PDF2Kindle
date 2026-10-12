@@ -4,7 +4,8 @@
 Extracts Psalms 1-150 from *The Catholic Study Bible* (New American Bible,
 Revised Edition) EPUB and places each psalm at the start of the matching
 commentary in Laurence Kriegshauser's *Praying the Psalms in Christ*. The
-result is a new EPUB 3 with one file per psalm, a 1-150 jump grid and a
+result is a new EPUB 2 (the same format as the original book, for Send to
+Kindle) with one file per psalm, a 1-150 jump grid and a
 nested table of contents. Every footnote, index and contents link into the
 old commentary files is rewritten to the file that now holds its target.
 
@@ -15,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import copy
-import datetime as _dt
 import posixpath
 import re
 import sys
@@ -334,11 +334,13 @@ def heading(ah, number: int):
     return h2, key.text
 
 
+DOCTYPE = ('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
+           '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">')
 HEAD = """<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="en" lang="en">
+""" + DOCTYPE + """
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-<meta charset="utf-8"/>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <title>{title}</title>
 <link href="und.css" rel="stylesheet" type="text/css"/>
 </head>
@@ -458,8 +460,8 @@ def close_empty_elements(data: bytes) -> bytes:
         if (isinstance(el.tag, str) and el.text is None and len(el) == 0
                 and etree.QName(el).localname not in VOID):
             el.text = ""
-    return etree.tostring(root.getroottree(), xml_declaration=True, encoding="utf-8",
-                          doctype="<!DOCTYPE html>")
+    body = etree.tostring(root, encoding="unicode")
+    return ('<?xml version="1.0" encoding="utf-8"?>\n' + DOCTYPE + "\n" + body + "\n").encode("utf-8")
 
 
 def collect_ids(files: dict[str, bytes]) -> dict[str, str]:
@@ -550,28 +552,6 @@ def build_ncx(nav, uid: str, title: str) -> bytes:
 """.encode("utf-8")
 
 
-def build_nav(nav, landmarks) -> bytes:
-    def ol(items, depth):
-        pad = "  " * depth
-        s = [f"{pad}<ol>"]
-        for label, href, kids in items:
-            if kids:
-                s.append(f'{pad}  <li><a href="{escape(href)}">{escape(label)}</a>')
-                s.extend(ol(kids, depth + 2))
-                s.append(f"{pad}  </li>")
-            else:
-                s.append(f'{pad}  <li><a href="{escape(href)}">{escape(label)}</a></li>')
-        s.append(f"{pad}</ol>")
-        return s
-
-    lm = "\n".join(f'    <li><a epub:type="{t}" href="{escape(h)}">{escape(l)}</a></li>'
-                   for t, h, l in landmarks)
-    body = ('<nav epub:type="toc" id="toc">\n<h1>Contents</h1>\n'
-            + "\n".join(ol(nav, 0)) + "\n</nav>\n"
-            + f'<nav epub:type="landmarks" hidden="">\n  <ol>\n{lm}\n  </ol>\n</nav>')
-    return page("Contents", body)
-
-
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("bible")
@@ -633,11 +613,6 @@ def main(argv=None) -> int:
                                    for l, h in orig_nav])
 
     uid = "urn:uuid:" + str(uuid.uuid5(uuid.NAMESPACE_URL, "praying-the-psalms-in-christ+nabre"))
-    html["nav.xhtml"] = build_nav(nav, [
-        ("cover", "und-kriegshauser-0001.html", "Cover"),
-        ("toc", "und-kriegshauser-0006.html", "Contents"),
-        ("bodymatter", "und-kriegshauser-0009.html", "Introduction"),
-    ])
 
     new_spine = []
     for name in spine:
@@ -664,31 +639,26 @@ def main(argv=None) -> int:
     css = get("und.css") + NAB_CSS.encode("utf-8")
 
     date = opf.findtext(".//{http://purl.org/dc/elements/1.1/}date") or ""
-    modified = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     items = ['<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>',
-             '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>',
              '<item id="css" href="und.css" media-type="text/css"/>']
     ids_for = {}
-    for i, name in enumerate(n for n in html if n != "nav.xhtml"):
+    for i, name in enumerate(html):
         ids_for[name] = f"x{i:03d}"
         items.append(f'<item id="x{i:03d}" href="{name}" media-type="application/xhtml+xml"/>')
     others = [n[len(base):] for n in names
               if n.endswith((".jpg", ".jpeg", ".png", ".otf", ".ttf"))]
     for i, name in enumerate(others):
         mt = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
-              "otf": "font/otf", "ttf": "font/ttf"}[name.rsplit(".", 1)[1]]
-        props = ' properties="cover-image"' if name.endswith("-cover.jpg") else ""
-        iid = "cover-image" if props else f"r{i:02d}"
-        items.append(f'<item id="{iid}" href="{name}" media-type="{mt}"{props}/>')
+              "otf": "application/x-font-opentype", "ttf": "application/x-font-truetype"}[name.rsplit(".", 1)[1]]
+        iid = "cover-image" if name.endswith("-cover.jpg") else f"r{i:02d}"
+        items.append(f'<item id="{iid}" href="{name}" media-type="{mt}"/>')
     itemrefs = "\n    ".join(f'<itemref idref="{ids_for[n]}"/>' for n in new_spine)
     opf_out = f"""<?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid" xml:lang="en">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:identifier id="uid">{uid}</dc:identifier>
+<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="uid">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
+    <dc:identifier id="uid" opf:scheme="UUID">{uid}</dc:identifier>
     <dc:title>{escape(args.title)}</dc:title>
-    <dc:creator id="aut">Laurence Kriegshauser, O.S.B.</dc:creator>
-    <meta refines="#aut" property="file-as">Kriegshauser, Laurence</meta>
-    <meta refines="#aut" property="role" scheme="marc:relators">aut</meta>
+    <dc:creator opf:file-as="Kriegshauser, Laurence" opf:role="aut">Laurence Kriegshauser, O.S.B.</dc:creator>
     <dc:language>en</dc:language>
     <dc:publisher>University of Notre Dame Press</dc:publisher>
     <dc:date>{date}</dc:date>
@@ -696,7 +666,6 @@ def main(argv=None) -> int:
     <dc:subject>Bible. Psalms -- Commentaries</dc:subject>
     <dc:description>Laurence Kriegshauser’s commentary on all 150 psalms, with the New American Bible (Revised Edition) text of each psalm placed before its commentary.</dc:description>
     <dc:rights>All rights reserved</dc:rights>
-    <meta property="dcterms:modified">{modified}</meta>
     <meta name="cover" content="cover-image"/>
   </metadata>
   <manifest>
@@ -714,11 +683,13 @@ def main(argv=None) -> int:
 """
 
     with zipfile.ZipFile(args.output, "w") as out:
-        out.writestr(zipfile.ZipInfo("mimetype"), b"application/epub+zip",
-                     compress_type=zipfile.ZIP_STORED)
+        def w(name, data, method=zipfile.ZIP_DEFLATED):
+            info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
+            info.external_attr = 0o100644 << 16
+            info.compress_type = method
+            out.writestr(info, data)
 
-        def w(name, data):
-            out.writestr(name, data, compress_type=zipfile.ZIP_DEFLATED)
+        w("mimetype", b"application/epub+zip", zipfile.ZIP_STORED)
 
         w("META-INF/container.xml", src.read("META-INF/container.xml"))
         w(base + "content.opf", opf_out.encode("utf-8"))
