@@ -46,26 +46,42 @@ MISSING_SUPERSCRIPTIONS = {19: "For the leader. A psalm of David."}
 # Typos in the source Bible text.
 TYPO_FIXES = {"he had sgone in to": "he had gone in to"}
 
-NAB_CSS = """
-/* ---- NABRE psalm texts (added) ---- */
-h2.ah	{font-size:x-large; font-weight:normal; margin-top:1em; margin-bottom:1.2em; text-align:left; text-indent:0; page-break-after:avoid;}
-h2.ah .ahkey	{display:block; font-size:65%; font-style:italic; margin-top:.25em; color:#555;}
-.nab	{margin:0 0 .5em 0;}
-.nab p	{text-align:left; margin-top:0; margin-bottom:0;}
-.nab .nab-title	{font-weight:bold; font-style:italic; text-indent:0; margin-bottom:.6em; page-break-after:avoid;}
-.nab .nab-super	{font-style:italic; font-size:90%; text-indent:0; margin-bottom:.6em;}
-.nab .nab-sec	{text-align:center; text-indent:0; font-size:90%; letter-spacing:.15em; margin-top:.7em; margin-bottom:.3em; page-break-after:avoid;}
-.nab .nab-stanza	{text-align:center; text-indent:0; margin-top:.9em; margin-bottom:.3em; page-break-after:avoid;}
-.nab .nab-l	{margin-left:1.6em; text-indent:-1.6em;}
-.nab .nab-l1	{margin-left:3.2em; text-indent:-1.6em;}
-.nab .nab-selah	{text-align:right; text-indent:0; margin-right:1em;}
-.nab .vn	{font-size:60%; vertical-align:super; line-height:0; color:#777; padding-right:.25em;}
-.nab-src	{text-align:right; text-indent:0; font-size:70%; color:#777; margin-top:.6em;}
-hr.nab-rule	{width:30%; margin:1.2em auto 1.4em auto; border:0; border-top:1px solid #999; height:0;}
-.psalm-grid-book	{font-size:medium; font-weight:bold; text-align:left; text-indent:0; margin-top:1.4em; margin-bottom:.4em;}
-table.psalm-grid	{border-collapse:collapse; margin:0 auto; width:100%;}
-table.psalm-grid td	{text-align:center; padding:.35em 0; width:10%;}
-.edition-note	{font-size:small; text-align:left; text-indent:0; margin-top:2em;}
+# A deliberately small stylesheet. Send to Kindle falls back to a fixed,
+# PDF-like layout (error E016) when it meets formatting it cannot reflow, so
+# the book uses no tables, embedded fonts, fixed widths or negative indents.
+STYLE_CSS = """
+p {margin:0; text-indent:1.2em;}
+h2 {font-size:1.4em; font-weight:normal; margin:1em 0 0 0; text-indent:0;}
+i, .theb-i, .hemb {font-style:italic;}
+b, .gt, .aubiof, .row-head, .tch1 {font-weight:bold;}
+.sm {font-size:80%;}
+.ahkey {font-style:italic; text-indent:0; margin-bottom:1em;}
+.pf, .paft, .pcon {text-indent:0; margin-top:.6em;}
+.psec {margin-top:.8em;}
+.ct, .cs, .ctbm, .ctfm {font-size:1.4em; font-weight:bold; text-indent:0; margin:1em 0;}
+.bk, .bk1 {font-size:1.6em; text-align:center; text-indent:0; margin-top:1em;}
+.bkau, .bkpub, .bkpub1, .crt, .crtf, .crt1, .crt2, .crtl, .cip, .cipf, .cip1, .cip2, .cipl,
+.fig, .cover, .end, .toc, .tocfm, .tocbm, .ded, .ded1, .dedf {text-align:center; text-indent:0; margin-top:.4em;}
+.in, .rf, .glo, .glof, .td, .tdp, .tdf, .tch, .row, .row-head, .aubio, .aubiof, .fn, .inhn,
+.sl, .sl1, .slf, .sll, .slt, .slif, .sl1l {text-indent:0;}
+.row, .rf, .glof, .in {margin-top:.3em;}
+.row-head {margin-top:1em;}
+.fn {font-size:.9em; margin-top:.6em;}
+.fnref {font-size:.7em; vertical-align:super;}
+.bqs, .ntbqs, .ntbqf, .ntbql, .bqaft, .senseline, .sl, .sl1, .slf, .sll, .slt, .slif, .sl1l,
+.ntsl, .ntslf, .ntsll {margin-left:1.5em; text-indent:0;}
+.blockquote {margin:.8em 0;}
+img {max-width:100%;}
+.nab {margin-top:1em;}
+.nab-title {font-weight:bold; font-style:italic; text-indent:0; margin-bottom:.5em;}
+.nab-super {font-style:italic; text-indent:0; margin-bottom:.5em;}
+.nab-sec, .nab-stanza {text-align:center; text-indent:0; margin-top:.6em;}
+.nab-l {text-indent:0;}
+.nab-l1 {text-indent:0; margin-left:2em;}
+.nab-selah {text-align:right; text-indent:0;}
+.vn {font-size:.7em; vertical-align:super;}
+.nab-sep {text-align:center; text-indent:0; margin:1em 0;}
+.edition-note {text-indent:0; margin-top:2em;}
 """
 
 
@@ -302,8 +318,9 @@ def psalm_block(ps: Psalm) -> list:
         new.tag = x("p")
         new.set("class", KIND_CLASS[kind])
         div.append(new)
-    rule = new_el("hr", {"class": "nab-rule"})
-    return [div, rule]
+    sep = new_el("p", {"class": "nab-sep"})
+    sep.text = "* * *"
+    return [div, sep]
 
 
 # --------------------------------------------------------------------------
@@ -329,9 +346,10 @@ def heading(ah, number: int):
     sm = etree.SubElement(h2, x("span"), {"class": "sm"})
     sm.text = "SALM"
     sm.tail = f" {number}"
-    key = etree.SubElement(h2, x("span"), {"class": "ahkey"})
+    key = new_el("p", {"class": "ahkey"})
     key.text = m.group(2).strip()
-    return h2, key.text
+    key.tail = "\n"
+    return h2, key
 
 
 DOCTYPE = ('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
@@ -342,7 +360,7 @@ HEAD = """<?xml version="1.0" encoding="utf-8"?>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <title>{title}</title>
-<link href="und.css" rel="stylesheet" type="text/css"/>
+<link href="style.css" rel="stylesheet" type="text/css"/>
 </head>
 <body>
 """
@@ -363,26 +381,73 @@ def page(title: str, body: str) -> bytes:
     return (HEAD.format(title=escape(title)) + body + "\n" + TAIL).encode("utf-8")
 
 
-def modernise_tables(root) -> None:
-    """Move EPUB 2 era table/col widths into CSS and wrap cols in a colgroup."""
-    for el in root.iter(x("table"), x("col")):
-        w = el.attrib.pop("width", None)
-        if w:
-            w = w if w.endswith("%") else w + "px"
-            el.set("style", f"width:{w};" + (el.get("style") or ""))
-    for table in root.iter(x("table")):
-        cols = [c for c in table if c.tag == x("col")]
-        if cols:
-            group = new_el("colgroup")
-            table.insert(table.index(cols[0]), group)
-            for c in cols:
-                group.append(c)
+def inline_content(cell):
+    """A table cell's inline content as (text, children), dropping <p> wrappers."""
+    holder = new_el("span")
+    paras = [c for c in cell if c.tag == x("p")]
+    for src in (paras or [cell]):
+        part = copy.deepcopy(src)
+        if len(holder) or (holder.text or "").strip():
+            append_inline(holder, part)
+        else:
+            holder.text = part.text
+            for child in list(part):
+                holder.append(child)
+    return holder
+
+
+def flatten_tables(root) -> None:
+    """Replace each table by one paragraph per row: 'cell — cell — cell'."""
+    for table in list(root.iter(x("table"))):
+        parent = table.getparent()
+        idx = parent.index(table)
+        rows = []
+        for tr in table.iter(x("tr")):
+            cells = [inline_content(td) for td in tr if td.tag in (x("td"), x("th"))]
+            cells = [c for c in cells if "".join(c.itertext()).strip()]
+            if not cells:
+                continue
+            head = any(classes(p) in ("tch", "tch1", "th")
+                       for td in tr for p in td.iter(x("p")))
+            p = new_el("p", {"class": "row-head" if head else "row"})
+            p.text = cells[0].text
+            for child in list(cells[0]):
+                p.append(child)
+            for cell in cells[1:]:
+                prev = "".join(p.itertext()).rstrip()
+                sep = " " if prev.endswith(":") else " — "
+                cell.text = sep + (cell.text or "").lstrip()
+                append_inline(p, cell)
+            # Keep anchors that sat on the row, its cells or their paragraphs.
+            anchors = [el.get("id") for el in [tr, *tr.iter(x("td"), x("th"), x("p"))]
+                       if el.get("id")]
+            for k, anchor in enumerate(anchors):
+                a = new_el("a", {"id": anchor})
+                a.tail = p.text if k == 0 else None
+                if k == 0:
+                    p.text = None
+                p.insert(k, a)
+            p.tail = "\n"
+            rows.append(p)
+        tail = table.tail
+        parent.remove(table)
+        for k, p in enumerate(rows):
+            parent.insert(idx + k, p)
+        if rows:
+            rows[-1].tail = (rows[-1].tail or "") + (tail or "")
+
+
+def plain_images(root) -> None:
+    for img in root.iter(x("img")):
+        img.attrib.pop("width", None)
+        img.attrib.pop("height", None)
 
 
 def normalise_existing(data: bytes, title: str) -> bytes:
     """Re-head an original XHTML file as clean EPUB 3 XHTML."""
     root = etree.fromstring(data, PARSER)
-    modernise_tables(root)
+    flatten_tables(root)
+    plain_images(root)
     body = root.find("h:body", NS)
     inner = (body.text or "") + "".join(etree.tostring(c, encoding="unicode") for c in body)
     inner = inner.replace(' xmlns="http://www.w3.org/1999/xhtml"', "")
@@ -402,15 +467,15 @@ def split_commentary(files: list[bytes]):
     for data in files:
         root = etree.fromstring(data, PARSER)
         chapter = root.find("h:body/h:div", NS)
+        flatten_tables(chapter)
         for el in chapter:
             if el.tag is etree.Comment:
                 continue
-            modernise_tables(el)
             if el.tag == x("p") and classes(el) == "ah":
                 n = int(re.search(r"(\d+)", (el.xpath("string(.)"))).group(1))
                 h2, key = heading(el, n)
                 h2.tail = "\n"
-                sections.append(Section(n, key, [h2]))
+                sections.append(Section(n, key.text, [h2, key]))
             elif sections:
                 sections[-1].elements.append(el)
             else:
@@ -425,19 +490,14 @@ def psalm_file(n: int) -> str:
     return f"psalm-{n:03d}.html"
 
 
-def grid_page(sections: list[Section]) -> str:
+def list_page(sections: list[Section]) -> str:
     rows = ['<div class="chapter" id="heads">',
             '<p class="ct">Psalms 1–150</p>']
     for name, lo, hi in BOOKS:
-        rows.append(f'<p class="psalm-grid-book">{name} · Psalms {lo}–{hi}</p>')
-        rows.append('<table class="psalm-grid">')
-        nums = list(range(lo, hi + 1))
-        for i in range(0, len(nums), 10):
-            chunk = nums[i:i + 10]
-            cells = "".join(f'<td><a href="{psalm_file(n)}">{n}</a></td>' for n in chunk)
-            cells += "<td></td>" * (10 - len(chunk))
-            rows.append(f"<tr>{cells}</tr>")
-        rows.append("</table>")
+        rows.append(f'<p class="row-head">{name} (Psalms {lo}–{hi})</p>')
+        for s in sections[lo - 1:hi]:
+            rows.append(f'<p class="row"><a href="{psalm_file(s.number)}">Psalm {s.number}</a>'
+                        f' — {escape(s.key)}</p>')
     rows.append("</div>")
     return "\n".join(rows)
 
@@ -598,12 +658,12 @@ def main(argv=None) -> int:
     cp = "und-kriegshauser-0004.html"
     html[cp] = html[cp].replace(b"</body>", note.encode("utf-8") + b"\n</body>", 1)
 
-    grid = grid_page(sections)
+    grid = list_page(sections)
     # Keep any page anchors that sat before the first psalm heading.
     lead_extra = [el for el in lead if not (el.tag == x("p") and classes(el) == "ct")]
     html["psalms.html"] = page("Psalms 1–150", grid + ("\n" + serialize(lead_extra) if lead_extra else ""))
     for s in sections:
-        body = [s.elements[0]] + psalm_block(psalms[s.number]) + s.elements[1:]
+        body = s.elements[:2] + psalm_block(psalms[s.number]) + s.elements[2:]
         inner = '<div class="chapter psalm">\n' + serialize(body) + "\n</div>"
         html[psalm_file(s.number)] = page(f"Psalm {s.number}", inner)
 
@@ -636,20 +696,19 @@ def main(argv=None) -> int:
             if frag and ids.get(frag) != path:
                 raise SystemExit(f"{name}: dead anchor {path}#{frag}")
 
-    css = get("und.css") + NAB_CSS.encode("utf-8")
+    css = STYLE_CSS.encode("utf-8")
 
     date = opf.findtext(".//{http://purl.org/dc/elements/1.1/}date") or ""
     items = ['<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>',
-             '<item id="css" href="und.css" media-type="text/css"/>']
+             '<item id="css" href="style.css" media-type="text/css"/>']
     ids_for = {}
     for i, name in enumerate(html):
         ids_for[name] = f"x{i:03d}"
         items.append(f'<item id="x{i:03d}" href="{name}" media-type="application/xhtml+xml"/>')
     others = [n[len(base):] for n in names
-              if n.endswith((".jpg", ".jpeg", ".png", ".otf", ".ttf"))]
+              if n.endswith((".jpg", ".jpeg", ".png"))]
     for i, name in enumerate(others):
-        mt = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
-              "otf": "application/x-font-opentype", "ttf": "application/x-font-truetype"}[name.rsplit(".", 1)[1]]
+        mt = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png"}[name.rsplit(".", 1)[1]]
         iid = "cover-image" if name.endswith("-cover.jpg") else f"r{i:02d}"
         items.append(f'<item id="{iid}" href="{name}" media-type="{mt}"/>')
     itemrefs = "\n    ".join(f'<itemref idref="{ids_for[n]}"/>' for n in new_spine)
@@ -694,7 +753,7 @@ def main(argv=None) -> int:
         w("META-INF/container.xml", src.read("META-INF/container.xml"))
         w(base + "content.opf", opf_out.encode("utf-8"))
         w(base + "toc.ncx", build_ncx(nav, uid, args.title))
-        w(base + "und.css", css)
+        w(base + "style.css", css)
         for name, data in html.items():
             w(base + name, close_empty_elements(data))
         for name in others:
