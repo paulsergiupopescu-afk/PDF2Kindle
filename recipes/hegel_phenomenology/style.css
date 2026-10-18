@@ -1,0 +1,83 @@
+/* Annotated study edition of Hegel's Phenomenology, Part One.
+   Kept to the CSS subset Kindle honours: no floats, no background images,
+   no web fonts.  Boxes are drawn with borders rather than background
+   colours so that they stay legible in Kindle's dark and sepia themes. */
+
+body { margin: 0; padding: 0; line-height: 1.45; }
+p { margin: 0 0 0.6em 0; text-align: justify; }
+h1, h2, h3 { font-weight: normal; text-align: left; page-break-after: avoid; }
+ul, ol { margin: 0.3em 0 0.7em 1.4em; padding: 0; }
+li { margin: 0 0 0.35em 0; text-align: left; }
+a { text-decoration: none; }
+blockquote { margin: 0.6em 1.2em; font-style: italic; }
+blockquote p { text-align: left; }
+
+/* Front and back matter ---------------------------------------------------*/
+.matter-title { font-size: 1.6em; margin: 1.2em 0 0.9em 0; line-height: 1.2; }
+.matter h2 { font-size: 1.25em; margin: 1.6em 0 0.6em 0; font-variant: small-caps; letter-spacing: 0.03em; }
+.matter h3 { font-size: 1.05em; margin: 1.2em 0 0.4em 0; font-style: italic; }
+.original h2 { font-size: 1.15em; }
+
+table.grid { border-collapse: collapse; margin: 0.8em 0 1.2em 0; width: 100%; font-size: 0.86em; }
+table.grid th, table.grid td { border: 1px solid #777; padding: 0.3em 0.4em; vertical-align: top; text-align: left; }
+table.grid th { font-weight: bold; }
+
+/* Reading units -------------------------------------------------------------*/
+.crumbs { font-size: 0.78em; letter-spacing: 0.08em; text-transform: uppercase; margin: 1.6em 0 0.3em 0; text-align: left; }
+.unit-title { font-size: 1.55em; line-height: 1.2; margin: 0 0 0.3em 0; }
+.unit-range { font-size: 0.82em; font-style: italic; margin: 0 0 1.2em 0; text-align: left; }
+
+.hegel-head { font-size: 1.25em; margin: 1.6em 0 0.5em 0; text-align: center; font-variant: small-caps; letter-spacing: 0.04em; }
+.hegel-sub { font-size: 1.05em; margin: 1.2em 0 0.6em 0; text-align: center; font-style: italic; }
+.analytic-head { font-style: italic; text-align: left; margin: 1.3em 0 0.5em 0; font-size: 0.95em; }
+
+p.hegel { text-indent: 0; margin: 0 0 0.9em 0; }
+p.hegel.cont { text-indent: 1.2em; }
+.pnum { font-weight: bold; font-size: 0.9em; margin-right: 0.2em; }
+a.pref { font-weight: bold; text-decoration: underline; }
+sup { font-size: 0.65em; line-height: 0; vertical-align: super; }
+sup.iw a { font-weight: normal; }
+sup.gl a { font-style: italic; font-weight: bold; }
+.gl-miss { font-size: 0.8em; }
+
+/* Boxes ---------------------------------------------------------------------*/
+.box { margin: 1.1em 0 1.3em 0; padding: 0.5em 0.8em 0.3em 0.8em; page-break-inside: auto; }
+.box p { text-align: left; }
+.box-label { font-size: 0.75em; letter-spacing: 0.12em; text-transform: uppercase; font-weight: bold; margin: 0.2em 0 0.4em 0; }
+.box-title { font-weight: bold; font-size: 1.02em; margin: 0 0 0.5em 0; }
+
+.box-guide { border: 1px solid #555; }
+.box-friendly { border: 1px dashed #555; }
+.box-unpack { border-left: 0.3em solid #555; border-top: 1px solid #999; border-bottom: 1px solid #999; padding-left: 0.9em; margin-left: 0.3em; }
+.box-key { border-top: 3px double #555; border-bottom: 3px double #555; padding-left: 0.2em; padding-right: 0.2em; }
+.box-cross { border: 2px solid #555; }
+.box-questions { border-top: 1px solid #555; border-bottom: 1px solid #555; padding-left: 0.2em; padding-right: 0.2em; }
+.box-plain { border: 1px solid #777; }
+.box-legend { border: 1px solid #777; font-size: 0.92em; }
+
+.q-tier { font-style: italic; font-weight: bold; margin: 0.6em 0 0.2em 0; }
+ol.q { margin-top: 0.1em; }
+.hint { font-size: 0.8em; white-space: nowrap; }
+.hint a { font-style: italic; }
+
+/* Notes ---------------------------------------------------------------------*/
+section.notes { margin-top: 2.4em; font-size: 0.88em; }
+.dinkus { text-align: center; letter-spacing: 0.4em; margin: 1em 0; }
+.notes-head { font-size: 1em; font-variant: small-caps; letter-spacing: 0.06em; text-align: center; margin: 0 0 1em 0; }
+aside.note { margin: 0 0 0.9em 0; }
+.note-body p { text-align: left; margin: 0 0 0.4em 0; }
+.nlabel { font-size: 0.78em; letter-spacing: 0.08em; text-transform: uppercase; font-weight: bold; margin-right: 0.3em; }
+.comm-head { margin-bottom: 0.2em; }
+a.back { font-size: 0.85em; }
+
+/* Cover ---------------------------------------------------------------------*/
+.cover-page { margin: 0; padding: 0; text-align: center; }
+.cover img { max-width: 100%; height: auto; }
+
+/* Title page ----------------------------------------------------------------*/
+.tp { text-align: center; margin-top: 3em; }
+.tp p { text-align: center; }
+.tp-title { font-size: 1.9em; line-height: 1.15; margin-bottom: 0.4em; }
+.tp-sub { font-size: 1.05em; font-style: italic; margin-bottom: 2em; }
+.tp-small { font-size: 0.85em; }
+.ah-label { font-style: normal; font-size: 0.72em; letter-spacing: 0.1em; text-transform: uppercase; margin-right: 0.4em; }
