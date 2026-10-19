@@ -39,6 +39,11 @@ unlabelled paragraphs continue the previous label.
   @c 17 | move | voice                 commentary on ¶17; paragraphs
                                          labelled gist: and why:
   @g 17 | term                         gloss on the first "term" in ¶17
+  @l 17 | phrase                       line note on the first "phrase" in ¶17
+                                         (lettered together with the glosses,
+                                         in reading order)
+  @note 17                             "Reading note", printed visibly right
+                                         after ¶17
   @u 17 | Title                        "Pause and Unpack" after ¶17; labels
                                          step: example: misreading: returns:
   @arg 17 | Title                      "Argument Reconstruction" after ¶17;
@@ -217,7 +222,8 @@ class Unit:
         self.map: list[tuple[str, str]] = []
         self.friendly: tuple[str, str] | None = None
         self.comm: dict[int, tuple[str, str, str]] = {}
-        self.gloss: dict[int, list[tuple[str, str]]] = {}
+        self.gloss: dict[int, list[tuple[str, str, str]]] = {}  # kind, term, body
+        self.reading: dict[int, str] = {}
         self.after: dict[int, list[tuple[str, str, str]]] = {}   # kind, title, body
         self.cross: list[tuple[str, str]] = []
         self.obj: list[tuple[str, str]] = []
@@ -257,8 +263,10 @@ class Unit:
                 move = parts[1] if len(parts) > 1 else ""
                 voice = parts[2] if len(parts) > 2 else ""
                 self.comm[int(parts[0])] = (move, voice, body)
-            elif kind == "g":
-                self.gloss.setdefault(int(parts[0]), []).append((parts[1], body))
+            elif kind in ("g", "l"):
+                self.gloss.setdefault(int(parts[0]), []).append((kind, parts[1], body))
+            elif kind == "note":
+                self.reading[int(parts[0])] = body
             elif kind in ("u", "arg", "lens"):
                 self.after.setdefault(int(parts[0]), []).append((kind, parts[1], body))
             elif kind == "cross":
@@ -344,6 +352,18 @@ def gloss_label(i: int) -> str:
     return GLOSS_LETTERS[i // 26 - 1] + GLOSS_LETTERS[i % 26]
 
 
+def phrase_end(html_blocks: list[str], term: str) -> tuple[int, int] | None:
+    """(block, offset) of the end of term's first occurrence, as attach_gloss finds it."""
+    pat = re.compile(r"(?<![\w])" + re.escape(esc(term)) + r"(?![\w])", re.I)
+    for k, html_text in enumerate(html_blocks):
+        flat = "".join(x for x in re.split(r"(<[^>]+>|\{\{n:[^}]+\}\})", html_text)
+                       if not (x.startswith("<") or x.startswith("{{")))
+        m = pat.search(flat)
+        if m:
+            return (k, m.end())
+    return None
+
+
 def attach_gloss(html_text: str, term: str, marker: str) -> tuple[str, bool]:
     """Put marker right after the first occurrence of term in text nodes."""
     pieces = re.split(r"(<[^>]+>|\{\{n:[^}]+\}\})", html_text)
@@ -394,7 +414,7 @@ class Builder:
         self.warnings: list[str] = []
         self.stats = {k: 0 for k in ("commentary", "gloss", "unpack", "arg", "lens",
                                      "inwood", "cross", "obj", "now", "questions",
-                                     "answers", "shape", "map")}
+                                     "answers", "shape", "map", "reading", "line")}
 
     def new_file(self) -> str:
         name = f"chap_{self.counter:03d}.xhtml"
@@ -499,21 +519,38 @@ class Builder:
     def hegel_paragraph(self, n: int, unit: Unit, notes: Notes) -> str:
         p = self.paras[n]
         body, more = p["html"], list(p["more"])
-        for term, gtext in unit.gloss.get(n, []):
+        # Glosses and line notes share one lettered series.  Letters follow
+        # the order of the markers in the text; markers are inserted from the
+        # last to the first so that no insertion falls inside a later phrase.
+        found, missing = [], []
+        for item in unit.gloss.get(n, []):
+            pos = phrase_end([body] + more, item[1])
+            (found if pos else missing).append((pos, item))
+        found.sort(key=lambda x: x[0])
+        labelled_items = []
+        for pos, (kind, term, gtext) in found + missing:
             label = gloss_label(self.gloss_index)
             self.gloss_index += 1
-            nid = notes.add(f'<p><span class="nlabel">Gloss</span> '
-                            f"<b>{inline(term, False)}</b>. {inline_par(gtext)}</p>")
-            marker = f'<sup class="gl">{ref(nid, label, "gref")}</sup>'
-            body, ok = attach_gloss(body, term, marker)
-            for k, blk in enumerate(more):
-                if ok:
-                    break
-                more[k], ok = attach_gloss(blk, term, marker)
+            if kind == "l":
+                nid = notes.add(f'<p><span class="nlabel">Note</span> '
+                                f"<b>“{inline(term, False)}”</b> {inline_par(gtext)}</p>")
+                self.stats["line"] += 1
+            else:
+                nid = notes.add(f'<p><span class="nlabel">Gloss</span> '
+                                f"<b>{inline(term, False)}</b>. {inline_par(gtext)}</p>")
+                self.stats["gloss"] += 1
+            labelled_items.append((pos, term, f'<sup class="gl">{ref(nid, label, "gref")}</sup>'))
+        blocks_ = [body] + more
+        for pos, term, marker in sorted(labelled_items, key=lambda x: x[0] or (-1, -1),
+                                        reverse=True):
+            if pos:
+                blocks_[pos[0]], ok = attach_gloss(blocks_[pos[0]], term, marker)
+            else:
+                ok = False
             if not ok:
                 self.warnings.append(f"unit {unit.id}: gloss term not in ¶{n}: {term!r}")
-                body += f' <span class="gl-miss">[{esc(term)}]</span>{marker}'
-            self.stats["gloss"] += 1
+                blocks_[0] += f' <span class="gl-miss">[{esc(term)}]</span>{marker}'
+        body, more = blocks_[0], blocks_[1:]
 
         def inwood_sub(m):
             note = self.inwood[m.group(1)]
@@ -546,6 +583,10 @@ class Builder:
         more = [blk.replace("</sup><sup", "</sup>&#8202;<sup") for blk in more]
         out = [f'<p class="hegel" id="p{n}"><span class="pnum">{num}</span> {body}</p>']
         out += [f'<p class="hegel cont">{blk}</p>' for blk in more]
+        if n in unit.reading:
+            self.stats["reading"] += 1
+            out.append('<div class="reading-note"><p class="rn-label">Reading note</p>'
+                       f"{blocks(unit.reading[n])}</div>")
         for kind, title, abody in unit.after.get(n, []):
             out.append(self.after_box(kind, title, abody, unit))
         return "\n".join(out)
@@ -708,7 +749,7 @@ class Builder:
         for n in unit.comm:
             if not unit.first <= n <= unit.last:
                 self.warnings.append(f"unit {unit.id}: commentary for ¶{n} outside range")
-        for n in list(unit.gloss) + list(unit.after):
+        for n in list(unit.gloss) + list(unit.after) + list(unit.reading):
             if not unit.first <= n <= unit.last:
                 self.warnings.append(f"unit {unit.id}: annotation for ¶{n} outside range")
         parts.append(notes.render())

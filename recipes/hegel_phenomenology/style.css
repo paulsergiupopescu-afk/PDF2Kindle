@@ -40,6 +40,11 @@ sup.iw a { font-weight: normal; }
 sup.gl a { font-style: italic; font-weight: bold; }
 .gl-miss { font-size: 0.8em; }
 
+/* Reading notes: visible, set back from Hegel's text so the eye can skip them. */
+.reading-note { margin: -0.3em 0 1.1em 1.2em; padding: 0.1em 0 0.1em 0.7em; border-left: 2px solid #777; font-size: 0.92em; }
+.reading-note p { text-align: left; margin: 0 0 0.4em 0; }
+.reading-note p.rn-label { font-size: 0.78em; font-variant: small-caps; letter-spacing: 0.1em; font-weight: bold; margin: 0 0 0.15em 0; }
+
 /* Boxes ---------------------------------------------------------------------*/
 .box { margin: 1.1em 0 1.3em 0; padding: 0.5em 0.8em 0.3em 0.8em; page-break-inside: auto; }
 .box p { text-align: left; }

@@ -32,14 +32,22 @@ Suppose someone tells you: “I am a completely honest person.” You do not nee
 Hegel does the same with ways of knowing. Each one announces what knowledge is (“to know is to see things directly”, “to know is to grasp the laws behind appearances”) and what its objects are. So it carries its own yardstick. We just watch whether it lives up to it. And here is the twist: when a way of knowing fails its own test, it is not left empty. Its failure shows what it was *really* dealing with, and that becomes the starting point of a new way of knowing. The person who claimed perfect honesty may learn, through failing, what honesty actually demands.
 
 @c 81 | objection | hegel
-gist: The presentation is science’s response to knowledge as it appears, an examination of the reality of cognition. But an examination seems to need a presupposed standard, taken as the essence or in-itself, against which what is examined is judged right or wrong. And at this point neither science nor anything else has justified itself as the standard.
-
 why: Hegel states the ancient “problem of the criterion” (Heidemann traces it to Agrippa’s trilemma in Sextus Empiricus): any test needs a criterion, which must itself be tested, and so on, unless we argue in a circle or simply assume it. If Hegel used his own philosophy as the standard, he would beg the question against natural consciousness.
 
-@c 82 | definition | hegel
-gist: Recall the abstract determinations of knowledge and truth as they occur in consciousness. Consciousness distinguishes something from itself and at the same time relates to it: something is *for* consciousness, and this being-for-consciousness is *knowing*. But we also distinguish from this the object’s being *in itself*, as existing outside the relation: this is *truth*.
+@note 81
+Now the method. Any examination seems to need a standard to test against. But at the start of the book nothing has yet been justified, not even Hegel’s own philosophy, so there seems to be no fair standard to use. This is the ancient “problem of the criterion”; the next four paragraphs solve it.
 
+@l 81 | neither science itself nor anything else has justified itself
+Even Hegel’s own philosophy may not serve as the yardstick, since it too has yet to prove itself. That is what makes the problem hard.
+
+@c 82 | definition | hegel
 why: The simplest structure of consciousness as it understands itself: I am aware of something (it is *for me*), and I take that something to exist on its own account (it is *in itself*). Houlgate stresses that Hegel is not giving his own theory of mind here, but describing how consciousness takes itself to be.
+
+@note 82
+Hegel recalls two everyday features of consciousness. I am aware *of* something: it is there *for me*, and that relation is “knowing”. But I also take that something to exist on its own, apart from my awareness: that is its “truth”, its being “in itself”. Consciousness draws both distinctions itself; Hegel is describing how it takes itself, not offering a theory of his own.
+
+@l 82 | of no further concern to us here
+Hegel will not say what knowing and truth really are. He takes them as consciousness itself understands them, because that is the only starting point that does not beg the question.
 
 @g 82 | for consciousness
 How the object is known or appears to consciousness: the object in its relation to the knower. Hegel calls this side “knowing”.
@@ -58,9 +66,19 @@ gist: If we investigate the truth of knowledge, knowledge becomes *our* object; 
 why: The problem sharpened: an outside observer who tests consciousness by the observer’s own standards has not tested consciousness at all, merely compared it with the observer. Consciousness could reject the verdict as one more bare claim (¶76).
 
 @c 84 | thesis | hegel
-gist: The nature of the object avoids this. Consciousness provides its own standard; the investigation is a comparison of consciousness with itself. Since consciousness distinguishes knowing (being-for-another) from truth (being-in-itself), what it declares to be the in-itself is the standard by which it measures its knowledge. Call knowing the concept and the object the true, and the test is whether the concept fits the object; call the in-itself the concept and the object as it is for another the object, and the test is whether the object fits its concept. Either way both moments fall within the knowledge examined, so we need not bring our own notions.
-
 why: Hegel’s answer to the problem of the criterion, and the reason the book is an *immanent* critique: each shape is judged by its own standard. The double formulation (concept to object, object to concept) prepares a subtle point: the examination may show not only that knowing must change, but that the object was not what consciousness took it to be.
+
+@note 84
+The solution: consciousness carries its own standard. Whatever it takes the real, in-itself object to be is the yardstick; its knowing is what gets measured. So the test is consciousness comparing itself with itself, and we need bring no standard of our own. The two formulations (does the concept fit the object? does the object fit its concept?) describe the same test run from either end.
+
+@l 84 | a comparison of consciousness with itself
+The key move: the standard and the thing measured both lie inside consciousness. It compares what it takes the object to be with how it actually knows it.
+
+@l 84 | whether the object corresponds to its concept
+The reverse formulation: now “concept” means what the object essentially is, and “object” means how it shows up for consciousness. The test is the same, run from the other end.
+
+@l 84 | we do not need to import standards
+This is what makes the critique immanent. No outside measure is applied, so consciousness cannot dismiss the verdict as someone else’s prejudice.
 
 @u 84 | Consciousness carries its own yardstick
 step: To test any claim to knowledge, it seems we need a standard of truth. But which one? Any standard we bring would be our own, and could be rejected by what we are testing. Hegel’s insight: consciousness already has a standard *inside* it. Whenever it knows something, it takes that thing to be a certain way *in itself*, and it has a certain way of knowing it. So we can ask whether its knowing matches what it itself takes the object to be. The verdict is then binding on consciousness, because the standard is its own.
@@ -79,9 +97,22 @@ C: Consciousness can be examined by its own standard, without any external presu
 weak: Inwood notes a puzzle: consciousness “cannot get behind the scenes” to the object in itself (¶85). How can it compare its knowledge with something it can only know through that knowledge? Houlgate answers that the comparison is between the object as initially conceived and what experience shows it to be: the test happens *over time*, through experience.
 
 @c 85 | argument | hegel
-gist: So we need not intervene: concept and object, standard and what is tested, are in consciousness itself, and consciousness itself does the comparing; “all that remains for us is simply to look on”. Consciousness seems unable to get behind the scenes to the object in itself, but the very fact that it knows an object involves the distinction. If the two do not correspond, it seems consciousness must alter its knowledge to fit the object. But in altering its knowledge, the object alters for it too, since the knowledge was knowledge of that object. What it took to be the in-itself turns out to have been in itself only for consciousness. The standard itself fails, and the test is a test of the standard too.
-
 why: The most important paragraph of the Introduction. Two claims. First, our role is “pure looking on” (*das reine Zusehen*): consciousness tests itself. Second, the test is not like correcting a mistake about an object that stays the same; when knowledge changes, the object changes with it, because the object was always the object *as so conceived*. So the very idea of what is “in itself” is revised.
+
+@note 85
+Even the comparing is done by consciousness itself; we only watch. The worry that consciousness “cannot get behind the scenes” to the real object is answered: the distinction between the object as known and the object in itself already lies inside consciousness. The striking claim comes at the end: when knowledge fails, the object changes too, so the standard itself is put to the test, not only the knowledge.
+
+@l 85 | get behind the scenes
+The sceptic’s worry: we only ever know the object as we know it, so how can we check our knowledge against the object as it really is? Hegel answers in the next sentence.
+
+@l 85 | This differentiation is at hand
+Consciousness already distinguishes the object it takes as real from its knowledge of it, so it need not step outside itself to compare them. Houlgate: the comparison happens over time, as experience shows the object to be other than it was taken to be.
+
+@l 85 | the object itself alters for it too
+The knowledge was knowledge of the object as so conceived, so correcting the knowledge changes what the object is taken to be. There is no unchanged object left to return to.
+
+@l 85 | the standard of the assessment alters
+The yardstick fails along with what it measured: each shape tests not only its beliefs but its idea of what counts as true.
 
 @u 85 | When knowledge changes, the object changes too
 step: In ordinary life, when I find I was wrong, I correct my belief and the object stays put: I thought it was a squirrel, it was a cat. Hegel says the experience of consciousness is different. A shape of consciousness is not wrong about this or that fact; it is wrong about what *kind* of thing an object is and what knowing it involves. When that conception collapses, there is no unchanged object to go back to: what it took to be the object “in itself” turns out to have been only its own conception. So the standard is revised along with the knowledge.
@@ -96,17 +127,40 @@ returns: In Sensory Certainty the object changes from “this, here, now” to �
 German *das reine Zusehen*, “pure looking on”: the role of the philosophical observer, who need not intervene because consciousness tests itself. Houlgate notes that the observer is not wholly passive: “we” name and order what consciousness experiences.
 
 @c 86 | definition | hegel
-gist: This dialectical movement which consciousness exercises on itself, on its knowledge and its object, insofar as the new true object arises from it, is *experience*. Consciousness has two objects: the first in-itself, and the being-for-consciousness of this in-itself. The second seems only consciousness’s reflection on its knowing; but since the first object is altered, the being-for-consciousness of the in-itself becomes the true, the new object. This new object contains the nullity of the first: it is what experience has made of it.
-
 why: Hegel’s technical definition of experience. The new object is not found by chance; it is “what the first object turned out to be in being known”. Inwood’s gloss is helpful: the tension arises between what consciousness takes the object to be and how it actually knows it; the *way of knowing* then becomes the next object. Note the first use of “dialectical” in the body of the book.
+
+@note 86
+Hegel defines “experience”. Consciousness first has an object it takes to be real in itself. It then notices how that object is *for it*, that is, how it actually knows it. When the test fails, this second thing, the object as consciousness actually knows it, becomes the new real object. So the new object is not found by luck: it is what the old object turned out to be in being known, “what experience has made of it”.
+
+@l 86 | the ambiguity of this truth
+The object is “in itself”, but it is in itself *for consciousness*, so it has two sides: what it is taken to be, and how it is known. This doubleness drives experience.
+
+@l 86 | the Being-for-consciousness of this in-itself
+The object as consciousness actually knows it. At first this looks like mere reflection on one’s own knowing; Hegel’s point is that it becomes the new object.
+
+@l 86 | contains the nullity of the first
+The new object carries the failure of the old one within it: it is defined by what the old object turned out not to be. Determinate negation at work (¶79).
 
 @g 86 | dialectical
 From the Greek for conversation. For Hegel, the movement in which a determination, pursued on its own terms, turns into its opposite and so gives rise to something new. Here it is the self-examination of consciousness.
 
 @c 87 | argument | hegel
-gist: This differs from ordinary experience, in which we discover our concept is untrue through some other object we come across by chance. Here the new object arises through a *reversal of consciousness itself*. This way of seeing is our contribution, which raises the sequence to a science; it is not for the consciousness we observe. It is the same point as determinate negation: the result contains the truth of what preceded it. The emergence of the new object goes on, as it were, behind the back of consciousness. For consciousness the new content is simply its object; for us it is also movement and becoming.
-
 why: The famous distinction between what is “for consciousness” and what is “for us”. The shape we observe experiences the collapse of its object and simply finds itself with a new one; it does not know where the new one came from. We see the whole movement and its necessity. Houlgate’s gloss: the *micro*-transitions within a shape are experienced by consciousness; the *macro*-transition to a new shape is made by us.
+
+@note 87
+In ordinary life we learn we were wrong by stumbling on some other object. Here the new object grows out of the old experience through a “reversal of consciousness”. Only “we” see this; the consciousness under study simply finds itself with a new object. Our seeing it is what makes the sequence necessary, a science; but we add only the form (the connection), never the content.
+
+@l 87 | by chance and externally
+Ordinary experience: I take the animal for a squirrel, then see it is a cat; I learn from a new object I happen upon. In the *Phenomenology* the new object grows out of the old one.
+
+@l 87 | our contribution
+The observers’ part: seeing that the new object arises from the old. This insight turns a series of experiences into a necessary sequence, a science.
+
+@l 87 | behind the back of consciousness
+The shape under study lives through the change but does not see how it came about; only we see the connection. See the Pause and Unpack box below.
+
+@l 87 | only its formal aspect
+We add no content of our own: what appears is what consciousness itself experiences. We grasp only the connection, the “pure emergence” of one object from another.
 
 @g 87 | reversal of consciousness
 German *Umkehrung des Bewusstseins*: the turning-around in which consciousness’s way of knowing its old object becomes its new object. It is “our contribution”: we see it; consciousness does not.
@@ -126,9 +180,16 @@ gist: Because of this necessity, the path to science is itself already science, 
 why: One sentence that gave the book its first title: *Science of the Experience of Consciousness*. Heidemann objects that this is where Hegel’s argument becomes circular: the necessity seen by “us” already presupposes the philosophical standpoint the path was supposed to justify (see the Objections box).
 
 @c 89 | preview | hegel
-gist: The experience consciousness has of itself can comprehend nothing less than the whole system of consciousness, the whole realm of the truth of spirit, but with its moments appearing as they are for consciousness: as *shapes of consciousness*. Pressing on to its true existence, consciousness will reach a point where it sheds the semblance of being burdened with something alien, where appearance becomes equal to essence; and when it grasps this, it will signify absolute knowledge itself.
-
 why: The Introduction ends with the destination. Notice “shapes of consciousness” (*Gestalten des Bewusstseins*): each stage of the book is a whole way of being conscious, with its own object, its own certainty and its own experience. The end point is where consciousness no longer faces anything alien.
+
+@note 89
+The Introduction ends with the destination. Followed through, this experience will cover the whole truth of spirit, but each truth will appear as a way of being conscious, a “shape of consciousness”. At the end consciousness no longer faces anything alien: how things appear to it and what they are will coincide. That point is absolute knowing.
+
+@l 89 | burdened with alien material
+At every stage so far consciousness has faced something other than itself that it had to take in. At the end it finds that nothing it confronts is simply alien to it.
+
+@l 89 | the appearance becomes equal to the essence
+How things appear to consciousness and what they are no longer come apart. This is the standpoint of absolute knowing, where the *Phenomenology* ends and the system proper begins.
 
 @g 89 | shapes of consciousness
 German *Gestalten des Bewusstseins*: whole configurations of experience, each defined by what it takes the object to be, how it claims to know it, and what it is certain of. The chapters of the book are a sequence of such shapes.

@@ -18,27 +18,28 @@ It is not a replacement for the text. Every aid can be skipped. The commentary i
 
 # How to Use This Book
 
-## Three markers in Hegel’s text
+## Markers and notes in Hegel’s text
 
-- **The paragraph number** (¶17) at the start of each paragraph is a link: tap it for the **commentary** on that paragraph, with its *gist*, *why it matters*, and two tags: the **move** Hegel makes (claim, argument, objection, test, result…) and the **voice** in which he speaks (Hegel himself, consciousness “for itself”, or the observing “we”).
-- **Small letters** (a, b, c) after a word are **glosses**: short explanations of a term, often with the German.
+- **The paragraph number** (¶17) at the start of each paragraph is a link: tap it for the **commentary** on that paragraph: *why it matters* (and, where there is no Reading note, its *gist*), with two tags: the **move** Hegel makes (claim, argument, objection, test, result…) and the **voice** in which he speaks (Hegel himself, consciousness “for itself”, or the observing “we”).
+- **Small letters** (a, b, c) are the **editor’s notes**. Some are **glosses** on a term, often with the German; others are **notes** on a hard phrase or sentence, which quote the phrase and explain it. Within a paragraph they run in reading order.
 - **Small numbers** (1, 2, 3) are **Inwood’s own notes**, reproduced in full.
+- A **Reading note**, set back from the text with a rule in the margin, follows the most difficult paragraphs: what just happened, in plain words, and the hardest sentence decoded. *(In this version Reading notes and phrase notes appear in Hegel’s Introduction, ¶73–89; the rest of the volume will follow.)*
 
-Every pop-up has a ↩ link that returns you to where you were.
+In short: letters are the editor’s, numbers are Inwood’s, and the ¶ number opens the paragraph commentary. Every pop-up has a ↩ link that returns you to where you were.
 
 ## Four layers around the text
 
 Each reading unit has the same shape, and every box says which layer it belongs to.
 
 - **Orient**: *Where We Are*, *Before You Read* (the question, what Hegel does, what to watch for, how to read), an *Argument Map* (Preface and Introduction) or *The Shape at a Glance* (for each shape of consciousness), and *A Friendlier Explanation*.
-- **Read**: Hegel’s text with its markers, interrupted occasionally by *Pause and Unpack* (a hard passage in four steps: step by step, in everyday terms, misreading to avoid, where it returns), *Argument Reconstruction* (premises, conclusion, weakest step) and *Translation Lens* (what the German says that the English cannot).
+- **Read**: Hegel’s text with its markers and Reading notes, interrupted occasionally by *Pause and Unpack* (a hard passage in four steps: step by step, in everyday terms, misreading to avoid, where it returns), *Argument Reconstruction* (premises, conclusion, weakest step) and *Translation Lens* (what the German says that the English cannot).
 - **Argue**: *Critical Crossroads* (where interpreters divide), *Objections and Replies* (with a question for your own verdict) and *Then and Now* (where the idea lives on).
 - **Consolidate**: *Key Ideas*, *Questions for Study* (four tiers, with model answers for the first), *Retell It* (with a model retelling) and *Carry Forward* (what to keep in mind for what follows).
 
 ## Three ways through
 
 @box guide | Reading paths
-**First reading.** Read *Where We Are*, *Before You Read* and *A Friendlier Explanation*; then Hegel’s text straight through, opening the commentary only when you are lost; then *Key Ideas*. About an hour per unit.
+**First reading.** Read *Where We Are*, *Before You Read* and *A Friendlier Explanation*; then Hegel’s text with its Reading notes, opening the lettered notes only when you are lost; then *Key Ideas*. About an hour per unit. (If you prefer Hegel uninterrupted, skip the Reading notes: they are set back from the text so the eye can pass over them.)
 
 **Study reading.** Everything in the Orient and Read layers; all commentary; then the Check and Think questions, and the Retell exercise. Two to three hours per unit.
 
