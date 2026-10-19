@@ -1,0 +1,154 @@
+@unit 07 | Preface VII: The effort of the concept | 58-66
+@title Preface VII: The Effort of the Concept and the Speculative Sentence
+@heading 58 | What is required in the study of philosophy
+@heading 59 | Ratiocinative thinking in its negative attitude
+@heading 60 | in its positive attitude; its subject
+
+@where
+Hegel has argued that science must follow the self-movement of its content (¶53–57). Now he turns to the reader: what does it take, from us, to follow such a movement? And why are philosophical sentences so hard to read?
+
+@guide
+**The question this section answers.** What kind of effort does reading philosophy require, and why do Hegel’s sentences (“God is Being”, “the actual is the universal”) resist ordinary understanding?
+
+**What Hegel does.** He names the requirement: “the exertion of the concept” (¶58). Two bad habits block it. *Material thinking* is so absorbed in content that it finds concepts painful; *ratiocination* (clever argument for and against) floats free of content and treats it with condescension. Ratiocination’s negative side merely refutes and so arrives at nothing; conceptual thinking finds in the negative a new, *determinate* content (¶59). Its positive side assumes a fixed subject to which predicates are attached; but in a philosophical sentence the predicate is the subject’s *essence*, so thought loses its footing and is thrown back on the subject. Hegel calls this the *speculative proposition* (¶60–62). It explains why philosophy must be read repeatedly (¶63). The remedy is not inner intuition but a presentation of the dialectical movement itself, which replaces the old idea of proof (¶64–66).
+
+**Watch for.** **The exertion of the concept**; **material thinking** and **ratiocination**; the merely negative versus the **determinate negative**; the **counter-thrust** (*Gegenstoß*); the comparison with **metre and accent**; why philosophy must be **read again**.
+
+**How to read it.** ¶58–59 are short and important; ¶60 is long and difficult, so read ¶62 (the examples) first and then go back. If you feel thrown back on a sentence and forced to reread it, you are experiencing exactly what Hegel is describing.
+
+@map
+thesis: Following a philosophical exposition requires letting the content move by itself; this disrupts the ordinary form of judgement, which is why speculative sentences must be reread and their movement presented, not just asserted.
+target: Two reading habits: “material thinking” immersed in images, and “ratiocination” that argues back and forth from outside; and the appeal to inner intuition in place of presentation.
+step: The study of science requires the exertion of the concept and the renunciation of personal intrusion into its rhythm (¶58).
+step: Ratiocination’s refutations are merely negative and empty; conceptual thinking finds a determinate negative that is also positive (¶59).
+step: Ratiocination assumes a fixed subject bearing predicates; in conceptual thinking the subject passes into the predicate, which is its substance (¶60).
+step: The speculative proposition destroys the subject–predicate form while preserving its difference, like metre and accent in rhythm (¶61).
+step: Examples: “God is Being”, “the Actual is the Universal” (¶62); hence the need to reread (¶63).
+step: Mixing speculative and ordinary readings causes confusion (¶64); the movement must be presented, not left to inner intuition: this replaces proof (¶65–66).
+conclusion: Philosophical presentation must keep the dialectical form, and the reader must accept only what is conceptualized.
+stakes: Why Hegel writes as he does; what kind of reading philosophy demands; whether a new logic of propositions is needed.
+
+@friendly Sentences that make you go back
+Linguists collect “garden-path sentences”, such as *The old man the boat*. You read “the old man” as a noun phrase, expect a verb, hit “the boat”, and stumble. Then you go back: *the old* (old people) *man* (crew) *the boat*. The sentence was fine; your first way of reading it was wrong, and the stumble forced you to read it differently.
+
+Hegel says philosophical sentences work like this, deliberately. “God is Being” looks like “the cat is black”: a thing with a property. But “Being” is not a property God happens to have; it is meant to say what God *is*. So the mind, expecting to move on to further properties, is thrown back on the subject and has to reread the sentence in a new way. That is why philosophy seems unintelligible, and why it must be read twice.
+
+@c 58 | claim | hegel
+gist: The important thing in studying science is to take on the exertion of the concept: attention to simple determinations such as being-in-itself, being-for-itself, equality with self. Two habits resist it. *Material thinking* runs on in representations and finds it painful to lift itself clear of the stuff; *ratiocination* is free of content and condescends to it. What is required is to give up this freedom, to let the content move by its own nature, and to contemplate this movement, refraining from intruding into its rhythm.
+
+why: Practical advice for the reader, and an ethic of reading: restraint. Notice that Hegel names the two typical student failures: getting lost in images and examples, or arguing cleverly without entering the material. The phrase *Anstrengung des Begriffs*, “the exertion of the concept”, became proverbial.
+
+@g 58 | ratiocinates
+German *räsonnieren*: reasoning back and forth, giving reasons for and against from outside the subject matter. Hegel uses it pejoratively, for argument that never enters the Thing itself.
+
+@c 59 | argument | hegel
+gist: Ratiocination’s first feature is its negative attitude: it refutes content and annihilates it. But the insight that something is *not* so is a dead end; to get new content it must take some from elsewhere. It is reflection into the empty I, vanity. In conceptual thinking, by contrast, the negative belongs to the content itself: as the content’s immanent movement it is positive, and as result it is the *determinate negative*, which has a positive content.
+
+why: One of the most important paragraphs for understanding the whole book. Mere refutation leaves you with nothing (Inwood compares the Socratic refutation, after which a fresh answer has to be found elsewhere). Hegel’s negation is “determinate”: when a view collapses, the way it collapses tells you what must come next. Every transition in the *Phenomenology* depends on this.
+
+@u 59 | Empty negation and determinate negation
+step: There are two ways to criticize a view. The first shows that it is false and stops; to go on, one must find another view somewhere else and criticize that too. This is the sceptic’s or the debater’s way, and Hegel calls it vain: its only product is the empty self-satisfaction of the critic. The second follows the view until it breaks down and asks *how* and *why* it breaks down; the failure has a specific shape, and that shape points to a richer view that would avoid it. The negation is then itself a new content.
+
+example: A doctor who says “it’s not appendicitis” has learned little; one who says “it’s not appendicitis, because the pain moves when the patient breathes” has learned something positive that guides the next step. Or think of a failed experiment that, precisely by the way it failed, suggests the next hypothesis.
+
+misreading: Determinate negation does not mean that every failure automatically produces the right answer, or that criticism should be gentle. It means that a criticism made from *inside* a view, following its own commitments, yields information that a criticism from outside does not.
+
+returns: Named and defined in the Introduction: “the result is grasped as it is in truth, namely as a *determinate* negation, a new form has thereby immediately arisen” (¶79). Watch it at work in the transition from Sense-Certainty to Perception (¶109–111).
+
+@c 60 | argument | hegel
+gist: Ratiocination’s second, positive feature: it takes the Self as a represented subject, a fixed base to which content is attached as predicates, and moves back and forth along it. Conceptual thinking differs: the concept is the object’s own Self, which moves itself and takes its determinations back into itself; the fixed subject perishes into the content. So the predicate is not a property but the substance and essence of the subject. Representational thinking, expecting to go beyond the predicate, suffers a “counter-thrust”: it finds the subject gone into the predicate, and is weighed down by it.
+
+why: The hardest paragraph of the section. The key claim: in a philosophical sentence the grammatical subject is not a fixed thing holding properties; the sentence says what the subject *is*. Our grammar, with its stable subjects, misleads us. Compare ¶23, where “God” was called “a senseless sound” filled only by its predicates.
+
+@c 61 | definition | hegel
+gist: Formally: the speculative proposition destroys the nature of the judgement, with its distinction of subject and predicate, and the identity it becomes contains a counter-thrust against that relation. The conflict resembles that between metre and accent in rhythm: the identity of subject and predicate should not destroy their difference, but their unity should emerge as a harmony.
+
+why: A musical image: metre is the regular pattern, accent the stress that plays against it; rhythm lives from their tension. In the same way, a speculative sentence keeps the difference that its grammatical form suggests while asserting an identity. Neither collapses into the other.
+
+@g 61 | speculative proposition
+Hegel’s term for a sentence whose predicate expresses the essence of its subject, so that subject and predicate are identical yet different (“God is Being”). Its proper reading requires a reversal of the ordinary subject–predicate reading.
+
+@c 62 | example | hegel
+gist: Examples: in “God is Being”, the predicate Being is meant as the essence, in which the subject dissolves; thinking misses the subject and is thrown back to it, or finds it in the predicate itself. In “the Actual is the Universal”, the Universal is not a predicate (as in “the actual is universal”) but the essence of the Actual. Thinking loses its firm basis and is returned not to itself but to the subject of the content.
+
+why: Read this paragraph first: it makes ¶60 intelligible. Inwood notes Hegel’s capitalization: “the Actual is *the* Universal” (an identity statement), not “the actual is universal” (an ordinary predication). The first example mixes a representation (God) with a thought (Being); the second is pure logic.
+
+@arg 62 | Why “God is Being” is not like “the cat is black”
+P1: In an ordinary judgement (“the cat is black”), the predicate is a universal that also applies to other things and does not exhaust the subject; the subject remains a fixed base for further predicates.
+P2: In “God is Being”, Being is meant not as one property among others but as what God essentially is.
+P3: So the subject does not remain fixed: it passes into the predicate, and there is nothing further to predicate in the same sense.
+C: The sentence must be read as an identity that preserves difference, which forces thought to return to the subject and reread: the speculative proposition.
+weak: P2 holds only if we already accept Hegel’s view that philosophical predicates express essences. Inwood notes that many identity statements (“water is H₂O”) are not obscure at all; Hegel may underrate how much of the difficulty of his prose comes from other sources.
+
+@c 63 | diagnosis | hegel
+gist: This unaccustomed inhibition is largely why people complain that philosophy is unintelligible, and why it is reproached for needing to be read repeatedly. The philosophical sentence, as a sentence, evokes the usual subject–predicate attitude; its content destroys that attitude; opinion learns by experience that the meaning is other than it opined, and is forced to go back and read the sentence another way.
+
+why: Hegel turns a complaint into a description: rereading is not a sign of bad writing but of the kind of thought involved. Note the pun on *Meinung* (opinion) and *meinen* (to mean): opinion “meant” one thing and discovers the sentence means another. The experience of the reader rehearses the experience of consciousness in the book.
+
+@lens 63 | Meinen: opining, meaning, and “mine”
+German *meinen* means both “to opine, believe” and “to mean, intend”; the noun *Meinung* is “opinion”. Hegel exploits this here: opinion (*Meinung*) “learns by experience that the meaning is otherwise than it opined (*meinte*)”. What I *mean* and what I *think* collapse into what is merely *my* view.
+
+The pun becomes central in Sense-Certainty, whose subtitle is “The This and Meaning” (*das Meinen*). There Hegel adds a third association, *mein* (“mine”): sense-certainty insists on what it *means*, its own private this, but cannot *say* it, since language expresses only the universal (¶97, ¶110). Inwood translates *Meinung* as “opinion” here and *Meinen* as “meaning” there; keep both senses in mind.
+
+@c 64 | caution | hegel
+gist: A difficulty to be avoided arises from mixing the speculative and the ratiocinative modes, when what is said of a subject sometimes expresses its concept and sometimes only an accidental predicate. Only an exposition that strictly excluded the ordinary relation between the parts of a proposition would attain plasticity.
+
+why: Hegel admits that his own text does not always manage this; the subjunctive (“would attain”) is telling. Readers must therefore keep asking whether a given sentence states an essence or merely a property.
+
+@c 65 | argument | hegel
+gist: Non-speculative thinking has its right. The sublation of the propositional form must not happen only immediately, through the content; the opposite movement, the return of the concept into itself, must be *presented*. This dialectical movement of the proposition is what proof used to accomplish, and it alone is the actually speculative. Philosophical expositions that refer us to inner intuition withhold this presentation. The true is subject: the self-generating, self-steering movement that returns into itself.
+
+why: A crucial concession and clarification: Hegel does not want readers simply to feel the “counter-thrust” and nod. The movement must be spelled out, step by step, and this spelling-out replaces the old notion of proof. The *Phenomenology* is meant to be such a presentation.
+
+@c 66 | caution | hegel
+gist: The dialectical movement also has propositions for its parts, so the difficulty seems to recur, like the regress of grounds in ordinary proof. But in the dialectical movement the element is the pure concept, a content that is subject through and through, so the propositional form is empty. Names like “God” suggest a static subject and lend speculative truths an edifying tone; terms like Being or the One are better. The presentation must keep the dialectical form and accept nothing except as conceptualized.
+
+why: The section ends with a practical rule of style: prefer concepts to names, and keep the movement visible. It explains why Hegel’s logic speaks of “Being”, “nothing”, “becoming” rather than of God, and why, in the *Phenomenology*, what moves are “shapes of consciousness”, not subjects with fixed natures.
+
+@cross What is the speculative proposition?
+**A theory of definition and identity** (Inwood): speculative sentences are like reductive identities (“flying saucers are lenticular clouds”) in that the subject is absorbed by the predicate, yet unlike them in preserving the subject’s meaning. On this reading Hegel is analysing a special kind of identity statement.
+
+**A theory of meaning as movement** (Brandom and the “inferentialists”): the content of a concept lies in its inferential relations; a speculative sentence asks us to follow those relations rather than to picture a thing with properties. Hegel then anticipates the view that meaning is use in a network of inferences.
+
+**A theory of philosophical style** (Adorno’s essay “Skoteinos, or How to Read Hegel”): Hegel’s sentences are meant to be read in motion, like music; their obscurity is partly a deliberate refusal of the fixed proposition. The difficulty is not a defect to be removed but part of the content.
+
+**Your task.** Take the sentence “the true is the whole” (¶20). Read it first as an ordinary predication (the true has the property of being whole), then as a speculative proposition. What changes?
+
+@obj Is this an excuse for obscurity?
+objection: Hegel turns a fault into a virtue. Philosophy is hard to read, he says, because its sentences reverse the ordinary relation of subject and predicate. But many deep thinkers write clearly; much of Hegel’s difficulty comes from jargon, compression and haste (he himself wished he could “clear the ship of ballast”). The theory of the speculative proposition looks like an alibi.
+
+reply: Hegel concedes much of this: he warns against mixing modes (¶64) and admits the presentation must do better (¶65–66). His claim is narrower: *some* difficulty is intrinsic to philosophical thought, because it questions the very forms (fixed subjects, stable predicates) in which ordinary thinking proceeds. Clarity of the ordinary kind would hide the problem.
+
+verdict: Which parts of Hegel’s difficulty seem intrinsic to his thought, and which seem merely his style? Keep a list as you read the next chapters.
+
+@now Grammar as a trap
+Hegel’s suspicion that the subject–predicate form of our sentences misleads metaphysics has a long afterlife. Nietzsche wrote that “we are not rid of God because we still believe in grammar”: the grammatical subject tempts us to posit a doer behind every deed. Russell and the logical positivists argued that grammatical form often hides logical form, and built new notations to expose it. Wittgenstein spoke of philosophy as a battle against the bewitchment of our intelligence by language.
+
+Hegel’s response differs from theirs: he wants neither to abandon philosophical sentences nor to translate them into a formal language, but to read them *dialectically*, so that their movement corrects their misleading form. Garden-path sentences show the phenomenon in miniature: understanding sometimes requires being thrown back and starting again.
+
+@key
+- Studying science requires the exertion of the concept: letting the content move by its own nature and refraining from intruding.
+- Material thinking is lost in images; ratiocination argues from outside and condescends to its content.
+- Mere refutation is empty; conceptual thinking finds a determinate negative that is also a positive content.
+- In a speculative proposition (“God is Being”), the predicate expresses the subject’s essence, so thinking suffers a counter-thrust and is thrown back on the subject.
+- That is why philosophy must be reread; the dialectical movement must be presented, and it replaces the old idea of proof.
+
+@q
+check: What are “material thinking” and “ratiocination”, and why do both resist the concept (¶58)? || Material thinking is absorbed in representations and stuff, and finds it painful to lift itself to concepts; ratiocination argues for and against from outside, free of the content and condescending to it. Both fail to let the content move by its own nature.
+check: What is the difference between merely negative refutation and determinate negation (¶59)? || Mere refutation shows that something is not so and stops; it needs new content from elsewhere. Determinate negation finds the negative within the content as its own movement, so the result of the negation is itself a new, determinate content.
+check: Why does “God is Being” produce a counter-thrust (¶60–62)? || Its form suggests that Being is a property attached to a fixed subject; but Being is meant as God’s essence. Thinking, expecting to move beyond the predicate, finds the subject has passed into it, and is thrown back to reread the sentence as an identity that preserves difference.
+think: Find a sentence from this Preface that you had to read more than once. Was it a garden-path effect, or simply compression?
+think: Hegel asks the reader to renounce “personal intrusion” into the rhythm of concepts (¶58). Is that a reasonable demand? What would it mean in practice?
+push: Is the distinction between empty and determinate negation clear enough to bear the weight Hegel puts on it? Try to construct a case where a refutation is determinate in Hegel’s sense.
+push: Is Hegel’s theory of the speculative proposition a genuine insight about language, or a rationalization of his style?
+write: In about 300 words, explain to a friend why Hegel thinks philosophy must be read twice, using one example sentence from the Preface.
+
+@retell
+Hegel says that studying science requires the exertion of the concept: letting the content move by its own nature, instead of getting lost in images or arguing cleverly from outside. Merely refuting a view leads nowhere, whereas conceptual thinking finds in the negative a new, determinate content. Ordinary judgement assumes a fixed subject to which predicates are attached, but in philosophical sentences like “God is Being” the predicate is the subject’s essence, so thinking suffers a counter-thrust and must reread the sentence. This explains why philosophy seems obscure and must be read repeatedly. The remedy is not intuition but a presentation of the dialectical movement itself, which takes the place of proof.
+
+@carry
+- **Determinate negation** (¶59): defined in ¶79; the engine of every transition from ¶90 on.
+- **The exertion of the concept** (¶58): the reader’s part, restated as “simply to look on” (¶85).
+- **Meinen** (¶63): central to Sense-Certainty, “The This and Meaning” (¶90–110).
+- **The speculative proposition** (¶60–62): watch for sentences in which the predicate states an essence, e.g. “self-consciousness is desire” (¶174).
+- **Presentation instead of proof** (¶65): the task the body of the book takes on.

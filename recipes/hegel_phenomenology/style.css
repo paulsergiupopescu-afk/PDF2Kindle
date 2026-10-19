@@ -81,3 +81,30 @@ a.back { font-size: 0.85em; }
 .tp-sub { font-size: 1.05em; font-style: italic; margin-bottom: 2em; }
 .tp-small { font-size: 0.85em; }
 .ah-label { font-style: normal; font-size: 0.72em; letter-spacing: 0.1em; text-transform: uppercase; margin-right: 0.4em; }
+
+/* v2 layers -------------------------------------------------------------------*/
+.layer { font-weight: bold; }
+.layer-sep { font-weight: normal; }
+.runin { font-weight: bold; font-style: italic; margin-right: 0.2em; }
+.text-start { text-align: center; font-size: 0.8em; letter-spacing: 0.25em; text-transform: uppercase; margin: 1.6em 0 1em 0; }
+a.xref { text-decoration: underline; }
+.comm-tags { font-size: 0.9em; margin-bottom: 0.3em; }
+
+.box-where { border-bottom: 1px solid #777; padding-left: 0.2em; padding-right: 0.2em; font-style: italic; }
+.box-where .box-label { font-style: normal; }
+.box-shape { border: 1px solid #555; border-left: 0.35em double #555; }
+.sg { margin: 0 0 0.35em 0; }
+.sg-l { font-weight: bold; font-variant: small-caps; letter-spacing: 0.02em; }
+ol.steps { margin-top: 0; }
+.tracker { margin: 0.8em 0; }
+
+.box-arg { border: 1px solid #555; }
+.arg-line { margin: 0 0 0.3em 0; padding-left: 2.2em; text-indent: -2.2em; }
+.arg-k { display: inline-block; width: 2em; text-indent: 0; font-weight: bold; }
+.arg-c { margin-top: 0.4em; }
+.arg-weak { margin-top: 0.5em; font-size: 0.95em; }
+.box-lens { border-top: 1px dotted #555; border-bottom: 1px dotted #555; padding-left: 0.2em; padding-right: 0.2em; }
+.box-obj { border: 1px solid #555; border-right: 0.35em solid #555; }
+.box-now { border: 1px dashed #777; }
+.box-retell { border-left: 1px solid #555; border-right: 1px solid #555; }
+.box-carry { border: 1px solid #555; border-top: 0.25em solid #555; }

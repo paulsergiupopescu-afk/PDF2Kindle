@@ -1,0 +1,183 @@
+@unit 02 | Preface II: The age and its temptations | 6-16
+@title Preface II: The Spirit of the Age and Its Two Temptations
+@heading 6 | Standpoint of the spirit at the present time
+@heading 12 | The principle is not the completion: against formalism
+
+@where
+Hegel has just claimed that truth exists only as a scientific system (¶5). Now he must face the objection that his whole age seems to raise against him: that the deepest truth is felt, not thought.
+
+@guide
+**The question this section answers.** If truth must be conceptual and systematic, what is wrong with the two most fashionable alternatives of 1806: knowing the absolute by *feeling and intuition*, and capturing everything with *one grand formula*?
+
+**What Hegel does.** First he diagnoses the age (¶6–11). After losing its traditional faith and passing through the cold reflection of the Enlightenment, the educated world now wants philosophy to give it back a *feeling* of the divine: “edification rather than insight”. Hegel refuses: philosophy must not try to be edifying. Then he turns, more surprisingly, on the new philosophy he himself had helped to launch (¶12–16). The new age, like a newborn child, has only the bare concept of its truth; its admirers paper over this by applying one formula to everything. The result is the absolute as “the night in which all cows are black”.
+
+**Watch for.** The story of spirit’s three stages (faith, enlightenment, longing); the image of the **birth-time** and the **acorn and the oak**; the demand that science be **intelligible and open to everyone**; the attack on **monochromatic formalism**.
+
+**How to read it.** This is cultural criticism, often witty. Read ¶7–8 and ¶15–16 slowly. The targets are unnamed: the advocates of feeling are Jacobi and the Romantics (Schleiermacher above all); the formalists are Schelling’s followers and, many thought, Schelling himself.
+
+@map
+thesis: Philosophy must not satisfy the age’s hunger for feeling, nor hide the immaturity of the new science behind a single formula; it must articulate its content conceptually.
+target: (1) The “immediate knowledge” of the absolute through feeling and intuition (Jacobi, the Romantics); (2) the “formalism” of the philosophy of identity (Schelling’s school).
+step: Against the view that the absolute is felt, not conceived, Hegel places it in its historical context (¶6–7).
+step: Having lost both faith and Enlightenment confidence, the age wants edification; “the extent of spirit’s loss is measured by what satisfies it” (¶8).
+step: Philosophy must refuse to be edifying; “empty depth” is as superficial as empty breadth (¶9–10).
+step: Our time is a birth-time; but the newborn science is only a concept, not yet a developed whole (¶11–12).
+step: Without articulation science becomes esoteric; its intelligible form is the path open to everyone (¶13–14).
+step: Formalism fakes development by applying one formula to every content, until in the absolute “everything is one” (¶15–16).
+conclusion: The task is a science that is both deep and articulated; Hegel now offers a “rough indication” of it (¶16).
+stakes: Whether philosophy should console or understand; whether profound truths must be accessible; whether a theory that explains everything in the same way explains anything.
+
+@friendly Two ways to fake depth
+Picture two people at a party who both claim to know the secret of life. The first says it cannot be put into words: you have to *feel* it; anyone who asks for explanations has missed the point. The second has a single diagram, a two-by-two matrix, say, and fits everything into it: politics, love, the weather, music. Ask about anything and the matrix answers.
+
+Hegel thinks these are the two great temptations of his age, and they fail in the same way. The first refuses to articulate anything; the second articulates everything identically. Both leave you with nothing determinate, nothing you could learn, test or disagree with. The first is a fog; the second is a dark night in which, as the proverb says, all cows are black.
+
+@c 6 | claim | hegel
+gist: To say that truth exists only in the concept contradicts a widespread conviction of the age: that the absolute is not grasped by concepts but known immediately, by intuition, feeling, faith or religion.
+
+why: Hegel names his opponent clearly but admits that, at this stage, he can only *assert* against it. The target is “immediate knowledge”, associated with Jacobi: the absolute can be felt and believed, never proven or articulated. Notice that Hegel promises no proof here; the book itself must provide it.
+
+@g 6 | concept
+German *Begriff* (Miller: “Notion”). For Hegel not a mere general idea in someone’s head but the inner, self-developing structure of a thing, what it is in truth. To know something “in the concept” is to grasp it in its articulated necessity.
+
+@g 6 | the absolute
+The unconditioned: what depends on nothing else, the ultimate reality on which everything depends. For Jacobi and the Romantics it was effectively God; for Schelling, the identity beneath nature and mind.
+
+@g 6 | intuition
+German *Anschauung*: direct, immediate apprehension, as opposed to conceptual thought. Schelling spoke of an “intellectual intuition” of the absolute; Hegel is suspicious of any claim to know without mediation.
+
+@c 7 | diagnosis | hegel
+gist: Placed in context, the demand for feeling reveals where spirit now stands. It has lost its old, unreflective faith, passed through the “insubstantial reflection” of the Enlightenment, and now knows its loss. So it wants philosophy to give it back a sense of substance by blurring distinctions and offering edification, ecstasy and enthusiasm instead of insight.
+
+why: A typical Hegelian move: instead of refuting a view head-on, he explains why it arises when it does. The appetite for feeling is a symptom of a historical predicament. Note the list of “bait” words (the beautiful, the holy, the eternal, religion, love): Hegel is mocking a style, not these things.
+
+@g 7 | spirit
+German *Geist*: mind and spirit at once. Here “spirit” means the collective mind of an age or culture, its shared self-understanding. The book will slowly build up what Hegel means by the word (first definition: ¶177).
+
+@g 7 | edification
+German *Erbauung*: uplift, devotional “building up” of the heart. Hegel contrasts it with *Einsicht*, insight.
+
+@lens 7 | Erbauung: being built up versus understanding
+The German *Erbauung* literally means “building up” (*bauen*, to build), and it is the word for devotional uplift: the edifying sermon or book that warms and strengthens the believer. Hegel’s objection is not to religion but to a philosophy that sets out to produce this effect. Elsewhere he says that philosophy may well be edifying as a by-product, but must never aim at it.
+
+There is a pun worth noticing. The age wants to be “built up”, yet refuses the hard work of construction, the articulated system. Hegel will say that philosophy “builds” only through the labour of the concept (¶70). Edification without articulation is a house with no walls.
+
+@c 8 | image | hegel
+gist: Once, men had a heaven full of thoughts and images, and the meaning of things lay in their link to the beyond. The Enlightenment had to drag attention down to earth and make “experience” respectable. Now the opposite is needed: the spirit is so impoverished that, like a wanderer in the desert, it craves even a meagre feeling of the divine.
+
+why: The paragraph tells, in compressed form, a story of three stages: rich faith, worldly enlightenment, thin religious longing. Its last sentence is one of Hegel’s best: “The extent of spirit’s loss is to be measured by what satisfies it.” The poverty of our consolations shows the depth of our loss.
+
+@u 8 | Faith, enlightenment, longing: a history in three stages
+step: Stage one: a world of traditional faith, in which everything earthly gets its meaning from heaven; the gaze glides “along this thread” to the beyond. Stage two: the Enlightenment turns the gaze forcibly back to this world, to science, experience and practical life; heaven empties. Stage three: having won the world, spirit finds it has lost its depth, and now longs for any feeling of the divine, however vague.
+
+example: Think of a family that has abandoned the church of its grandparents, enjoyed decades of secular confidence, and whose children now browse spirituality apps and wellness retreats for a feeling of meaning. Hegel would not mock their need; he would say that what now satisfies them shows how much was lost.
+
+misreading: Hegel does not want to go back to stage one, nor does he despise the Enlightenment. He wants a fourth stage, in which the depth of faith and the clarity of reason are united through conceptual thinking. His complaint is that the Romantics offer only the *feeling* of depth.
+
+returns: The same three-step pattern (immersion, loss through reflection, recovery at a higher level) structures the whole book. The struggle between faith and enlightenment gets a full chapter later (¶527ff., beyond this edition), and the Unhappy Consciousness (¶207–230) shows a soul longing for a beyond it cannot reach.
+
+@c 9 | claim | hegel
+gist: Whoever wants mere edification, an indeterminate enjoyment of an indeterminate divinity, may look for it where he likes. But philosophy must beware of wishing to be edifying.
+
+why: A short paragraph with a sharp line. It defines the role of philosophy against the consolation business: philosophy is not therapy by feeling. (Hegel will turn out to offer a kind of reconciliation, but one that must be earned through thought.)
+
+@c 10 | polemic | hegel
+gist: Still less may this enthusiasm claim to be superior to science. It boasts of depth and despises determinate concepts; but there is an empty depth just as there is an empty breadth. The force of spirit is only as great as its expression. Those who surrender understanding in order to receive wisdom from God “in sleep” produce only dreams.
+
+why: The core argument against “immediate knowledge”: depth that cannot express itself in determinate form is not depth at all. The image of the sleeper echoes Psalm 127 (“he giveth his beloved sleep”). Hegel turns a pious phrase against the pious.
+
+@g 10 | the Horos
+Greek *horos*, a boundary stone: limit, definition, determinacy. The enthusiasts despise definite boundaries, preferring the limitless; Hegel insists that without determinacy there is no content.
+
+@arg 10 | “The force of spirit is only as great as its expression”
+P1: A claim to deep knowledge must have some content that distinguishes it from ignorance or fantasy.
+P2: Content is determinate: it is this and not that, and can be articulated and tested.
+P3: Enthusiastic “depth” refuses determination, concepts and necessity.
+C: So such depth has no content of its own; it is filled by the believer’s “contingency” and “wilfulness”, and is as superficial as empty breadth.
+weak: The mystic can reply that some truths exceed all articulation (as Otto argued for the experience of the holy). Hegel must show that the inexpressible is not deeper but poorer; he argues this in detail against Sense-Certainty (¶110: “what is called the unsayable is nothing other than the untrue”).
+
+@c 11 | image | hegel
+gist: Our time is a birth-time and a transition to a new era. Spirit has broken with its previous world. Like a child’s first breath after long, quiet growth, a qualitative leap follows gradual change; the old order crumbles with frivolity, boredom and foreboding until, like lightning, a sunrise reveals the new world.
+
+why: Written as Napoleon’s armies were transforming Germany, this is Hegel at his most historically charged. Notice the logic he will use often: slow quantitative change ends in a sudden qualitative leap (water cooling, then freezing). The French Revolution and its aftermath hover in the background.
+
+@c 12 | claim | hegel
+gist: But the new world, like a newborn child, is not yet complete. Its first appearance is only its immediacy or concept. A foundation is not a building; an acorn is not an oak. So too science, the crown of a new world of spirit, is not complete in its beginnings.
+
+why: The birth image now limits the claims of the new philosophy. The beginning contains the whole only in compressed form; its truth must unfold. This prepares the attack on those who treat the bare principle as the finished science.
+
+@c 13 | argument | hegel
+gist: In its first appearance the new science lacks articulation. Without it, science seems the “esoteric possession” of a few. Only what is fully determined is exoteric, learnable, everyone’s property. The intelligible form of science is the way to it, open to all, and the demand to reach rational knowledge through the understanding is just.
+
+why: A democratic principle at the heart of Hegel’s project: philosophy must be learnable by anyone who thinks. This is aimed at circles that treated speculative insight as a gift of genius. It also explains why the *Phenomenology* exists: it is the public road into science (compare the “ladder”, ¶26).
+
+@g 13 | understanding
+German *Verstand*: the faculty of clear, fixed distinctions and definitions. Hegel often criticizes it for rigidity, but here he defends it: understanding makes knowledge intelligible and shareable.
+
+@c 14 | diagnosis | hegel
+gist: The new science, still lacking detail and finished form, is rightly criticized for this, though the criticism does not touch its essence. Two sides confront each other: one insists on rich material and intelligibility, the other on immediate rationality and divinity. Even when silenced, the first side remains unsatisfied: its demands are just but unmet.
+
+why: Hegel stands on both sides: he shares the big idea of the new philosophy, but grants its critics their main point. The Phenomenology is meant to untie this “knot” by giving the new idea a developed, intelligible form.
+
+@c 15 | polemic | hegel
+gist: The formalists seem to have a wide range, absorbing already ordered material and focusing on oddities. But closer inspection shows not one principle developing itself into different shapes, but the same formula applied externally to everything, giving a tedious semblance of diversity: a “monochromatic formalism”.
+
+why: The charge is precise: development must come from the content itself, not be imposed from outside. A theory that fits everything in the same way explains nothing (Inwood compares Popper’s critique of unfalsifiable theories). Hegel’s own method will have to avoid this charge.
+
+@c 16 | polemic | hegel
+gist: Formalism treats this monotony as the absolute standpoint. To consider something “in the absolute” becomes saying that there, in A=A, everything is one. To set this single insight against detailed cognition, or to pass off its absolute as “the night in which all cows are black”, is naivety and empty cognition. Hegel ends by promising a rough sketch of his own view.
+
+why: The most quoted joke in German philosophy, and the moment Hegel publicly broke with Schelling. Schelling read it as aimed at him, and their friendship never recovered. The last sentences turn to Hegel’s own programme, which begins in ¶17.
+
+@g 16 | A=A
+The formula of pure identity, used by Schelling’s philosophy of identity to express the absolute as the indifference of subject and object, mind and nature. Hegel’s point: pure identity leaves no room for difference, and so for content.
+
+@u 16 | The night in which all cows are black
+step: Schelling taught that beneath the oppositions of mind and nature, subject and object, lies one absolute in which they are identical. His followers applied this to everything: magnetism, plants, history are all “really” the same absolute under different appearances. Hegel’s quip: such an absolute is like a dark night in which all cows look black. It is not that every difference is explained; every difference simply vanishes from view.
+
+example: Imagine a doctor who, for every symptom, replies: “Ultimately, all illness is imbalance.” True, perhaps, but useless; it tells you nothing about this fever or that rash. A real diagnosis must keep the differences and show how they connect.
+
+misreading: Hegel does not reject the idea of an absolute or of an underlying unity. He rejects a unity that *swallows* differences instead of containing and explaining them. His alternative, announced in ¶17–18, is a unity that differentiates itself and returns to itself through its differences.
+
+returns: Pure identity without difference is exactly what Sense-Certainty discovers it cannot hold (¶90–110). The Understanding’s flight to an empty “inner world” repeats the error (¶146–147). And self-consciousness as the bare “I am I” is a “motionless tautology” (¶167).
+
+@cross Was Hegel fair to Schelling?
+**Hegel’s official line.** In a letter to Schelling (May 1807) he insisted the target was the “shallowness” of Schelling’s imitators, not Schelling. Schelling replied coolly that he could not see the distinction, and never wrote to him again.
+
+**Schelling’s defenders** (Andrew Bowie, cited by Stern): Schelling’s absolute was never a featureless blank; he was trying to think a ground of difference that is not itself one more difference, a problem Hegel arguably inherits rather than solves.
+
+**Hegel’s defenders**: the issue is method. If philosophy begins with an intuition of the absolute “like a shot from a pistol” (¶27), it has no way of deriving differences, so they can only be listed under a formula.
+
+**Your task.** Keep this quarrel in mind at ¶17, where Hegel states his alternative. Is “substance as subject” really different in kind from Schelling’s identity, or a more articulated version of it?
+
+@now Theories that explain everything
+Hegel’s attack on “monochromatic formalism” anticipates a familiar modern worry. Popper argued that theories which can absorb any evidence (he named psychoanalysis and Marxist history) gain their apparent power from emptiness. Today one meets the same pattern in grand slogans (“everything is power”, “everything is evolution”, “everything is information”) when they are applied identically to every case.
+
+Hegel’s remedy is not Popper’s, however. Popper wanted testable predictions; Hegel wants a principle that *differentiates itself* from within, generating the specific shapes of its content. Ask yourself, as you read on, whether the *Phenomenology* meets its own standard, or whether its “dialectic” becomes a formula of its own (thesis, antithesis, synthesis is a label Hegel never used and would have rejected as exactly this kind of formalism).
+
+@key
+- The age believes the absolute is felt and intuited, not conceived; Hegel calls this a symptom of a historical loss.
+- Spirit has passed from rich faith through the Enlightenment to a thin longing; “the extent of spirit’s loss is measured by what satisfies it.”
+- Philosophy must not try to be edifying; empty depth is as superficial as empty breadth.
+- Ours is a birth-time, but the new science is so far only a concept (an acorn, not an oak).
+- Science must be articulated, intelligible and open to everyone, not an esoteric possession.
+- Formalism applies one formula to everything; its absolute is “the night in which all cows are black”.
+
+@q
+check: What does Hegel mean by saying that the extent of spirit’s loss is measured by what satisfies it (¶8)? || A spirit that is satisfied by a meagre, vague feeling of the divine reveals how much it has lost compared with the rich faith of earlier ages. The poverty of the consolation measures the depth of the loss.
+check: Why is “empty depth” no better than empty breadth (¶10)? || Depth that refuses to express itself in determinate content has nothing to show for itself; “the force of spirit is only as great as its expression”. Without determination it is filled only by contingency and arbitrariness.
+check: What is wrong with the formalism of ¶15–16? || It does not let one principle develop into different shapes; it applies the same formula externally to all material, producing a tedious appearance of variety. Its absolute, in which everything is one (A=A), dissolves all differences: “the night in which all cows are black”.
+think: Hegel insists that philosophy should be “open to everyone” (¶13). Is that compatible with writing as difficult a book as this one? How might he answer?
+think: Is the appetite for spiritual feeling in our own time a symptom of loss in Hegel’s sense? What would he say about it?
+push: Is Hegel unfair to religious feeling? Could there be truths that are real but resist conceptual articulation?
+push: Does Hegel’s own dialectic risk becoming the kind of formula he attacks here? What would show that it does not?
+write: Write a short dialogue (about 300 words) between a Romantic who says “the divine must be felt” and Hegel, who replies with ¶10.
+
+@retell
+Hegel admits that his claim that truth lives in concepts contradicts the age, which holds that the absolute is felt and intuited. He explains this demand historically: having lost its faith and passed through the Enlightenment, spirit now wants edification instead of insight, and the poverty of what satisfies it shows the depth of its loss. Philosophy must refuse to be edifying, since depth without expression is empty. Our age is a birth-time, but the new science is only a beginning, and it must become articulated and accessible to everyone. Its fashionable formalism, which applies one formula to everything until in the absolute all is one, is “the night in which all cows are black”.
+
+@carry
+- **Immediate knowledge** versus conceptual knowledge: the issue of Sense-Certainty (¶90–110), which claims to know without concepts.
+- **The force of spirit is only as great as its expression** (¶10): returns in the claim that the unsayable is the untrue (¶110).
+- **Science open to everyone** (¶13): the reason for the “ladder” (¶26) and for the whole Phenomenology.
+- **Against formalism** (¶15–16): Hegel promises a principle that develops itself; watch whether his method lives up to this (¶50–53).

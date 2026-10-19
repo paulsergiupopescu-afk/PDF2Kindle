@@ -1,0 +1,194 @@
+@unit 03 | Preface III: Substance as subject | 17-25
+@title Preface III: The True Not Only as Substance but Also as Subject
+@heading 17 | The absolute is subject
+@heading 18 | and what this is
+
+@where
+Hegel has dismissed both the feeling of the absolute and the formula that makes everything one (¶6–16), and promised a “rough indication” of his own view. Here it is: the most famous and most compressed pages of the Preface.
+
+@guide
+**The question this section answers.** If the absolute is neither a feeling nor an undifferentiated identity, what is it? And why must knowledge of it be a system?
+
+**What Hegel does.** He states his central thesis: everything depends on grasping the true “not as *substance*, but just as much as *subject*” (¶17). A substance simply *is*; a subject *becomes itself* by going out into what is other and returning to itself. So the true is not a fixed starting point but a movement, “the circle that presupposes its end as its goal” (¶18). Hence the slogans: “the true is the whole”, the absolute is “essentially result” (¶20). Mediation, far from betraying the absolute, is its life (¶21–22). Then two consequences: a proposition like “God is love” cannot express a subject (¶23), and any first principle, taken as a mere principle, is false (¶24). Finally the word that sums it all up: the absolute is *spirit* (¶25).
+
+**Watch for.** *Substance* and *subject*; *negativity*; *mediation* versus *immediacy*; *in itself* and *for itself* (the embryo and the adult, ¶21); the first appearance of *sublate* (¶21); *purpose* (¶22); *spirit* (¶25).
+
+**How to read it.** These paragraphs are dense because they compress Hegel’s whole philosophy. Do not expect to understand them fully now; Hegel himself says this view “must be justified only by the presentation of the system” (¶17). Aim for the shape of the idea. Read ¶17, ¶18 and ¶20 twice; ¶23 and ¶25 can be returned to later.
+
+@map
+thesis: The true must be grasped as subject as well as substance: a self-developing whole that becomes what it is through its own otherness and return.
+target: Spinoza’s one substance (as Hegel reads it), Kant’s and Fichte’s abstract I, and Schelling’s intellectual intuition, all of which leave the absolute inert.
+step: Each rival view leaves the true as an immobile unity, whether substance, pure thinking or intuited identity (¶17).
+step: Living substance is subject: self-positing, negating itself into otherness and restoring itself; the true is this circle (¶18).
+step: God’s life as “love playing with itself” is empty without “the seriousness, the pain, the patience and labour of the negative” (¶19).
+step: The true is the whole; the absolute is essentially result; mediation is not alien to it (¶20–21).
+step: This is purposive activity, as Aristotle saw: the end is already active in the beginning (¶22).
+step: Propositions with a fixed subject (“God is…”) cannot present this self-movement (¶23).
+step: Knowledge is actual only as system; a first principle taken on its own is false, and its true refutation is its development (¶24).
+conclusion: The absolute is spirit: what is in and for itself, and which, knowing itself as spirit, is science (¶25).
+stakes: Whether reality is a static something or a process of self-development, and whether knowledge can have foundations at all.
+
+@friendly The seed, the person and the story
+A stone is what it is; nothing about it is unfinished. A person is different. A baby is “human”, yet not in the way an adult is: the adult has *made* herself into what the baby only promised, through learning, failure and growth. And the adult’s identity includes all that history; you do not understand who she is by looking only at the infant, or only at the present moment.
+
+Hegel thinks the deepest truth of things is like the person, not like the stone. A good story works the same way: its meaning is not in the first sentence, nor in the last one torn from the rest, but in the whole development. That is what he means by “the true is the whole” and by calling the absolute a *subject*: it is not a thing lying there to be looked at, but a process that becomes itself.
+
+@c 17 | thesis | hegel
+gist: Everything depends on grasping the true not only as substance but equally as subject. Hegel reviews three inadequate views: Spinoza’s one substance, in which self-consciousness is drowned; the opposite view that clings to thinking as such (Kant, Fichte), which is just as immobile; and Schelling’s intellectual intuition, which threatens to fall back into inert simplicity.
+
+why: The most famous sentence of the Preface, and Hegel adds at once that it can only be justified by the system as a whole. The three rejected views mark the road of German philosophy after Kant, and Hegel claims to go beyond all of them. Note that “subject” here does not first mean a human mind; it means something active, self-relating and self-developing.
+
+@g 17 | substance
+In the tradition, what exists in its own right and underlies changing properties; for Spinoza, the one infinite reality, God or nature. Hegel uses it for any self-contained whole that simply *is*, without knowing or developing itself.
+
+@g 17 | subject
+Here not first a human knower, but whatever is active and self-relating: something that becomes what it is through its own activity and remains itself in what it becomes. Inwood notes that Hegel moves between this sense and the sense of a knowing, willing subject.
+
+@g 17 | God as the one substance
+Spinoza’s doctrine (*Ethics*, 1677): there is only one substance, God or nature, of which minds and bodies are modes. It “shocked the age”: it was widely denounced as atheism and pantheism, and the “pantheism controversy” of the 1780s brought it back to the centre of German thought.
+
+@g 17 | intellectual intuition
+A direct, non-sensory insight into the absolute, claimed by Fichte and Schelling. Kant had said humans lack it. Hegel’s worry: knowledge by intuition skips the mediation in which the content would be articulated.
+
+@u 17 | Substance and subject: what is the difference?
+step: A *substance*, in the sense Hegel attacks, is a unity that is simply there: it underlies its properties but does nothing to produce them, and it does not relate to itself. A *subject* is a unity that is *active*: it goes out of itself, becomes different from itself, and recognizes itself in what it has become. Hegel’s claim is that the true, reality in its deepest structure, has the second shape, not only the first.
+
+example: Think of a seed versus a living plant, or better, a child versus a self-aware adult. The child is already a human being “in itself”; but it becomes one “for itself” only by going through education, conflict and experience, and the adult carries that whole history within. Or think of a team that becomes a team only by playing together, losing, adjusting and finally recognizing its own style.
+
+misreading: “Substance is subject” does not mean that everything is a mind, or that rocks think. Nor does it mean Hegel abandons substance: the true is subject “just as much” as substance. The claim is that reality is a self-developing process whose highest form is self-knowing spirit, and that only such a whole can be fully intelligible.
+
+returns: Self-consciousness will be defined as “the return from otherness” (¶167). The circle of going out and returning is the pattern of every shape in the book, and Spirit, the “I that is We” (¶177), is the first full image of a subject in Hegel’s sense.
+
+@c 18 | definition | hegel
+gist: Living substance is in truth subject: it is actual only as the movement of positing itself, the mediation of becoming other to itself with itself. As subject it is “pure simple negativity”: it splits itself and then negates this split, restoring its unity. The true is not an original unity but this self-restoring equality, “the circle that presupposes its end as its goal”.
+
+why: Hegel’s definition of the subject. Three steps: a simple unity, its self-division into opposition, and the overcoming of the opposition. But the third step is not a return to the start: the true is the whole circle, in which the end was already guiding the beginning.
+
+@g 18 | negativity
+Hegel’s word for the power of something to differentiate itself, to “say no” to its present state and become other. For him negation is creative, not merely destructive.
+
+@g 18 | mediation
+German *Vermittlung*: being related to or produced through something else, as opposed to being *immediate* (simply given). Hegel’s constant theme: nothing is purely immediate.
+
+@c 19 | image | hegel
+gist: The life of God may be called love playing with itself, but the idea becomes edifying and even insipid without “the seriousness, the pain, the patience and labour of the negative”. In itself this life is serene unity; but its nature is to be for itself, and so the form, the developed articulation, belongs to the essence.
+
+why: A direct rebuke to edifying theology: a God untouched by otherness, alienation and their overcoming is empty. Notice that Hegel makes pain and labour part of the divine life itself. Notice too the first pairing of *in itself* and *for itself*, the most useful distinction in the book.
+
+@lens 19 | In itself, for itself, in and for itself
+Three of Hegel’s most important phrases come from ordinary German. *An sich* (“in itself”) means potentially, implicitly, or as it intrinsically is; *für sich* (“for itself”) means actually, explicitly, aware of itself, or on its own account; *an und für sich* (“in and for itself”) means fully developed and self-aware, what it is and knowing that it is.
+
+Hegel’s own example comes in ¶21: the embryo is human *in itself* but not *for itself*; the educated adult has made itself *for itself* what it was *in itself*. A further pair complicates things: something may be so “for us” (the observers) before it is so “for itself” (¶25, ¶87). Miller’s translation often paraphrases these phrases (“implicitly”, “explicitly”); Inwood keeps them literal, so you can track them.
+
+@c 20 | thesis | hegel
+gist: The true is the whole; the whole is the essence completing itself through its development. The absolute is essentially result: only at the end is it what it is in truth. This only seems contradictory. A first word like “all animals” is no zoology; words like “the absolute” or “the divine” express only the immediate. Anything more, even a single proposition, involves mediation, a becoming-other that is taken back.
+
+why: “The true is the whole” is often quoted as a motto of totalitarian thinking, but here its meaning is modest and precise: a beginning is an abstraction, and its truth lies in its development. The zoology example is the key: a science begins with a word and becomes true only in its articulation.
+
+@u 20 | “The true is the whole”
+step: Hegel’s reasoning has three steps. Any beginning is only a general word (“the absolute”, “all animals”). Saying anything determinate about it already introduces difference and relation, that is, mediation. So the real content of the beginning appears only in its developed whole, and the absolute is “essentially result”.
+
+example: The meaning of “justice” is not captured by the word, nor by a definition of a line; it emerges as we work through cases, conflicts, institutions and history. A child who can say “fair!” has the word; a judge with long experience has something closer to the whole.
+
+misreading: The slogan does not say that only the totality of everything is true and all parts are false, nor that individuals count for nothing. It says that partial views are *one-sided*, true as moments and false when taken as the whole. Adorno’s reversal, “the whole is the false”, attacks the slogan as a claim of total reconciliation; whether Hegel deserves that charge is a question for the end of the book.
+
+returns: Each shape of consciousness is a partial view that takes itself to be the whole truth, and learns otherwise. The theme returns in “the true is the Bacchanalian revel in which no member is not drunk” (¶47).
+
+@c 21 | argument | hegel
+gist: The horror of mediation comes from misunderstanding it. Mediation is self-moving equality with itself, the I that is for itself, pure negativity, “simple becoming”. Reflection must not be excluded from the true; it makes the true a result and sublates the opposition between result and becoming. The embryo is human in itself; only cultivated reason, which has made itself what it is in itself, is human for itself.
+
+why: Hegel argues that mediation and immediacy are not enemies. A result that has absorbed its process is immediate again, but now as “self-conscious freedom” reconciled with its oppositions. The embryo example gives the in-itself / for-itself distinction its clearest illustration.
+
+@g 21 | reflection
+In Hegel, thought that turns back on itself or relates one thing to another; also the relating as such. His opponents feared reflection would break up the absolute; he makes it a “positive moment” of it.
+
+@lens 21 | Aufheben: to cancel, to keep, to raise
+Here the word *sublates* appears for the first time. It translates *aufheben*, which in ordinary German means three things: to cancel or abolish (a law is *aufgehoben*), to preserve or keep (you *hebst* something *auf* for later), and to lift up. Hegel delights in the fact that one word holds all three: when one stage gives way to the next, it is cancelled as independent, preserved as a moment, and raised to a higher level.
+
+Translators struggle. “Sublate” is a technical coinage from the Latin *tollere*, which Hegel himself compared with *aufheben*; Miller uses “supersede”, others “overcome” or “sublimate”. Whenever you meet “sublate” in this book, ask: what is cancelled, what is kept, and what is raised? The bud, blossom and fruit (¶2) are the picture to keep in mind.
+
+@c 22 | argument | hegel
+gist: The same point: reason is purposive activity. Purpose has fallen into disrepute, but in Aristotle’s sense nature is purposive: the purpose is the unmoved mover, and so a subject. The end is the same as the beginning because the beginning *is* the purpose; the realized purpose is the unrest that is the Self, returned into itself.
+
+why: Hegel reaches back to Aristotle against modern mechanism. He rejects “external” purposiveness (sheep exist to give us wool) but defends internal purposiveness, the end immanent in a growing organism. The self-developing subject is modelled on life, a theme that returns in Self-Consciousness (¶168–172).
+
+@g 22 | purposive activity
+Activity directed by an end that is already at work in it, as the form of the oak is at work in the growing acorn. Aristotle called it *entelechy*; Kant called it internal purposiveness.
+
+@c 23 | argument | hegel
+gist: People try to express the absolute as subject in propositions such as “God is the eternal”, “God is the moral world-order”, “God is love”. But in these the word “God” is by itself a senseless sound, filled only by the predicate; and the subject is treated as a fixed point to which predicates are attached by our activity, not by its own movement. This makes the actual self-movement of the concept impossible.
+
+why: The first statement of a theme developed in ¶58–66: ordinary subject–predicate sentences picture a fixed thing with properties hung on it, which is just the wrong picture for a self-developing subject. The examples point at Böhme or Jacobi (“the eternal”), Fichte (“the moral world-order”) and the First Letter of John (“God is love”).
+
+@c 24 | consequence | hegel
+gist: Knowledge is actual only as science or system. A so-called first principle, if true, is also false, insofar as it is only a principle. It is easy to refute, by showing its deficiency; a thorough refutation develops the principle from within. Rightly understood, refutation and positive development are the same: the principle shows itself to be only the beginning.
+
+why: A compact statement of Hegel’s method and a rejection of foundationalism: philosophy cannot start from self-evident axioms that stay fixed. Every starting point is one-sided, and the system is the process of correcting it from within. This is exactly how the *Phenomenology* will treat each shape of consciousness.
+
+@arg 24 | Why a first principle, “if true, is also false”
+P1: A first principle is only a universal beginning: indeterminate, not yet developed.
+P2: Taken as complete, such a principle claims to be the whole truth while being only part of it.
+P3: A claim that presents a part as the whole is, as it stands, one-sided and so false.
+C1: So a principle is true as a beginning and false as a final principle.
+C2: The proper refutation of a principle is its development, which completes it; refutation and positive realization coincide.
+weak: P3 trades on Hegel’s special sense of “false” (inadequate to the whole), not the ordinary sense (failing to correspond to fact). Inwood notes that Hegel works with both senses of truth (¶2); the argument is persuasive only once we adopt the first.
+
+@c 25 | thesis | hegel
+gist: That the true is actual only as system, or that substance is subject, is expressed in the representation of the absolute as *spirit*, the most sublime concept, which belongs to the modern age and its religion. The spiritual alone is actual: in and for itself. At first it is so only for us, as spiritual substance; it must become so for itself, knowing itself as spirit. Spirit that knows itself as spirit is science.
+
+why: The summit of the section, and the book’s title word. Notice the claim that Christianity, with its God who becomes man and dwells in the community as Spirit, already *represents* in religious imagery what philosophy must *conceive*. The whole *Phenomenology* is the journey by which spirit comes to know itself as spirit.
+
+@g 25 | for us
+The perspective of the philosophical observer (Hegel and his readers) as opposed to that of the consciousness being observed. Something can be true “for us” before it is true “for itself”. A key device of the book (¶87).
+
+@cross What does “substance as subject” claim?
+**The theological-metaphysical reading** (Charles Taylor and an older tradition): reality is cosmic Spirit, God, which posits the world in order to come to self-consciousness through finite minds. Support: ¶19 on the life of God; ¶25 on the absolute as spirit. Pressure point: it saddles Hegel with an extravagant metaphysics and a God who needs the world.
+
+**The holist reading** (Stern): Hegel defends identity-in-difference against both monism (Schelling’s “all is one”) and dualism; a subject finds itself in its other without being cut off from it or dissolved in it. Support: ¶18, “reflection into itself in otherness”. Pressure point: critics from William James to Russell doubt that identity-in-difference avoids incoherence or collapses back into monism.
+
+**The epistemological reading** (Heidemann): the substance–subject claim is a *definition of truth* as a self-referential process; the companion claim that knowledge is only actual as system rejects individual certainty as a foundation (“methodological anti-individualism”). Pressure point: it can make Hegel sound more like a modern epistemologist than he is.
+
+**The normative-social reading** (Pippin, Brandom): a “subject” is a self-determining, norm-governed activity; spirit is the space of mutually recognizing reasoners. Support: “I that is We” (¶177). Pressure point: it struggles with Hegel’s talk of God and of nature as purposive (¶22).
+
+@obj Does the absolute depend on the world?
+objection: The absolute was supposed to be what depends on nothing. But if it is only “essentially result”, actual only at the end of a process in which it goes out into a world and returns, then it depends on that process and on the world. Hegel has made the unconditioned conditional.
+
+reply: Hegel accepts the premise and denies the conclusion. What depends only on its *own* development is not dependent on anything else; the process is the absolute’s self-relation, not a relation to something alien. A person who becomes herself through her own life is not “dependent” on her biography in the way a tool depends on its user.
+
+verdict: Is self-dependence through a process a coherent notion of the unconditioned, or a clever redescription of dependence? (Inwood raises this as Hegel’s second apparent contradiction in ¶20.)
+
+@now The self as a story
+Hegel’s idea that a subject becomes what it is through its own history anticipates a whole family of later ideas. Philosophers of “narrative identity” (Ricoeur, MacIntyre) hold that a person is not a fixed core but a self that understands itself through the story of its life. The *Bildungsroman*, the novel of formation that flourished in Hegel’s Germany with Goethe’s *Wilhelm Meister*, tells exactly this kind of story; the *Phenomenology* has often been read as a Bildungsroman of spirit.
+
+There is also a link to contemporary holism in the theory of knowledge. Quine argued that beliefs face experience “as a corporate body”, not one by one, and Robert Brandom draws on Hegel to argue that concepts get their content from their inferential relations to other concepts. “The true is the whole” and “a principle on its own is false” (¶24) are early, more metaphysical, versions of this anti-foundational idea.
+
+@key
+- The true must be grasped not only as substance but equally as subject: an active, self-developing whole.
+- A subject is “pure simple negativity”: it divides itself and returns to itself; the true is this circle, not an original unity.
+- Without “the pain, the patience and labour of the negative”, talk of the divine life is empty edification.
+- “The true is the whole”: the absolute is essentially result; mediation belongs to it.
+- The embryo is human in itself; only cultivated reason is human for itself. *Aufheben*: cancel, preserve, raise.
+- A first principle, if true, is also false as a mere principle; its true refutation is its development.
+- The absolute is spirit; spirit knowing itself as spirit is science.
+
+@q
+check: What is the difference between grasping the true as substance and as subject (¶17–18)? || As substance, the true is a unity that simply is, inert and undifferentiated. As subject it is active: it posits itself, becomes other, and restores its unity through that otherness; it is the whole circle of this movement, not the original unity.
+check: Why does Hegel say the absolute is “essentially result” (¶20)? || Because any beginning is only a universal word; the content appears only as it is developed and mediated. What the absolute truly is shows itself only at the end, in the whole development.
+check: Explain the embryo example in ¶21. || The embryo is human in itself, potentially and implicitly; only the educated, rational adult is human for itself, having made itself actually and consciously what it was in itself. The result is again simple (“self-conscious freedom”) but now reconciled with its process.
+check: What does *aufheben* mean, and why does Hegel like the word? || It means to cancel, to preserve, and to raise up. Hegel likes it because it names in one word the way a stage is overcome, kept as a moment, and lifted into a richer whole.
+think: Can you think of something in your own experience that is “essentially result”, which is only what it is through its history?
+think: Why might ordinary subject–predicate sentences (“God is love”) be the wrong form for expressing a self-developing subject (¶23)?
+push: Is “substance as subject” a discovery about reality or a metaphor? What would count as evidence either way?
+push: Does the claim that the absolute is “essentially result” make it dependent on something else? See the Objections box.
+write: Explain in your own words, in about 300 words, why Hegel thinks a first principle “if true, is also false” (¶24). Use an example from mathematics, science or ordinary argument.
+
+@retell
+Hegel’s central claim is that the true must be grasped not only as substance, a unity that simply is, but also as subject, a unity that develops itself. Spinoza, Kant and Fichte, and Schelling all left the absolute inert, whereas a subject divides itself and returns to itself through its otherness, so the true is the whole circle, not its starting point. That is why “the true is the whole” and the absolute is “essentially result”: mediation is part of its life, just as the embryo becomes truly human only by making itself so. It follows that no fixed proposition or first principle can capture the truth, which exists only as a developed system. All this is summed up in calling the absolute spirit, and spirit that knows itself as spirit is science.
+
+@carry
+- **Substance and subject** (¶17): the deep structure Hegel will claim for spirit; tested in Self-Consciousness (¶166–177).
+- **Negativity and return** (¶18): the circle of every shape of consciousness.
+- **In itself / for itself / for us** (¶19–25): indispensable for reading the Introduction (¶85–87).
+- **Aufheben** (¶21): watch for “sublate” at every transition.
+- **The fixed subject of propositions** (¶23): developed as the “speculative proposition” (¶60–66).
+- **Spirit** (¶25): first given content in ¶177, the “I that is We”.

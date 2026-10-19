@@ -1,80 +1,146 @@
-@unit 01 | Against prefaces | 1-5
+@unit 01 | Preface I: Against prefaces | 1-5
 @title Preface I: Why a Preface Cannot Say What Philosophy Is
 @heading 1 | The element of the true is the concept, and its true shape is the scientific system
 
+@where
+You are at the very beginning, but in an odd sense also at the end: Hegel wrote this Preface after he had finished the whole book, in the winter of 1806–7. Nothing has yet been argued. These five paragraphs set the tone for everything else.
+
 @guide
-You are about to read one of the most famous prefaces in philosophy, and it opens by explaining why prefaces are useless. That is not a joke at the reader’s expense. Hegel wrote the Preface *after* finishing the whole book, in the winter of 1806–7, and he uses it to warn us against a habit of mind: wanting the conclusions without the journey. A preface normally tells you the author’s aim, his results, and how he differs from rivals. Hegel argues that in philosophy all three are misleading if taken on their own.
+**The question this section answers.** Why can’t a philosophy simply be summarized: aims, results, and how it differs from its rivals?
 
-Watch for three ideas that will return again and again. First, the difference between a **result** and a result *together with its becoming*: a conclusion detached from the argument that produced it is, in Hegel’s blunt image, a corpse. Second, the image of the **bud, blossom and fruit**: philosophies that seem to refute one another can be stages of one living development. Third, the claim that truth can only exist as a **system**, a connected whole, which is why philosophy must stop being “love of wisdom” and become actual knowledge.
+**What Hegel does.** He turns the convention of the preface against itself. A preface normally states the author’s aim, his results and his relation to other books. Hegel argues that in philosophy each of these misleads if taken on its own, because philosophical truth lies in the worked-out development, not in the headline. He then announces his programme: truth can exist only as a *system*, and his task is to turn philosophy from “love of knowing” into actual knowing.
 
-How to read it: slowly, but without trying to master every clause. These five paragraphs are a manifesto, not yet an argument. Your aim is to catch the attitude Hegel is fighting, and the attitude he wants you to adopt.
+**Watch for.** The *Thing* (the subject matter itself, which summaries “bypass”); the image of **bud, blossom and fruit**; the claim that “the naked result is a corpse”; *Bildung* (education, culture); the confident claim that the time is ripe.
+
+**How to read it.** Slowly, but do not try to master every clause. This is a manifesto, not yet an argument. Slow down at ¶2 (the plant) and ¶3 (the corpse); ¶4 can be read more quickly.
+
+@map
+thesis: Philosophical truth exists only as a developed scientific system; therefore no preface can deliver it, and the task of the age is to make philosophy into actual knowledge.
+target: Readers who want the results without the journey, and a culture of “positions”, verdicts and quick comparisons.
+step: Prefaces state aims, results and differences from rivals (¶1–2).
+step: Aims without their working-out are empty; results without their process are “corpses”; differences mark only where a thing stops (¶3).
+step: Such general knowledge is a necessary beginning of education, but only a beginning (¶4).
+step: Truth exists only as system; philosophy must become actual knowledge, and showing that the time is ripe for this would be its best justification (¶5).
+conclusion: Read the whole development, not the summary; the book itself is the only real “preface” to its own truth.
+stakes: If Hegel is right, the habit of reducing philosophers to slogans (“Kant: idealist”) is not a harmless shortcut but a way of missing philosophy altogether.
 
 @friendly The trailer and the film
-Imagine someone who never watches films, only trailers. They know the stars, the genre, the twist, perhaps even the ending. They can say confidently which film is better than which. But they have never actually *seen* any film: they have missed everything that makes a film what it is, the way each scene grows out of the last.
+Imagine someone who never watches films, only trailers. They know the stars, the genre, the twist, perhaps even the ending. They can say confidently which film is better than which. But they have never actually *seen* a film: they have missed everything that makes it what it is, the way each scene grows out of the last.
 
-Hegel thinks most talk about philosophy is like that. We collect “positions” (Kant thinks this, Hume thinks that), compare them, take sides, and feel informed. A preface encourages this: it is the trailer. Hegel wants to stop us at the door. The real thing, he says, is not the label on the result but the whole movement that produced it. That is why this book will make you walk every step.
+Hegel thinks most talk about philosophy is like that. We collect positions (Kant thinks this, Hume thinks that), compare them, take sides, and feel informed. A preface encourages the habit: it is the trailer. Hegel stops us at the door. The real thing is not the label on the result but the whole movement that produced it. That is why this book will make you walk every step.
 
-@c 1
-Hegel begins by turning the convention of the preface against itself. A preface states aims, motives and relations to other books; but philosophy, unlike a heap of facts, cannot be captured by such summary statements. In anatomy we know the general definition does not give us the body; in philosophy we are tempted to think the general statement *is* the whole thing. Hegel’s point is that philosophical truth lies in the worked-out articulation, not in the headline.
+@c 1 | claim | hegel
+gist: A preface normally explains the author’s aim, motives and relation to other books. In philosophy this is not only superfluous but misleading, because philosophy’s general statements give the false impression that they already contain the whole subject.
+
+why: In anatomy everyone knows the definition is not the body; in philosophy we are tempted to think the general statement *is* the matter. Hegel’s first move, then, is a warning about how to read him: the truth will be in the details of the development, not in quotable conclusions.
 
 @g 1 | Thing
-Hegel’s word is *Sache*: the matter at issue, the subject matter itself, what is really at stake. Not a physical object (that is *Ding*). “The Thing itself” is a refrain of the Preface: always ask whether a way of thinking engages the subject matter or merely talks around it.
+German *Sache*: the matter at issue, the subject matter itself, what is really at stake. Not a physical object (that is *Ding*, the “thing” of Perception, ¶111ff.). “The Thing itself” is a refrain of the Preface: always ask whether a way of thinking engages the matter or only talks about it.
 
 @g 1 | science
-*Wissenschaft*: any rigorous, systematic body of knowledge, not only the natural sciences. For Hegel, philosophy done properly is the highest “science”: knowledge that justifies itself as a connected whole.
+German *Wissenschaft*: any rigorous, systematic body of knowledge, not only natural science. For Hegel philosophy done properly is the highest “science”: knowledge that justifies itself as a connected whole.
 
-@c 2
-Here Hegel applies the point to disagreements between philosophies. Ordinary opinion sees only true versus false, and so treats every new system as refuting the old. The plant image proposes another model: bud, blossom and fruit really do supplant one another, yet each is a necessary stage of one living process. The history of philosophy, Hegel suggests, is like that. This is your first glimpse of his idea that contradiction can be a moment within a larger unity rather than a dead end.
+@c 2 | image | hegel
+gist: Comparing philosophies as simply true or false makes every new system look like a refutation of the old. The plant offers another model: bud, blossom and fruit supplant one another, yet each is a necessary stage of one life.
+
+why: This is your first glimpse of Hegel’s idea that contradiction can be a moment inside a larger unity rather than a dead end. The whole *Phenomenology* will treat positions this way: each is “refuted” by its own experience and yet preserved in what comes next.
 
 @g 2 | moments
-A recurring Hegelian term: a *moment* is a stage or aspect that is real and necessary, but only as part of a larger whole or process, like the bud in the life of the plant. A moment taken in isolation becomes one-sided.
+A recurring Hegelian term. A *moment* is a stage or aspect that is real and necessary, but only as part of a larger whole or process, like the bud in the life of the plant. A moment taken in isolation becomes one-sided.
+
+@g 2 | Being-there
+Inwood’s literal rendering of *Dasein*, “existence” in ordinary German: the determinate, concrete presence of something. Not Heidegger’s technical term.
 
 @u 2 | Bud, blossom, fruit: a new way to disagree
-Hegel’s plant image is the most quoted passage of the opening pages, and it is easy to admire without seeing what it claims. Step by step: when the blossom appears, the bud is gone. In a sense the blossom “refutes” the bud: it shows the bud was not the plant’s final truth. Then the fruit does the same to the blossom. Each stage excludes the others; you cannot have bud and fruit on the same twig at once. And yet none of them is simply false. Each is necessary, and the life of the plant is the whole sequence.
+step: When the blossom appears, the bud is gone; in a sense the blossom “refutes” the bud, showing that it was not the plant’s final truth. The fruit does the same to the blossom. Each stage excludes the others, yet none is simply false: each is necessary, and the life of the plant is the whole sequence.
 
-Now apply this to philosophy. When Kant criticizes Hume, or Hegel criticizes Kant, we usually ask who is right. Hegel suggests a different question: what did the earlier view achieve that the later view needed, and what limitation forced it to be outgrown? A good analogy is the history of physics. Newton did not make Galileo worthless; Einstein did not make Newton worthless. Each superseded theory survives inside its successor as a special case or a stage.
+example: Think of the history of physics. Newton did not make Galileo worthless, and Einstein did not make Newton worthless; each superseded theory survives in its successor as a stage or special case. A student who learns only “Einstein was right, Newton wrong” has learned almost nothing about physics.
 
-Two cautions. First, the image is only an image: plants grow automatically, while philosophies develop through argument and argument can fail. Second, the model will be tested on you directly: the whole *Phenomenology* is a sequence of positions each of which is “refuted” by its own experience and yet preserved in what follows. Keep the bud in mind; you will meet it again.
+misreading: The image does not say that every view is equally true, nor that the later is automatically better. Plants grow automatically; philosophies develop through argument, and arguments can fail. The image describes a *possibility* Hegel thinks opinion overlooks, not a guarantee.
 
-@c 3
-Why are aims and results not enough? Because an aim on its own is a “lifeless universal”, a mere intention, and a result without the process that led to it is “a corpse”. Comparing one work with others is also easy and superficial, since a difference marks only where a thing *stops*. The final sentence is worth remembering: judging is easy, understanding is harder, and the hardest task is to do both by giving a faithful account of the thing.
+returns: The bud-to-fruit pattern is the logic of the whole book. Each “shape of consciousness” is undone by its own experience and preserved in the next (¶87). Hegel’s word for this cancelling-and-keeping is *aufheben*, “sublate”: see the Translation Lens at ¶21.
+
+@c 3 | diagnosis | hegel
+gist: An aim on its own is a “lifeless universal”; a result without the process that led to it is “a corpse”; and comparing works only shows where each one stops. Judging is easy, grasping is harder, and giving an account that does both is hardest.
+
+why: The famous formula “the result together with its becoming” states Hegel’s idea of truth in miniature. It also explains why this edition never offers a result without its route: the route *is* the content. Note the closing triad (judge, grasp, give an account), which is a good rule for reading Hegel himself.
 
 @g 3 | lifeless universal
 A general statement with no particular content worked into it, like a plan never carried out. Hegel constantly contrasts the *abstract* universal (empty, general) with the *concrete* universal (a whole that contains its particular differences).
 
-@c 4
-Hegel concedes that the skills he has just criticized have their place. Education (Bildung) begins by learning general principles, arguing for and against, and judging precisely. That is how anyone climbs out of an unreflective, “substantial” immersion in life. But this is only the beginning; mature thinking must go on to the serious experience of the Thing itself, and only then do general information and assessment become useful again, as conversation.
+@arg 3 | Why the bare result is a “corpse”
+P1: The content of a philosophical position is not exhausted by its stated aim or final result, but consists in how it is worked out.
+P2: An aim on its own lacks this working-out (it is a “lifeless universal”); a result on its own has left it behind (it is a “corpse”).
+P3: Differences between positions mark only where each stops (its “limit”), not what each is.
+C: So aims, results and comparisons, the usual material of prefaces, by-pass the Thing itself.
+weak: P3 is too quick. Inwood points out that some differences go to the heart of things: asking how Hegel differs from Kant may lead straight into the core of both. The argument works best against *superficial* comparison.
+
+@c 4 | concession | hegel
+gist: Hegel admits that the skills he has been criticizing have their place. Education begins with general principles, reasons for and against, and precise judgement; that is how anyone emerges from an unreflective immersion in life.
+
+why: The concession makes the criticism more precise. General knowledge is not wrong but *preliminary*: maturity means going on to the “seriousness” of the Thing itself. Notice the three-step pattern (immersion, separation, richer return), which you will meet often.
 
 @g 4 | Culture
-*Bildung*: education, cultivation, formation. A central idea of the period, and of this book: the slow shaping of a person (or a civilization) through effort, discipline and estrangement from what is merely natural or given.
+German *Bildung*: education, cultivation, formation. A central idea of the period and of this book: the slow shaping of a person, or of a civilization, through effort, discipline and estrangement from what is merely given.
 
 @g 4 | substantial life
-Life lived unreflectively, immersed in custom, faith and tradition, where the individual does not yet stand back and question. For Hegel, “substance” suggests a whole one belongs to without yet being a self-aware subject within it.
+Life lived unreflectively, absorbed in custom, faith and tradition, before the individual stands back to question. For Hegel “substance” suggests a whole one belongs to without yet being a self-aware subject within it (compare ¶17).
 
-@c 5
-The thesis of the whole Preface in two sentences: truth exists in its true shape only as a scientific *system*, and Hegel’s task is to turn philosophy from love of wisdom into actual knowledge. He adds a striking claim: the inner, logical necessity of this transformation coincides with an outer, historical necessity. The time is ripe; showing that it is ripe would be the only real justification of his project. Notice the confidence: philosophy is to be in step with its age.
+@c 5 | thesis | hegel
+gist: The true shape of truth is a scientific system; Hegel’s aim is to turn philosophy from love of knowing into actual knowing. The inner, logical necessity of this transformation coincides with an outer, historical necessity: the time is ripe.
+
+why: This is the thesis of the whole Preface. Two claims are bundled together: a claim about *truth* (it is systematic) and a claim about *history* (our age is ready for it). Keep them apart when you assess Hegel; one can accept the first and doubt the second, or the reverse.
 
 @g 5 | system
-Not a filing cabinet of doctrines, but an organized whole in which each part is justified by its place and by its connections to the others. For Hegel, a truth that stands alone, unconnected, is not yet fully true.
+Not a filing cabinet of doctrines, but an organized whole in which each part is justified by its place and its connections. A truth that stands alone, unconnected, is for Hegel not yet fully true.
 
 @u 5 | Why truth must be a system
-This claim sounds grandiose: why should truth only exist as a system? Hegel’s reasoning can be put simply. Any single assertion (“God exists”, “the mind is immaterial”, “everything is matter”) can be met with the opposite assertion. If philosophy offers only assertions, it is a shouting match of what he will later call “bare assurances”, each worth as much as the other. What breaks the stalemate is not a louder assertion but the demonstration of how claims hang together: what each presupposes, what follows from it, how it fails when isolated, how it fits within a larger account.
+step: Any single assertion (“God exists”, “everything is matter”) can be met by its opposite. If philosophy offers only assertions, it becomes a contest of what Hegel later calls “bare assurances”, each worth as much as the other (¶76). What breaks the stalemate is showing how claims hang together: what each presupposes, what follows from it, how it fails when isolated.
 
-Think of a single puzzle piece. On its own, its shape is meaningless; you cannot even say whether it is sky or sea. Placed among the others, it becomes intelligible and necessary. Hegel thinks concepts are like that: “cause” means something only in relation to “effect”, “freedom” only in relation to necessity, law and others.
+example: A single jigsaw piece on its own is unintelligible; you cannot even tell whether it is sky or sea. Among the others it becomes intelligible and necessary. Hegel thinks concepts are like that: “cause” means something only with “effect”, “freedom” only in relation to necessity, law and other people.
 
-Two warnings for the critical reader. First, “system” does not mean that Hegel claims to have deduced every fact of the world; it means that philosophical concepts must be developed in their interconnection. Second, the demand for system is exactly what many later philosophers rejected (Kierkegaard, Nietzsche, most of the twentieth century). Whether Hegel can make good on it is the question this whole book poses.
+misreading: “System” does not mean that Hegel claims to deduce every fact of the world, or that he wants a closed list of doctrines. It means that philosophical concepts must be developed in their interconnection, so that each is justified by its place.
+
+returns: Restated as “the true is the whole” (¶20) and “knowledge is actual only as system” (¶24); tested in practice by the book’s claim that its sequence of shapes is necessary and complete (¶79).
+
+@cross What kind of claim is “truth is a system”?
+**A metaphysical reading** (older commentators; Charles Taylor): reality itself is a single rational whole, “the absolute”, and only a system can mirror it. The claim is about the structure of being.
+
+**An epistemological reading** (Forster, Heidemann in Moyar & Quante): the claim concerns *justification*. No belief is self-standing; knowledge is justified holistically, by its place in a developed whole. Hegel is then an early critic of foundationalism.
+
+**A methodological reading** (Houlgate, Stern): “system” describes how concepts must be developed, each out of the one before, without arbitrary assumptions. The claim is about philosophical procedure.
+
+**Your task.** Look for evidence for each as you read ¶17–25. Heidemann notes that “system” can mean Hegel’s three-part *Encyclopedia* or simply “connectedness”; which fits ¶5 best?
+
+@obj Is the anti-preface self-defeating?
+objection: Hegel says a preface cannot state philosophical truth, and then writes a seventy-two-paragraph preface full of large claims (“the true is the whole”, “substance is subject”). Either the claims are true and statable, which undermines his point, or they are empty, which undermines the Preface.
+
+reply: Hegel anticipates this. He says the Preface can give only a “rough indication” (¶16) and “assertions” (¶6) whose justification lies in the book. Prefatory claims are like a map before a journey: true enough to orient you, but no substitute for travelling. Stern adds that the Preface was written last and works best as a *coda*, read after the book.
+
+verdict: Is a map that you cannot understand until after the journey still useful beforehand? Decide, and consider the reading route suggested in How to Use This Edition (Introduction first, Preface last).
 
 @key
 - A preface that summarizes aims and results misrepresents philosophy, whose truth lies in the worked-out development.
-- The bud–blossom–fruit image: positions that refute each other can be necessary moments of one living process.
-- “The result is a corpse” without the becoming that produced it; judging is easy, understanding hard, giving an account hardest.
+- Bud, blossom and fruit: positions that refute each other can be necessary moments of one living process.
+- Without its process the result is “a corpse”; judging is easy, grasping harder, giving an account hardest.
 - Education (Bildung) begins with general principles and argument, but must go on to the “seriousness” of the Thing itself.
-- Truth exists properly only as a scientific system; Hegel aims to turn philosophy from love of wisdom into actual knowledge, and claims the time is ripe.
+- Truth exists properly only as a scientific system; Hegel aims to turn philosophy into actual knowing, and claims the time is ripe.
 
 @q
-check: What exactly is wrong, according to Hegel, with stating a philosopher’s aims and results? || See ¶3: the aim is a “lifeless universal”; the bare result is a “corpse” that has left its process behind.
-check: What does the image of bud, blossom and fruit show about disagreement between philosophies? || Each stage supplants the previous one, yet all are necessary moments of the plant’s life (¶2).
-think: Hegel says judging a work is easy, grasping it harder, and combining both hardest. Think of a book or film you dismissed quickly. What would it have taken to “give an account” of it?
-think: In what sense might the history of philosophy be a single development rather than a series of rival errors? What would count as progress?
-push: Is the plant analogy fair to real intellectual disputes, where one side may simply be wrong? What does the analogy hide?
-push: Hegel ties philosophy’s rise to science to the “ripeness” of the time. Is it a strength or a danger to tie the truth of a philosophy to its historical moment?
+check: What exactly is wrong with stating a philosopher’s aims and results? || The aim alone is a “lifeless universal”, the result alone “a corpse”: each omits the working-out in which the content actually lies (¶3). Comparison with rivals shows only where a position stops, not what it is.
+check: What does the image of bud, blossom and fruit show about disagreement between philosophies? || Stages that exclude and supplant one another can still be necessary moments of one development; the life of the whole is the sequence (¶2). Philosophies may relate in this way, rather than simply as true versus false.
+check: Which two necessities does ¶5 say coincide? || The inner, logical necessity that knowledge become systematic science, and the outer necessity of the historical moment: the time is ripe. Showing the latter would justify the attempt.
+think: Think of a book or film you dismissed quickly. What would it have taken to “give an account” of it in Hegel’s sense (¶3)?
+think: In what sense could the history of philosophy be one development rather than a series of rival errors? What would count as progress?
+push: Is the plant analogy fair to real disputes, where one side may simply be wrong? What does the analogy hide?
+push: Hegel ties philosophy’s rise to science to the ripeness of the time. Is tying a philosophy’s truth to its historical moment a strength or a danger?
+write: In about 300 words, explain “the result together with its becoming” (¶3) using an example from your own field or experience.
+
+@retell
+Hegel opens by saying that prefaces mislead in philosophy, because they offer aims, results and comparisons, while philosophical truth lies in the worked-out development. Opinion sees rival philosophies as simply true or false; Hegel suggests they may relate as bud, blossom and fruit, stages of one life. An aim without its working-out is empty, and a result without its process is “a corpse”, so judging is easy but understanding hard. General principles and arguments are the beginning of education, not its end. Truth exists only as a system, and Hegel’s aim, for which he believes the time is ripe, is to make philosophy into actual knowledge.
+
+@carry
+- **The result together with its becoming** (¶3): the core of Hegel’s idea of truth; see “the true is the whole” (¶20).
+- **Bud, blossom, fruit** (¶2): the pattern of every transition in the book (¶87).
+- **The Thing itself** (Sache): the test the Preface applies to every rival way of thinking.
+- **System** (¶5): restated in ¶20 and ¶24; Hegel’s claim that the sequence of shapes is necessary (¶79) is where it is put to work.

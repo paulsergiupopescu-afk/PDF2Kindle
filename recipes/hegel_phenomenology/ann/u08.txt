@@ -1,0 +1,136 @@
+@unit 08 | Preface VIII: Common sense, genius, the public | 67-72
+@title Preface VIII: No Royal Road: Common Sense, Genius, and the Public
+@heading 67 | Natural philosophizing as sound common sense and as genius
+@heading 71 | Conclusion: relationship of the author to the public
+
+@where
+The last pages of the Preface. Having described what philosophy requires (¶58–66), Hegel takes aim at the two most popular ways of avoiding it, and ends with a wry reflection on how his own book will be received.
+
+@guide
+**The question this section answers.** Why can’t philosophy rest on “sound common sense” or on the inspired flashes of genius, the two shortcuts that need no training? And what can a philosopher expect from his public?
+
+**What Hegel does.** Everyone accepts that shoemaking needs training, yet everyone believes he can philosophize, and judge philosophy, with his natural reason, “as if he did not equally possess the measure of a shoe in his own foot” (¶67). Philosophy lies at the end of a long education; its counterfeits are *genius*, which produces “neither poetry nor philosophy” (¶68), and *common sense*, which offers trivial truths and, when challenged, appeals to the heart and refuses further discussion (¶69). That refusal, Hegel says, “tramples underfoot the root of humanity”, since it belongs to human nature to press for agreement with others. There is no royal road to science: true thoughts are won only “in the labour of the concept” (¶70). He closes by trusting that truth wins out when its time has come, and by asking the individual author to forget himself (¶71–72).
+
+**Watch for.** The **shoemaker** comparison; **chicory for coffee**; the claim that humanity exists only in “the achieved community of consciousnesses” (¶69); the **royal road**; the **labour of the concept**; the hope that the truth is “the property of all self-conscious reason”.
+
+**How to read it.** Lively and polemical; read it straight through. ¶69 is the philosophically important paragraph: it anticipates the theme of recognition (¶178ff.).
+
+@map
+thesis: Philosophy requires disciplined education; neither common sense nor genius can substitute for the labour of the concept, which alone yields a truth that can belong to everyone.
+target: “Natural philosophizing” in two forms: the appeal to sound common sense (e.g. the popular philosophy of Krug, the Scottish school) and the Romantic cult of genius and intuition.
+step: Owning “settled truths” blocks study as much as ratiocination; philosophy, unlike every craft, is assumed to need no training (¶67).
+step: Genius, in philosophy as earlier in poetry, yields wilful combinations, neither poetry nor philosophy (¶68).
+step: Common sense offers trivialities and, when pressed, retreats to feeling; refusing to argue with those who feel differently denies the human need for agreement (¶69).
+step: There is no royal road: true thoughts are won only in the labour of the concept, which alone yields a truth common to all reason (¶70).
+step: The age is unfavourable, but truth prevails when its time comes; the public differs from its self-appointed spokesmen (¶71).
+step: In an age of universal culture the individual’s share is small; he must forget himself (¶72).
+conclusion: The reader must undertake the labour of the concept; the book will make its way, if at all, by the truth of the Thing itself.
+stakes: Whether philosophy is a specialized discipline or the shared business of all reasoning people, and whether these can be reconciled.
+
+@friendly The measure of a shoe in your own foot
+Nobody thinks that owning feet makes you a shoemaker. You need to learn the craft: leather, lasts, stitching. And yet, Hegel observes, everyone seems to think that owning a mind makes them a philosopher. We all have opinions about truth, justice and God, and we judge philosophers confidently by whether their views “feel right”.
+
+Of course, your foot does tell you when a shoe pinches, and your reason does tell you something about philosophy. But a foot cannot design a shoe, and a gut feeling cannot construct or test an argument. Hegel is not saying that only professors may think. He is saying that thinking well is a skill that takes work, and that the shortcut of “I just feel it” ends the conversation instead of advancing it.
+
+@c 67 | polemic | hegel
+gist: As much a hindrance as ratiocination is the conceit that parades settled truths without argument and uses them as a foundation for judgement. Philosophy must again become serious. Every science, art and craft needs long training, yet people think anyone can philosophize and judge philosophy with natural reason, “as if he did not equally possess the measure of a shoe in his own foot”. Philosophy is not a formal knowledge without content: without it the other sciences have “neither life, nor spirit, nor truth”.
+
+why: Two claims. One is modest and true: philosophy is a discipline that must be learned. The other is grand and contested: philosophy gives the other sciences their rational foundation. Notice the shoemaker image, which cuts both ways (Inwood: one needs training to make shoes, but not to judge whether they fit).
+
+@c 68 | polemic | hegel
+gist: Genuine philosophy lies at the end of a long journey of education. Instead, common sense and the immediate revelation of the divine pass themselves off as substitutes for this journey, “as good a substitute as chicory is reputed to be for coffee”. Genius, once the fashion in poetry and now in philosophy, produces either trivial prose or deranged speeches; intuitive philosophizing yields imaginative combinations that are neither poetry nor philosophy.
+
+why: Hegel targets the Romantic and Sturm und Drang cult of genius, which Kant had defined as the talent for producing what no rule can teach. Schelling had placed art above philosophy as the organ of the absolute; Hegel’s reply is that philosophy must not become bad poetry.
+
+@g 68 | genius
+For Kant, “a talent for producing that for which no determinate rule can be given”. The Romantics extended it from art to philosophy and religion; Hegel insists that philosophy, unlike art, must be learnable.
+
+@c 69 | argument | hegel
+gist: When natural philosophizing follows common sense, it offers trivial truths found long ago in the catechism and proverbs; challenged, it says their meaning lies in the heart. Its truths are vague, and their opposites are easily found in the same consciousness; confused, it declares “that is just how it is, and the rest is sophistry”. Appealing to feeling, its inner oracle, it has nothing to say to anyone who disagrees. This tramples on the root of humanity: human nature presses for agreement with others, and exists only in the achieved community of consciousnesses. Confinement to feeling is the anti-human, the animal.
+
+why: The philosophical heart of the section. Hegel’s objection to the appeal to feeling is not that feelings are false but that they cannot be shared, tested or argued about. Truth, for Hegel, must be communicable and universal. The phrase “the achieved community of consciousnesses” anticipates the theme of recognition and of Spirit as the “I that is We” (¶177).
+
+@u 69 | Why “I just feel it” is anti-human
+step: Common sense, when its trivial truths are challenged, retreats to the heart: “I feel it to be so, and if you don’t, there is nothing more to say.” Hegel argues that this ends communication. A feeling is mine; I cannot hand it to you or show you its grounds. To rest truth on feeling is therefore to give up on agreement. But reaching agreement with others, building a shared world of meanings and reasons, is what makes us human; animals communicate only by feeling. So the appeal to the inner oracle is not just weak philosophy but a betrayal of our humanity.
+
+example: Think of an argument that ends with “well, that’s just my truth” or “you wouldn’t understand unless you felt it”. Whatever the merit of the feeling, the conversation is over. Hegel would say the speaker has chosen to stand outside the community of reasons, which is the only place where truth can be shared.
+
+misreading: Hegel does not despise feeling or say it has no place. Religion, art and love all involve feeling for him. His point is that feeling cannot be the *final court* of truth, because it cannot answer disagreement. Nor is he demanding conformity: agreement must be *achieved*, through argument, not assumed.
+
+returns: The “community of consciousnesses” is the destination of the book’s whole account of self-consciousness: self-consciousness “achieves its satisfaction only in another self-consciousness” (¶175), and Spirit is “the I that is We and the We that is I” (¶177). The struggle for recognition (¶178–188) shows what happens when that community is sought by force instead of agreement.
+
+@arg 69 | The argument against the inner oracle
+P1: Common sense, when challenged, rests its claims on feeling, an inner oracle accessible only to the one who has it.
+P2: A claim resting only on feeling cannot be shared, tested, or defended to someone who does not feel the same.
+P3: So such a claim gives up on agreement with those who differ.
+P4: It belongs to human nature to press for agreement with others; humanity exists only in an achieved community of consciousnesses.
+C: So the appeal to feeling as final authority is not merely weak but “anti-human”.
+weak: Inwood argues that sophisticated common-sense philosophers (Reid, G. E. Moore) do not merely appeal to feeling: they also criticize sceptical arguments, and can engage their opponents. P1 is true of crude common sense, not of every defence of it.
+
+@c 70 | thesis | hegel
+gist: If anyone wants a royal road to science, nothing is more convenient than common sense plus reading reviews, prefaces and opening paragraphs, since reviews give an assessment that stands above the object. Genius strides in priestly robes along the other road, but its fireworks are not the empyrean. True thoughts and scientific insight are won only in the labour of the concept, which alone yields a universality that is neither the poverty of common sense nor the private gift of genius, but a truth matured to the point where it can be the property of all self-conscious reason.
+
+why: The Preface ends where it began (¶1): with a jibe at those who read prefaces instead of books. The famous phrase is *die Arbeit des Begriffs*, “the labour of the concept”. Note the balance: philosophy is hard work, *and* its results belong to everyone who thinks. Training is the price of real universality.
+
+@lens 70 | Gemein and ungemein: common and uncommon
+Hegel plays on the German *gemein*, which means “common” in two senses: shared by all, and vulgar or ordinary. Its opposite, *ungemein*, means extraordinary, but also “not common to all”. Common sense is *gemein* in the bad sense: ordinary and poor. Genius is *ungemein*: extraordinary, but private, not shared.
+
+Hegel’s conclusion turns both: the labour of the concept yields a truth that is common in the good sense (“the property of all self-conscious reason”) without being commonplace, and extraordinary in depth without being private. The *royal road* is from Euclid’s famous reply to King Ptolemy, who asked for a shortcut through geometry: “there is no royal road to geometry.”
+
+@c 71 | conclusion | hegel
+gist: Hegel places science in the self-movement of the concept, which runs against the ideas of the age; so his book cannot expect a warm welcome. But there have been times when Aristotle and Plato’s *Parmenides*, “the greatest work of art of ancient dialectic”, were valued; and the best philosophy of the present stakes its value on being scientific. Truth wins through when its time has come, never prematurely; the author needs this confirmation to experience his private conviction as universal. The public differs from its self-appointed spokesmen: it blames itself, they blame the author.
+
+why: A mixture of confidence and nerves, written by an unknown thirty-six-year-old who had just lost his job to war. The claim that truth appears only “when its time has come” echoes ¶5. The biblical barbs (“the dead burying their dead”, “the feet of those who will carry you out are at the door”) are aimed at reviewers.
+
+@c 72 | conclusion | hegel
+gist: In an age when the universality of spirit has grown strong and singularity less important, the individual’s share in the total work of spirit can only be small. So the individual must forget himself all the more, as science requires; he must do what he can, but less should be demanded of him, and he should expect and demand less for himself.
+
+why: A modest ending to an immodest Preface. Hegel presents himself not as a genius but as a worker in a collective enterprise. It fits the argument: if truth is universal and communal (¶69–70), the individual author matters less than the Thing itself.
+
+@cross Elitist or democratic?
+**The elitist reading**: Hegel says philosophy requires long training, mocks the judgement of the untrained, and makes philosophy the ground of all the sciences. In his Jena years he even called philosophy “essentially esoteric”. This is the professorial Hegel of later caricature.
+
+**The democratic reading**: the same pages insist that science must be “open to everyone” (¶13), that the individual has a right to a ladder (¶26), and that the labour of the concept yields a truth that can be “the property of all self-conscious reason” (¶70). What Hegel rejects is not ordinary people but shortcuts: private feeling and private genius alike.
+
+**A mediating view** (Stern): Hegel occupies a “middle” position: against both common sense and esoteric genius, he wants a discipline that is demanding but in principle open, like any science or craft.
+
+**Your task.** Compare ¶13, ¶26 and ¶67–70. Is Hegel’s position consistent? What would it take for his own book to be “open to everyone”?
+
+@obj Common sense can argue too
+objection: Hegel caricatures common-sense philosophy. Thomas Reid did not merely appeal to feeling: he analysed sceptical arguments and showed where they go wrong. G. E. Moore argued that he was more certain that he had two hands than he could ever be of any premise in a sceptical argument. Such philosophers do engage their opponents, and their appeal to common certainties is a reasoned position.
+
+reply: Hegel can grant that a *philosophical defence* of common sense is not the same as common sense itself, and that it is an achievement of “cultivated reason”. His deeper point remains: common-sense certainties, however secure they feel, are what the *Phenomenology* will examine. Sense-Certainty, the first chapter, is precisely the most common-sense of all certainties, and Hegel claims to show that it does not know what it thinks it knows.
+
+verdict: Is Moore’s certainty that he has hands a counterexample to Hegel, or exactly the kind of “immediate certainty” that the book sets out to examine? Return to this question after ¶110.
+
+@now Expertise, feeling and the public conversation
+Hegel’s diagnosis feels contemporary. Debates in which “I feel” or “my truth” closes the discussion, and the suspicion that expertise is just another opinion, both fit his picture of a common sense that will not submit to argument. So does the opposite vice: the guru whose deep sayings are beyond criticism.
+
+His positive claim that “it is the nature of humanity to press for agreement with others” has an important twentieth-century descendant. Jürgen Habermas built a theory of “communicative reason” on the idea that in serious discussion we commit ourselves to reaching agreement through the force of the better argument. Hegel’s phrase “the achieved community of consciousnesses” could serve as a motto for that tradition, and for the theory of recognition that runs from Hegel to Axel Honneth.
+
+@key
+- Philosophy, like every craft, requires training; natural reason is no more a philosopher than a foot is a shoemaker.
+- Genius produces neither poetry nor philosophy; common sense offers trivialities and retreats into feeling.
+- Appealing to feeling as final authority refuses agreement and “tramples underfoot the root of humanity”, which exists only in “the achieved community of consciousnesses”.
+- There is no royal road: true thoughts are won only in the labour of the concept.
+- Such truth can be “the property of all self-conscious reason”, neither commonplace nor private.
+- Truth wins through when its time has come; the individual author must forget himself.
+
+@q
+check: What is the point of the shoemaker comparison (¶67)? || Everyone accepts that making shoes requires training, yet people assume anyone can philosophize and judge philosophy by natural reason. Having a mind no more makes one a philosopher than having a foot makes one a shoemaker.
+check: Why does Hegel call the appeal to feeling “anti-human” (¶69)? || Because a claim resting on feeling cannot be shared or argued with those who feel differently, so it abandons the effort to reach agreement. But human nature presses for agreement and exists only in an achieved community of consciousnesses; confinement to feeling is animal.
+check: What is “the labour of the concept”, and what does it produce (¶70)? || The disciplined work of developing concepts and their connections, as opposed to shortcuts through common sense or genius. It produces a universal knowledge, a truth that can be the property of all self-conscious reason.
+think: Hegel says humanity exists only in “the achieved community of consciousnesses”. What does “achieved” add? How might such a community be achieved?
+think: Is reading a good summary of a philosopher (as Hegel mocks in ¶70) always worthless? When might it help?
+push: Is Hegel fair to common sense? Read the Objections box and decide whether Sense-Certainty (¶90–110) is a fair target.
+push: Can Hegel consistently demand both long training and universal accessibility?
+write: In about 300 words, describe a disagreement you have witnessed that ended with an appeal to feeling. What would continuing the conversation have required, in Hegel’s terms?
+
+@retell
+Hegel argues that philosophy, like any craft, demands training, though people assume natural reason is enough, as if owning a foot made one a shoemaker. Its two counterfeits are genius, which produces neither poetry nor philosophy, and common sense, which offers trivial truths and, when challenged, appeals to feeling. That appeal ends the conversation and so tramples on the root of humanity, which presses for agreement and exists only in an achieved community of consciousnesses. There is no royal road: true thoughts are won only by the labour of the concept, which yields a truth that can belong to all reason. Hegel ends by trusting that truth prevails when its time comes, and by asking the individual author to forget himself.
+
+@carry
+- **The community of consciousnesses** (¶69): becomes the theme of recognition (¶178–184) and Spirit (¶177).
+- **Immediate certainty** of common sense: the starting point of the book proper, Sense-Certainty (¶90).
+- **The labour of the concept** (¶70): what the reader must now undertake.
+- **The Preface in one line**: truth is the whole, a self-developing subject; it must be presented as a system, reached by a ladder through the experience of consciousness, and earned by the labour of the concept. Now the Introduction explains how the ladder works.
