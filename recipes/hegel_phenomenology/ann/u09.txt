@@ -35,9 +35,6 @@ Hegel thinks this is the trap of the “critical” philosophers who say: first 
 @c 73 | objection | hegel
 why: Hegel opens with Kant’s question: before doing metaphysics, examine reason’s capacity for it. His dilemma is sharp. Either the instrument changes the object (Kant’s active understanding) or the medium bends the light (Kant’s forms of sensibility); either way, subtracting the distortion subtracts the cognition. Inwood notes that Hegel may also be glancing at J. H. Lambert, whose “phenomenology” of 1764 tried to correct for appearance like an optics of illusion.
 
-@note 73
-Hegel starts from a sensible-sounding plan, Kant’s: before trying to know reality, check the tool we know it with. He shows that the plan undermines itself. A tool reshapes what it grasps; a lens bends what it shows; subtract the distortion and you subtract the knowing. The hardest sentence, “cognition is not the refraction of the ray, but the ray itself”, means that knowing is not a filter laid over the truth but the very way truth reaches us.
-
 @l 73 | absurd in its concept
 The plan fails by its very idea, not by poor execution. If knowing is a means placed between us and reality, what reaches us is always the product of the means, never reality as it is.
 
@@ -68,14 +65,26 @@ returns: Hegel’s alternative is set out in ¶81–85: consciousness contains i
 @c 74 | argument | hegel
 why: The decisive turn: the cautious critic is not cautious enough. His “presuppositionless” starting point rests on a whole picture of mind and world, assumed without examination. Hegel turns the critic’s own weapon, suspicion, against him. The phrase “fear of truth” suggests that the critic’s modesty hides a wish not to be committed.
 
-@note 74
-Hegel turns the critic’s suspicion against the critic. The “fear of error” looks modest, but it quietly assumes a great deal: that knowing is a tool or a lens, that we stand apart from our own knowing, and above all that the absolute is on one side and our knowing on the other. But if our knowing is cut off from the absolute, how could it be true at all? So the supposed caution is really a refusal to be committed to truth: a “fear of truth”.
+@l 74 | gets on with the job itself and actually cognizes
+“Science” is Hegel’s word for philosophy done properly. Science simply gets on with knowing; the critic of ¶73 interrupts it with a worry: what if our tool of knowing is faulty? That worry “injects a mistrust” into the work before it starts.
 
-@l 74 | inject a mistrust into this mistrust
-Suspicion turned on itself: if cognition must be suspected before it is trusted, so must the suspicion, which rests on unexamined assumptions of its own.
+@l 74 | this fear of erring is really the error itself
+Hegel turns the critic’s own weapon round. If we must mistrust knowing before we use it, why not also mistrust the mistrust? Perhaps the fear of making mistakes is itself the mistake. The next two sentences show why it is.
 
-@l 74 | stands exposed rather as fear of truth
-The critic says he fears mistakes; in fact his picture makes truth impossible in advance, by separating knowing from the absolute. His caution is a way of never committing himself.
+@l 74 | needs to be examined first to see if it is truth
+The irony: the critic demanded that nothing be accepted without examination, yet his own worry rests on assumptions he has not examined at all. His starting point is not presuppositionless; it takes “a great deal” for granted.
+
+@l 74 | a distinction between ourselves and this cognition
+The first hidden assumptions. To fear that the tool is faulty, you must already picture knowing as a tool or a lens (an instrument or medium), and picture yourself as standing apart from your own knowing, like a user holding a device.
+
+@l 74 | separated from the absolute, and yet is something real
+The deepest assumption: the absolute, what truly is, sits on one side, and our knowing sits on the other, cut off from it, yet still counting as something real. Hegel will now show that this picture contradicts itself.
+
+@l 74 | is nevertheless genuine
+Here is the contradiction. If knowing lies outside what truly is, it lies outside the truth; yet the critic still treats it as genuine knowledge, good enough to examine itself with. He gives knowing a status his own picture denies it.
+
+@l 74 | fear of truth
+The verdict. A view that separates knowing from the real in advance makes truth unreachable before any inquiry begins. So what presents itself as caution about error is really an avoidance of truth: a way of never having to commit to anything.
 
 @arg 74 | The fear of error is itself an error
 P1: The critical programme says: do not trust cognition until it has been examined.
@@ -85,27 +94,64 @@ C: So the critical programme has no right to its starting point; its mistrust de
 weak: Stern points out that Kant need not rely on a “natural assumption”: he might be motivated by evidence that reason fails (the antinomies, the endless disputes of metaphysics). Like someone who nearly drowned and now reflects on his swimming, the critic may have real grounds for caution. Hegel’s argument works against the *a priori* demand to test first, not against every critique of reason.
 
 @c 75 | reply | hegel
-gist: One could escape by distinguishing: a cognition that does not grasp the absolute may still be true of something else. But this only leads to a murky distinction between an absolutely true and some other kind of true, and shows that words like “absolute” and “cognition” presuppose meanings that still need to be established.
-
 why: The Kantian reply would be: we know appearances truly, though not things in themselves. Hegel suspects this “other kind of truth” is a consolation prize. His deeper point is that we do not yet know what “absolute”, “truth” or “cognition” mean; we cannot settle their relations before we have examined them.
+
+@l 75 | the true alone is absolute
+Hegel names the premise behind his verdict in ¶74: truth and the absolute go together. To be true is to grasp what really is. So knowing cut off from what really is cannot be true at all.
+
+@l 75 | capable of some other truth
+The obvious reply, and essentially Kant’s: our knowledge cannot reach things as they are in themselves, but it is perfectly true of things as they appear to us. Second-best truth is still truth.
+
+@l 75 | some other kind of true
+Hegel is unimpressed. “Beating about the bush” leads to a murky distinction between absolute truth and some lesser kind of truth that is nonetheless supposed to be truth. What could that second kind be?
+
+@l 75 | first needs to be ascertained
+The deeper point, and the bridge to Hegel’s method. We talk confidently about “the absolute”, “cognition” and “truth”, but we have not yet established what these words mean. Their relations cannot be settled before their meaning is.
 
 @c 76 | argument | hegel
 why: The methodological core of the whole book. Hegel faces the oldest sceptical problem: when two parties each assert their view, neither can win without begging the question (the sceptics called it *equipollence*). His solution is neither to assert science nor to argue against rivals from outside, but to present the rival views themselves, and let them show their own limits.
 
-@note 76
-Why not simply ignore these doubts? Because when science (Hegel’s philosophy) first arrives, it is just one more claimant among others. If it merely declares itself true, its rivals can declare the same: one bare claim against another. So it must do something different: take the rival forms of knowledge as they appear and let them show their own limits. That is the programme of the whole book.
+@l 76 | assuming the air of serious and zealous endeavour
+The opening clauses lump together all pictures of a knowing “separated from the absolute”: they all come down to the instrument and the medium. Then a barb: such worries can serve as an excuse to avoid the hard work of philosophy while looking very serious and responsible.
+
+@l 76 | nor need we struggle for answers to all this
+Hegel considers simply refusing to engage. We do not have to answer these worries one by one. The next sentences weigh two ways of dismissing them.
 
 @l 76 | could even be regarded as a fraud
-The target is the habit of using big words (“the absolute”, “cognition”, “objective”, “subjective”) as if everyone knew what they meant. Treating them as settled avoids the real work: providing their concept.
+First option: reject the whole vocabulary as arbitrary. People use big words (“the absolute”, “cognition”, “objective”, “subjective”) as if everyone knew what they meant. Hegel says this pretence could even be called a fraud.
+
+@l 76 | to provide this concept
+Why a fraud? Because pretending we already possess the concepts lets us dodge “the main Thing”, the real task of philosophy, which is to work out and supply those concepts. The meaning of “the absolute” is a result, not a starting point.
+
+@l 76 | when science itself comes on the scene
+Second option, with “more right”: ignore the worries altogether. They are an “empty appearance of knowing”, and once real philosophy is actually done they will simply evaporate, as superstitions fade when a science matures.
 
 @l 76 | is itself an appearance
-When science first comes on the scene it is one view among others and has not yet shown its truth. “Appearance” here means coming on the scene, not illusion.
+The turning point of the paragraph. When science first arrives, it too is only an appearance: one more claim on the scene, not yet developed or proven. “Appearance” here means coming on the scene, not illusion. So science cannot look down on its rivals from a height it has not yet reached.
 
-@l 76 | declaring its Being to be its power
-That is, claiming to be right simply because it exists and says so. That is no argument, and the rival view can do exactly the same.
+@l 76 | its appearing
+Two ways of saying the same thing. Either science “appears” because it shows up alongside other kinds of knowledge, or those other, untrue kinds are science’s own appearing, science in an undeveloped form. Either way, science has not yet established itself.
+
+@l 76 | only by turning against it
+So science must free itself from being a mere appearance, and it can do so only by engaging with the other forms of knowledge, not by ignoring them. The rest of the paragraph shows that the two easy ways of doing this both fail.
+
+@l 76 | of no account whatever
+Easy way one: dismiss ordinary knowledge as a vulgar point of view, with science as a completely different kind of knowing for which it does not count.
 
 @l 76 | the intimation of something better
-Science might point to hints of itself in ordinary views (“you are halfway to my position already”). Hegel refuses: those hints are science in a lesser form, and appealing to them still assumes what has to be shown.
+Easy way two: point to hints of science inside ordinary knowledge (“deep down you are already on the way to my position”). Hegel rejects this too, a few lines below.
+
+@l 76 | declaring its Being to be its power
+Why the first way fails. Dismissing a rival amounts to saying “I am right because I am here and say so”: making one’s bare existence into one’s authority.
+
+@l 76 | worth just as much as another
+The rival can do exactly the same: “I exist too, and for me your science counts for nothing.” Two bare assertions cancel each other out. The ancient sceptics called this standoff *equipollence*, equal weight on both sides, and Hegel accepts their point.
+
+@l 76 | how it is in and for itself
+Why the second way fails, for two reasons. Pointing to hints of science is again just pointing to something that exists, another assertion. And it appeals to science in its weakest form, as it shows up within a defective view, rather than to science as it fully is: “in and for itself”, in its developed truth.
+
+@l 76 | is to be undertaken here
+The conclusion of the argument, and the reason the *Phenomenology* exists. Since science can neither dismiss its rivals nor claim them as secret allies, it must take them seriously, present them as they appear, and let them show their own limits. That presentation is the book you are reading.
 
 @g 76 | bare claim
 German *trockenes Versichern*, literally “dry assuring”: asserting something without grounds. Two opposed assurances cancel each other out, a principle of ancient scepticism.
@@ -123,9 +169,19 @@ misreading: This does not mean that Hegel is neutral about truth, or that all vi
 returns: Houlgate stresses that this gives natural consciousness a real right (compare ¶26) and makes the book an *immanent* critique. The method is spelled out in ¶81–87, where consciousness turns out to carry its own criterion.
 
 @c 77 | definition | hegel
-gist: Because it deals only with knowledge as it appears, the presentation does not look like free science. It can be regarded as the path of natural consciousness pressing towards true knowledge, or as the way of the soul passing through the sequence of its shapes as stations prescribed by its own nature, so that it may purify itself into spirit and, through a complete experience of itself, come to know what it is in itself.
-
 why: The famous description of the book as a journey, a *Bildungsroman* of the soul, with “stations” (an echo of the Stations of the Cross, and of the stages of a pilgrimage). Note the key phrase *natural consciousness*: ordinary, pre-philosophical awareness, which the book will lead, by its own experience, to spirit.
+
+@l 77 | moving in its own peculiar shape
+Because the book deals with knowledge as it appears, it does not look like philosophy in its finished form. Hegel means the system proper, above all the *Logic*, where thought moves freely in pure concepts. Here it must follow consciousness’s experience instead.
+
+@l 77 | pressing on to true knowledge
+So the book can be read as a journey: ordinary consciousness making its way towards real knowledge. The image of a path will return constantly (the “way of despair”, ¶78).
+
+@l 77 | stations prescribed for it by its own nature
+“Stations” suggests the stages of a pilgrimage, and perhaps the Stations of the Cross, each a place of suffering on the way to redemption. They are prescribed “by its own nature”: the route is set by consciousness itself, not by Hegel’s choice.
+
+@l 77 | what it is in itself
+The goal of the pilgrimage: to be purified into *spirit* and, by experiencing itself completely, to learn what it really is. The journey to true knowledge of the world turns out to be a journey of self-knowledge.
 
 @g 77 | natural consciousness
 Ordinary, pre-philosophical awareness of a world of objects, which takes its knowledge for real knowledge. The protagonist of the book’s journey.
@@ -133,20 +189,44 @@ Ordinary, pre-philosophical awareness of a world of objects, which takes its kno
 @c 78 | argument | hegel
 why: A key paragraph. Hegel contrasts his scepticism with two others: Descartes’s methodical doubt, which doubts in order to return to secure certainty, and Kant’s Enlightenment motto “dare to think for yourself”, which may keep all the old prejudices, now held proudly as one’s own. The way of despair is lived, not resolved upon: consciousness undergoes the collapse of its own certainties.
 
-@note 78
-Ordinary consciousness thinks it already knows. On this path it will learn, step by step, that it does not, and it will experience each lesson as a loss of itself: hence “the way of despair”, not merely the way of doubt. This differs both from Descartes’s doubt, which returns home to its old beliefs, and from the slogan “think for yourself”, which can keep every old prejudice. Only a scepticism aimed at the whole of consciousness clears the ground.
+@l 78 | knowledge that is not real
+Natural consciousness has the idea of knowing, it means to know, but not the reality: what it takes to be knowledge will turn out not to be. “Concept” here means a plan or germ not yet realized, as an acorn is the concept of an oak.
 
-@l 78 | only the concept of knowledge
-Natural consciousness has the idea of knowing but not the reality: what it takes for knowledge will turn out not to be. “Concept” here means the germ or plan of something not yet realized.
+@l 78 | it loses its truth
+Consciousness takes itself to know already, so each step that shows it otherwise feels like a loss. What is really progress (its concept being realized) it experiences as losing itself, because it identified itself with the certainties it is losing.
 
-@l 78 | the loss of its own self
-What is really progress feels to natural consciousness like losing itself, because each step takes away a certainty it identified with.
+@l 78 | the way of despair
+Not just doubt but despair. In German the step is from *Zweifel* to *Verzweiflung*, both built on *zwei*, “two”: being torn between possibilities, then being undone by it. See the Translation Lens after this paragraph.
+
+@l 78 | as it was in the first place
+Ordinary doubt shakes a belief for a while and then returns to it, so that everything ends up as it was. That is roughly Descartes’s method: doubt everything in order to get one’s beliefs back on firmer ground. Hegel’s path does not return home.
+
+@l 78 | only the unrealized concept
+What the path really is: a conscious recognition that knowledge as it appears is untrue, because what natural consciousness treats as the highest reality is only the unrealized concept, the plan of knowledge, not knowledge itself.
 
 @l 78 | self-accomplishing scepticism
-Scepticism that carries itself out: consciousness itself, not an outside critic, discovers the untruth of each of its certainties. See the Translation Lens below.
+Scepticism that carries itself out: not a critic applying doubt from outside, but consciousness itself discovering, shape by shape, the untruth of its own certainties.
 
-@l 78 | differ only in respect of the vanity
-Holding beliefs because you reached them yourself is better than holding them on authority, but the beliefs may be exactly the same. The only gain may be pride in owning them.
+@l 78 | regard only one’s own deed as the true
+The Enlightenment resolution: never accept anything on authority, examine everything yourself, follow your own conviction. Compare Kant’s motto “Dare to use your own understanding!” (1784). “Produce everything oneself… one’s own deed” probably glances at Fichte, for whom all knowledge begins from the I’s own act.
+
+@l 78 | education of consciousness itself to science
+Hegel’s path is a process of formation (*Bildung*), a history of how consciousness is educated up to the standpoint of philosophy, stage by stage. This is why the book is often compared to a novel of education.
+
+@l 78 | this path is the actual performance
+A resolution treats education as done the moment you decide on it (“from now on I will think for myself”). Hegel’s path is the long actual work, not the decision to do it.
+
+@l 78 | replace error with truth
+Thinking for yourself is better than obeying authority, Hegel grants. But switching from believing something because you were told to believing it because you are convinced may leave the belief exactly as false as before.
+
+@l 78 | the vanity that goes with the latter policy
+A sharp line: the only difference may be vanity, the pride of holding your prejudices as your own.
+
+@l 78 | to investigate what the truth is
+By contrast, a scepticism aimed at the whole range of consciousness, all its natural ideas and certainties at once, is what first makes a genuine inquiry into truth possible.
+
+@l 78 | incapable of the task it proposes to undertake
+Why? Because it produces despair in all our natural ideas, whether we call them our own or borrowed. Whoever starts investigating “right away”, as Descartes or the Enlightenment thinker does, is still full of those ideas, and so is not really free to investigate.
 
 @lens 78 | Zweifel and Verzweiflung: doubt and despair
 Hegel moves from *Zweifel*, doubt, to *Verzweiflung*, despair. Both words contain *zwei*, “two”: to doubt is to be divided between two possibilities, and to despair is to be utterly undone by that division. The step from one word to the other is the step from a method to an ordeal. Ordinary doubt is something I *do*, at a safe distance; despair is something that *happens to me*, and from which I do not return unchanged.
@@ -165,17 +245,29 @@ returns: The most dramatic despair in this edition is the bondsman’s fear of d
 @c 79 | argument | hegel
 why: The single most important methodological idea of the book: *determinate negation*. When a view fails, the way it fails is specific, and that specificity points to what must come next. This is also Hegel’s claim that the series of shapes is complete: each one generates its successor. Inwood argues that determinate negation can show that some successor follows, but not that only *one* could.
 
-@note 79
-A reassurance after the despair. No failure on the path is a dead end, because a view always fails in a particular way, and that particular failure tells us what is needed next. The pure sceptic, who sees only “nothing” in every refutation, has nowhere to go and can only wait for the next view to knock down. Hegel calls the productive kind of failure “determinate negation”, and claims it makes the series of shapes complete: each one produces the next.
+@l 79 | the necessity of the progression and interconnection itself
+Hegel claims that the book will cover all the forms of untrue knowing, without drawing up a list in advance. The completeness will follow from the way each form leads necessarily to the next.
 
 @l 79 | a merely negative movement
-The journey is not just a string of refutations; each failure produces something, as the rest of the paragraph explains.
+To see how, note first that the journey is not just a string of refutations, one view knocked down after another.
+
+@l 79 | will present itself there
+Seeing only destruction is the one-sided view natural consciousness takes. A position that makes this its whole outlook is itself one of the shapes on the journey: Scepticism, which appears in Chapter IV (¶202–206).
 
 @l 79 | the nothing of that from which it results
-When a view collapses, what is left is not nothing in general but the failure of that specific view, which tells us something definite. “Not this road” helps only if you know which road failed, and why.
+What such scepticism forgets: when a view collapses, what remains is not nothing in general but the failure of that particular view, which tells us something definite. “Not this road” helps only if you know which road failed, and why.
+
+@l 79 | has a content
+So the result of a refutation is a “determinate nothing”: a nothing with a content, the lesson of the specific failure.
 
 @l 79 | cast it into the same empty abyss
-The pure sceptic can only wait for the next view and refute it too, without end. Determinate negation, by contrast, moves forward of itself.
+The pure sceptic, holding nothing but emptiness, cannot move. He can only wait for the next view to turn up and throw it into the same abyss, endlessly.
+
+@l 79 | a new form has thereby immediately arisen
+Understood as determinate negation, the failure of one view already contains the outline of the next: the new form arises at once from the specific way the old one broke down.
+
+@l 79 | ensues of itself
+This is how the series moves “of itself”: no outside push is needed, because each negation is already the transition. That is Hegel’s ground for claiming the series is complete.
 
 @g 79 | determinate negation
 The negation of a definite position, which yields not mere nothing but a definite result: the content of what failed, transformed. The motor of the *Phenomenology*.
@@ -191,20 +283,41 @@ weak: P3 and P4 are disputed. A negation may be determinate and still leave seve
 @c 80 | argument | hegel
 why: Why does consciousness keep moving? Because, unlike a stone or a plant, it always has in view more than its present object: its own standard. So it is restless; every limited satisfaction is spoiled from within. Hegel lists the evasions of this restlessness, ending with the clever ironist who stands above every view; the target is the Romantic irony of Friedrich Schlegel.
 
-@note 80
-Where does the journey end, and why can consciousness not stop sooner? It ends where knowing and its object fully match. It cannot stop sooner because consciousness always has its own standard in view, measures every resting place against it, and finds it lacking: it “spoils its own limited satisfaction”. Hegel then lists three ways of escaping this restlessness (not thinking, declaring everything good of its kind, and the clever vanity that dissolves every view) and shows that none works.
+@l 80 | no longer needs to go beyond itself
+The destination is as fixed as the route: a knowledge that no longer needs to go beyond itself, because it finds itself in its object, where what it takes the object to be and what the object is fully coincide.
+
+@l 80 | at any earlier station
+So the journey is relentless: no earlier stage can give lasting satisfaction, because each still falls short of that goal.
 
 @l 80 | this uprootedness is its death
-A plant or animal goes beyond its present state only when something else forces it to, and for a living thing that ending is death. Consciousness is different: it drives itself beyond itself.
+A comparison with living things. A plant or an animal goes beyond its present state only when something outside forces it to, and for a living thing that uprooting means death.
 
 @l 80 | consciousness is for itself its own concept
-Consciousness always has in view its own idea of what knowing should be, so it measures where it is against where it should be and is pushed beyond every limited resting place.
+Consciousness is different. It always has in view its own concept, its idea of what knowing should be. So it goes beyond every limited state of itself from within, measuring where it is against where it should be.
+
+@l 80 | as in spatial intuition
+To know a limit is already to be beyond it, as in space: when you see a boundary, you also see the space on its other side. In grasping something limited, consciousness also posits what lies beyond it.
+
+@l 80 | it spoils its own limited satisfaction
+Hence the “violence” consciousness suffers “at its own hands”: every time it settles into a limited satisfaction, it spoils that satisfaction for itself by seeing beyond it.
+
+@l 80 | what it is in danger of losing
+Faced with this, anxiety may shrink back from the truth and cling to what it fears to lose. The rest of the paragraph lists three ways of clinging.
+
+@l 80 | its restlessness disturbs indolence
+First evasion: simply stop thinking. It fails, because thought keeps breaking in and its restlessness disturbs the comfortable rest.
 
 @l 80 | insofar as it is a kind
-The sentimentalist says everything is “good of its kind”. Reason replies that being merely one kind among others is precisely a limitation, so nothing is good simply for being a kind.
+Second evasion: sentimental tolerance, finding everything “good of its kind”. Reason replies that being merely one kind among others is exactly what makes something limited, so nothing is good just for being a kind.
+
+@l 80 | the sole truth of vanity
+Third evasion, the subtlest: a person who claims to love truth so passionately that no particular truth is ever good enough. The only truth left is their own cleverness: always cleverer than any thought they examine.
 
 @l 80 | the barren I
-The vain ironist can dissolve any thought, and behind every content finds only himself. Hegel probably has in mind the Romantic irony of Friedrich Schlegel.
+This ironic vanity can dissolve any thought and, behind every content, finds only itself, an empty I. Hegel probably has in mind the Romantic irony of Friedrich Schlegel.
+
+@l 80 | seeks only Being-for-itself
+Hegel’s answer is to leave it alone: it flees from the universal, what can be shared and held in common, and seeks only its own self-enjoyment. It has stepped off the path, so there is nothing to argue with.
 
 @g 80 | concept corresponds to the object
 The goal of the journey: a knowledge whose idea of its object fits the object fully, so that there is no longer a gap between knowing and what is known. Hegel’s formula for “absolute knowing”.

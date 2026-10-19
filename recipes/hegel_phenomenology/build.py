@@ -39,11 +39,10 @@ unlabelled paragraphs continue the previous label.
   @c 17 | move | voice                 commentary on ¶17; paragraphs
                                          labelled gist: and why:
   @g 17 | term                         gloss on the first "term" in ¶17
-  @l 17 | phrase                       line note on the first "phrase" in ¶17
-                                         (lettered together with the glosses,
-                                         in reading order)
-  @note 17                             "Reading note", printed visibly right
-                                         after ¶17
+  @l 17 | phrase                       running note, attached after the first
+                                         "phrase" in ¶17 (lettered with the
+                                         glosses, a, b, c… in reading order,
+                                         restarting with each paragraph)
   @u 17 | Title                        "Pause and Unpack" after ¶17; labels
                                          step: example: misreading: returns:
   @arg 17 | Title                      "Argument Reconstruction" after ¶17;
@@ -223,7 +222,6 @@ class Unit:
         self.friendly: tuple[str, str] | None = None
         self.comm: dict[int, tuple[str, str, str]] = {}
         self.gloss: dict[int, list[tuple[str, str, str]]] = {}  # kind, term, body
-        self.reading: dict[int, str] = {}
         self.after: dict[int, list[tuple[str, str, str]]] = {}   # kind, title, body
         self.cross: list[tuple[str, str]] = []
         self.obj: list[tuple[str, str]] = []
@@ -265,8 +263,6 @@ class Unit:
                 self.comm[int(parts[0])] = (move, voice, body)
             elif kind in ("g", "l"):
                 self.gloss.setdefault(int(parts[0]), []).append((kind, parts[1], body))
-            elif kind == "note":
-                self.reading[int(parts[0])] = body
             elif kind in ("u", "arg", "lens"):
                 self.after.setdefault(int(parts[0]), []).append((kind, parts[1], body))
             elif kind == "cross":
@@ -353,7 +349,8 @@ def gloss_label(i: int) -> str:
 
 
 def phrase_end(html_blocks: list[str], term: str) -> tuple[int, int] | None:
-    """(block, offset) of the end of term's first occurrence, as attach_gloss finds it."""
+    """(block, offset in the flattened text) of the end of term's first
+    occurrence: the place where attach_gloss puts its marker."""
     pat = re.compile(r"(?<![\w])" + re.escape(esc(term)) + r"(?![\w])", re.I)
     for k, html_text in enumerate(html_blocks):
         flat = "".join(x for x in re.split(r"(<[^>]+>|\{\{n:[^}]+\}\})", html_text)
@@ -365,32 +362,31 @@ def phrase_end(html_blocks: list[str], term: str) -> tuple[int, int] | None:
 
 
 def attach_gloss(html_text: str, term: str, marker: str) -> tuple[str, bool]:
-    """Put marker right after the first occurrence of term in text nodes."""
+    """Put marker right after the first occurrence of term in the text, even
+    where markup splits the term (e.g. partly italic)."""
     pieces = re.split(r"(<[^>]+>|\{\{n:[^}]+\}\})", html_text)
     pat = re.compile(r"(?<![\w])" + re.escape(esc(term)) + r"(?![\w])", re.I)
-    for i, piece in enumerate(pieces):
-        if piece.startswith("<") or piece.startswith("{{"):
-            continue
-        m = pat.search(piece)
-        if m:
-            pieces[i] = piece[: m.end()] + marker + piece[m.end():]
-            return "".join(pieces), True
-    # The term is split by markup (e.g. partly italic).
     flat, owners = "", []
     for i, piece in enumerate(pieces):
         if piece.startswith("<") or piece.startswith("{{"):
             continue
-        for ch in piece:
+        for k, ch in enumerate(piece):
             flat += ch
-            owners.append(i)
+            owners.append((i, k))
     m = pat.search(flat)
-    if m:
-        j = owners[m.end() - 1] + 1
+    if not m:
+        return html_text, False
+    i, k = owners[m.end() - 1]
+    head, tail = pieces[i][: k + 1], pieces[i][k + 1:]
+    if tail:
+        pieces[i: i + 1] = [head, marker, tail]
+    else:
+        # The term ends a text run: put the marker after any closing tags.
+        j = i + 1
         while j < len(pieces) and pieces[j].startswith("</"):
             j += 1
         pieces.insert(j, marker)
-        return "".join(pieces), True
-    return html_text, False
+    return "".join(pieces), True
 
 
 def inline_par(s: str) -> str:
@@ -414,7 +410,7 @@ class Builder:
         self.warnings: list[str] = []
         self.stats = {k: 0 for k in ("commentary", "gloss", "unpack", "arg", "lens",
                                      "inwood", "cross", "obj", "now", "questions",
-                                     "answers", "shape", "map", "reading", "line")}
+                                     "answers", "shape", "map", "line")}
 
     def new_file(self) -> str:
         name = f"chap_{self.counter:03d}.xhtml"
@@ -519,9 +515,11 @@ class Builder:
     def hegel_paragraph(self, n: int, unit: Unit, notes: Notes) -> str:
         p = self.paras[n]
         body, more = p["html"], list(p["more"])
-        # Glosses and line notes share one lettered series.  Letters follow
-        # the order of the markers in the text; markers are inserted from the
-        # last to the first so that no insertion falls inside a later phrase.
+        # Glosses and line notes share one lettered series, restarting with
+        # each paragraph.  Letters follow the order of the markers in the
+        # text; markers are inserted from the last to the first so that no
+        # insertion falls inside a later phrase.
+        self.gloss_index = 0
         found, missing = [], []
         for item in unit.gloss.get(n, []):
             pos = phrase_end([body] + more, item[1])
@@ -531,12 +529,13 @@ class Builder:
         for pos, (kind, term, gtext) in found + missing:
             label = gloss_label(self.gloss_index)
             self.gloss_index += 1
+            where = f"¶{n}&#160;{label}"
             if kind == "l":
-                nid = notes.add(f'<p><span class="nlabel">Note</span> '
-                                f"<b>“{inline(term, False)}”</b> {inline_par(gtext)}</p>")
+                nid = notes.add(f'<p><span class="nlabel">Note</span> <b>{where}</b> '
+                                f"“{inline(term, False)}”. {inline_par(gtext)}</p>")
                 self.stats["line"] += 1
             else:
-                nid = notes.add(f'<p><span class="nlabel">Gloss</span> '
+                nid = notes.add(f'<p><span class="nlabel">Gloss</span> <b>{where}</b> '
                                 f"<b>{inline(term, False)}</b>. {inline_par(gtext)}</p>")
                 self.stats["gloss"] += 1
             labelled_items.append((pos, term, f'<sup class="gl">{ref(nid, label, "gref")}</sup>'))
@@ -583,10 +582,6 @@ class Builder:
         more = [blk.replace("</sup><sup", "</sup>&#8202;<sup") for blk in more]
         out = [f'<p class="hegel" id="p{n}"><span class="pnum">{num}</span> {body}</p>']
         out += [f'<p class="hegel cont">{blk}</p>' for blk in more]
-        if n in unit.reading:
-            self.stats["reading"] += 1
-            out.append('<div class="reading-note"><p class="rn-label">Reading note</p>'
-                       f"{blocks(unit.reading[n])}</div>")
         for kind, title, abody in unit.after.get(n, []):
             out.append(self.after_box(kind, title, abody, unit))
         return "\n".join(out)
@@ -631,7 +626,6 @@ class Builder:
         for n in range(unit.first, unit.last + 1):
             self.para_file[n] = name
         notes = Notes(f"u{unit.id}")
-        self.gloss_index = 0
         first = self.paras[unit.first]
         crumbs = " · ".join(x for x in (first["part"], first["chapter"]) if x)
         words = sum(len(self.paras[n]["text"].split())
@@ -749,7 +743,7 @@ class Builder:
         for n in unit.comm:
             if not unit.first <= n <= unit.last:
                 self.warnings.append(f"unit {unit.id}: commentary for ¶{n} outside range")
-        for n in list(unit.gloss) + list(unit.after) + list(unit.reading):
+        for n in list(unit.gloss) + list(unit.after):
             if not unit.first <= n <= unit.last:
                 self.warnings.append(f"unit {unit.id}: annotation for ¶{n} outside range")
         parts.append(notes.render())
