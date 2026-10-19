@@ -1,16 +1,67 @@
-# Placeholder 04_back
+# The Dialectic Tracker
 
-To be written. See ¶90 and ¶¶1–5.
+These cards collect the *Shape at a Glance* of each shape of consciousness in this volume, so that you can see the pattern of the book at a glance. Read them in order and notice how what each shape learns becomes the object of the next.
 
-## A section
-
-Text with *italic* and **bold**.
-
-@box guide | Test box
-Inside the box.
-@end
-
-| A | B |
-|---|---|
-| one | two |
 @tracker
+
+### What the two shapes have in common
+
+Both begin by taking the object as the essential, independent side and consciousness as the inessential one (¶93, ¶111). Both are driven back into themselves when the object fails to be what they took it to be (¶100, ¶118). And both end with a universal: sensory certainty with the bare universal of the Now and Here, perception with the “unconditioned universal” that can only be thought (¶129). The next shape, the Understanding, will take that universal as its object.
+
+# Where the Road Goes Next
+
+Volume One ends with consciousness at the threshold of the *Understanding*. Here is a sketch of the ground ahead, to help you keep your bearings if you read on in Inwood’s translation.
+
+## Force and Understanding (¶132–165)
+
+Perception could not hold the thing together with the senses alone. The Understanding looks *behind* appearances for what explains them: first *force* and the “play of forces”, then a “supersensible world”, a “calm realm of laws” (¶149), the world of Newtonian science. Hegel argues that explanation by laws is tautological (“explanation that explains nothing”, ¶155), turns the realm of laws into its opposite, the strange “inverted world” (¶157–160), and arrives at *infinity*: a unity that differentiates itself and remains itself in its differences. In grasping that, consciousness discovers that what it finds behind the screen of appearances is the same movement as itself: “behind the so-called screen which is supposed to conceal the interior, there is nothing to be seen unless *we* go behind it ourselves” (¶165). Consciousness has become *self-consciousness*.
+
+## Self-Consciousness (¶166–230)
+
+The second part of the book contains its most famous pages. Self-consciousness first appears as *desire*, which seeks to confirm itself by consuming its objects (¶167–175), and learns that it can find satisfaction only “in another self-consciousness” (¶175). “The I that is We, and We that is I” (¶177) introduces *recognition*. Two self-consciousnesses risk their lives in a struggle for recognition; one prefers life to freedom and becomes the bondsman of the other, the lord (¶178–196). Through fear, service and work, the bondsman, not the lord, comes to an independent consciousness of himself. Freedom of thought then appears as *stoicism*, *scepticism* and the *unhappy consciousness*, divided between itself and an unattainable beyond (¶197–230), until it gives way to *Reason*.
+
+## And beyond
+
+Reason (¶231–437) seeks itself in nature, in the body and in action; Spirit (¶438–671) follows forms of communal life from the Greek city to the French Revolution and modern morality; Religion (¶672–787) traces how communities picture the absolute; Absolute Knowing (¶788–808) comprehends the whole path. Everything you have learned in this volume, above all the method of ¶84–87 and the idea that “the true is the whole” (¶20), is needed for the rest of the journey.
+
+# Questions for the Whole Volume
+
+1. Hegel says the absolute must be grasped “not as *substance*, but just as much as *subject*” (¶17). Having read Sensory Certainty and Perception, what light do they throw on that claim?
+2. Is the method of ¶84–87 actually followed in ¶90–131? Find one transition where you think Hegel imports something consciousness has not learned for itself, and one where he does not.
+3. The Preface condemns the familiar as unknown (¶31). Do Sensory Certainty and Perception bear this out for our most familiar ideas: “this”, “now”, “thing”, “property”?
+4. Both shapes end with a universal. Is Hegel showing that the universal is more real than the individual, or that individuals can only be known through universals? Which is the stronger claim, and which does he need?
+5. Write a short dialogue between a defender of common sense and Hegel, based on ¶69, ¶109–110 and ¶131.
+
+# A Four-Week Study Plan
+
+| Week | Read | Focus |
+|---|---|---|
+| 1 | Editor’s Introduction; ¶1–25 | What philosophy must become; substance and subject. |
+| 2 | ¶26–72 | The ladder; the labour of the negative; the speculative sentence. |
+| 3 | ¶73–89 | The method: immanent critique, experience, “for us”. Read twice. |
+| 4 | ¶90–131 | Sensory Certainty and Perception: the method at work. Then reread ¶84–87. |
+
+# Further Reading
+
+## Translations
+
+- *The Phenomenology of Spirit*, trans. Michael Inwood (Oxford, 2018): the translation reproduced here, with a full commentary.
+- *The Phenomenology of Spirit*, trans. Terry Pinkard (Cambridge, 2018): a lucid modern translation.
+- *Phenomenology of Spirit*, trans. A. V. Miller (Oxford, 1977): the long-standard English version, whose paragraph numbers all scholars use.
+
+## Guides
+
+- Stephen Houlgate, *Hegel’s Phenomenology of Spirit: A Reader’s Guide* (Bloomsbury, 2013): a close, clear reading of the logic of each transition.
+- Robert Stern, *The Routledge Guidebook to Hegel’s Phenomenology of Spirit* (2nd edn, 2013): an accessible overview, strong on the arguments and the interpretive debates.
+- Dean Moyar and Michael Quante (eds), *Hegel’s Phenomenology of Spirit: A Critical Guide* (Cambridge, 2008): essays by leading scholars on key sections.
+- Charles Taylor, *Hegel* (Cambridge, 1975): still one of the best general introductions to Hegel’s thought.
+
+## Further
+
+- Jean Hyppolite, *Genesis and Structure of Hegel’s Phenomenology of Spirit* (1946; English 1974).
+- Alexandre Kojève, *Introduction to the Reading of Hegel* (1947; English 1969): famous and contested, centred on lordship and bondage.
+- H. S. Harris, *Hegel’s Ladder* (2 vols, 1997): the most detailed English commentary.
+- Terry Pinkard, *Hegel’s Phenomenology: The Sociality of Reason* (1994).
+- Robert Pippin, *Hegel’s Idealism* (1989).
+- Robert Brandom, *A Spirit of Trust* (2019).
+- Wilfrid Sellars, *Empiricism and the Philosophy of Mind* (1956): the modern classic closest to Sensory Certainty.

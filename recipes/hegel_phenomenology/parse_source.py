@@ -28,7 +28,7 @@ NOTE_HREF = re.compile(
     r'<a href="020_BM_endNotes\.xhtml#([^"]+)" id="r_[^"]+"><sup>(\d+)</sup></a>')
 PARA = re.compile(r'<p class="(para|parafl)">(.*?)</p>', re.S)
 HEAD = re.compile(r'<h([12]) class="([^"]+)"[^>]*>(.*?)</h\1>', re.S)
-NOTE = re.compile(r'<div class="refnote[^"]*" id="([^"]+)">(.*?)</div>', re.S)
+NOTE = re.compile(r'<div class="refnote[^"]*" id="([^"]+)">')
 
 # Files holding Hegel's text, in reading order.
 TEXT_FILES = [
@@ -118,8 +118,15 @@ def parse_notes(z: zipfile.ZipFile):
     src = z.read("OEBPS/020_BM_endNotes.xhtml").decode("utf-8")
     notes = {}
     para = None
-    for m in NOTE.finditer(src):
-        nid, body = m.group(1), m.group(2)
+    starts = list(NOTE.finditer(src))
+    for k, m in enumerate(starts):
+        nid = m.group(1)
+        end = starts[k + 1].start() if k + 1 < len(starts) else len(src)
+        body = src[m.end():end]
+        # A note runs to the next note; cut off any chapter heading after it.
+        head = re.search(r"<h[1-6]\b", body)
+        if head:
+            body = body[:head.start()]
         lab = re.search(r'<span class="label">(.*?)</span>', body, re.S)
         label = strip_tags(lab.group(1)) if lab else ""
         pm = re.search(r"¶(\d+)", label)
@@ -128,10 +135,14 @@ def parse_notes(z: zipfile.ZipFile):
         num = re.search(r"(\d+)\.\s*$", label)
         text = body[lab.end():] if lab else body
         text = re.sub(r'^\s*</a>', "", text)
+        # Some notes hold lists or further paragraphs: keep them as paragraphs.
+        text = re.sub(r'<(?:p|div class="item\d*")[^>]*>', "\x00", text)
+        text = re.sub(r"</?(?:p|div|section|body|html)\b[^>]*>", "", text)
+        blocks = [clean_inline(b) for b in text.split("\x00")]
         notes[nid] = {
             "para": para,
             "num": num.group(1) if num else "",
-            "html": clean_inline(text),
+            "html": "</p><p>".join(b for b in blocks if b),
         }
     return notes
 

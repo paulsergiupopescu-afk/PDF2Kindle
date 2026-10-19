@@ -1,15 +1,51 @@
-# Placeholder 02_introduction
+# 1. Why Read the Phenomenology?
 
-To be written. See ¶90 and ¶¶1–5.
+The *Phenomenology of Spirit* is one of the most difficult books in the history of philosophy and one of the most influential. Marx, Kierkegaard, Nietzsche, Heidegger, Sartre, Simone de Beauvoir, Frantz Fanon, the Frankfurt School and, more recently, analytic philosophers such as Wilfrid Sellars, John McDowell and Robert Brandom all defined themselves for or against it. Ideas that now seem like common property, such as that knowledge has a history, that the self is formed through recognition by others, that a culture can be alienated from itself, or that truth emerges through conflict and correction, were first worked out here.
 
-## A section
+But the book is worth reading for a simpler reason. It asks a question everyone can feel: *how do we know that our way of seeing the world is the right one?* And it answers in an unusual way. It does not lay down a theory and defend it. It takes up, one after another, the most natural ways of knowing (just looking, perceiving things, explaining them by laws, then being a self among other selves, and on through reason, society and religion), and lets each one discover its own limits. The reader is invited to recognize these ways of knowing as their own, and to watch them fail and grow. Hegel called this a “ladder” to philosophy (¶26), and the “way of despair” (¶78).
 
-Text with *italic* and **bold**.
+# 2. Jena, 1806: The Book and Its Moment
 
-@box guide | Test box
-Inside the box.
-@end
+Georg Wilhelm Friedrich Hegel was born in Stuttgart in 1770. He studied theology at the Protestant seminary in Tübingen, where he shared rooms with the poet Friedrich Hölderlin and the philosopher F. W. J. Schelling, five years his junior. The three young men were enthusiasts for the French Revolution and for the idea that philosophy, religion and art could renew a fragmented modern world.
 
-| A | B |
-|---|---|
-| one | two |
+In 1801 Hegel joined Schelling at the University of Jena, then the centre of German philosophy. Kant had argued that we can know only how things appear to us, not things in themselves. Fichte had tried to derive all knowledge from the activity of the I. Schelling had answered with a philosophy of the “absolute”, an identity of mind and nature grasped by intellectual intuition. Hegel worked alongside Schelling, but became convinced that the absolute could not simply be intuited or announced; it had to be *known*, in a system of concepts that anyone could follow. The Preface’s famous jibe at “the night in which all cows are black” (¶16) was widely read as aimed at Schelling, and ended their friendship.
+
+The *Phenomenology* was meant as the introduction to Hegel’s system. It was written at speed in 1805–6. Hegel finished the manuscript in October 1806 as Napoleon’s army defeated the Prussians at the Battle of Jena; the day before, he wrote to a friend that he had seen the Emperor, “this world-soul”, riding through the town. The book appeared in 1807, with the Preface (¶1–72), written last, at its head. Its working title had been *Science of the Experience of Consciousness*; it was published as the first part of a *System of Science*.
+
+Hegel went on to write the *Science of Logic* (1812–16) and the *Encyclopaedia of the Philosophical Sciences* (1817), and became the most celebrated philosopher in Germany as professor in Berlin from 1818 until his death in 1831.
+
+# 3. What Kind of Book Is This?
+
+## A journey of consciousness
+
+The body of the book follows a single “consciousness” through a series of *shapes*. Each shape is a whole way of taking the world: an object, a certainty about it, a standard of truth. Each is tested by its own standard, fails, and is replaced by a new shape that contains what the old one learned. The book begins with the simplest possible certainty, sensory certainty (¶90), and ends with “absolute knowing” (¶788–808), the standpoint from which the whole journey can be understood.
+
+## Three parts, two halves
+
+Hegel’s table of contents divides the book into **A. Consciousness** (knowing objects), **B. Self-Consciousness** (knowing oneself, in relation to others), and **C**, a long third part subdivided into **Reason**, **Spirit** (the life of communities and history), **Religion** and **Absolute Knowing**. In the first half, the shapes are individual ways of knowing; in the second, they are whole forms of social and historical life. This volume covers the Preface, the Introduction and the first two chapters of Consciousness.
+
+## Two points of view
+
+The most important thing to grasp about the book’s method is that it runs on two levels. There is the consciousness being examined, which lives through its experience and sees only its object. And there are “we”, Hegel and his readers, who watch, and who see how each new object arises from the failure of the last, “behind the back” of consciousness (¶87). The commentary’s **voice** tag tells you, paragraph by paragraph, which perspective Hegel is speaking from.
+
+## Logic and history
+
+Is the sequence of shapes a history? Partly. The later chapters clearly refer to historical worlds: Greek city-states, Roman law, the French Revolution. But the early chapters do not describe any historical period; sensory certainty is a temptation we all fall into, not an age of humanity. Hegel claims that the order of the shapes is *necessary*: each follows from the experience of the one before. Whether he succeeds is the great question every reader must decide.
+
+# 4. How the Argument Works
+
+## Immanent critique
+
+Hegel will not criticize a view from outside, by his own standards; the view could reject them as “one bare claim” against another (¶76). Instead he takes each view at its word and asks whether it can live up to its own standard (¶84). This is *immanent critique*, and it is the engine of the whole book.
+
+## Determinate negation
+
+When a view fails its own test, the failure is not empty. It shows exactly *what* was wrong, and so points to what is needed. Hegel calls this “determinate negation” (¶79): the result of a refutation is a new, richer position. That is why the book is a progress rather than a series of demolitions.
+
+## Experience changes the object
+
+In ordinary life, when I find I was mistaken, I correct my belief about a thing that stays the same. In the *Phenomenology*, what changes is consciousness’s whole idea of what an object *is* (¶85–86). Sensory certainty takes its object to be a bare “this”; it learns that what it holds is a universal, and so becomes perception, for which the object is a thing with properties.
+
+## What to expect in this volume
+
+The **Preface** (¶1–72) explains what philosophy must become (a *science*, a system in which “the true is the whole”, ¶20) and why the absolute must be grasped “not as *substance*, but just as much as *subject*” (¶17). The **Introduction** (¶73–89) explains the method. **Sensory Certainty** (¶90–110) shows that the most immediate knowledge is the poorest. **Perception** (¶111–131) shows that common sense’s picture of things with properties cannot hold together without thinking beyond the senses. Each unit opens with a map of the ground ahead.

@@ -46,8 +46,8 @@ def main(out_path: str) -> None:
     y = centered(d, y, "of Spirit", f_title2, INK) + 120
     d.line([W / 2 - 230, y, W / 2 + 230, y], fill=DIM, width=3)
     y += 90
-    y = centered(d, y, "Part One", f_part, INK) + 60
-    for line in ("Preface · Introduction", "Consciousness · Self-Consciousness", "¶1–230"):
+    y = centered(d, y, "Volume One", f_part, INK) + 60
+    for line in ("Preface · Introduction", "Sensory Certainty · Perception", "¶1–131"):
         y = centered(d, y, line, f_small, DIM) + 34
 
     # Epigraph from ¶20, between two small diamonds.

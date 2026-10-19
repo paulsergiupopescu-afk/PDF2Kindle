@@ -11,7 +11,7 @@ Hegel has said that the book will present knowledge as it appears, a path of des
 
 **Watch for.** The **problem of the criterion**; *for consciousness* versus *in itself*; **knowing** and **truth**; **concept** and **object** (in two directions); “**simply to look on**”; the **standard alters**; **experience** as the arising of a new object; **the reversal of consciousness**; **behind the back of consciousness**; “**for us**”; **shapes of consciousness**.
 
-**How to read it.** These are the most important methodological paragraphs of the book. Read ¶84–87 at least twice, and come back to them after Sense-Certainty (¶90–110), when you have seen the method at work.
+**How to read it.** These are the most important methodological paragraphs of the book. Read ¶84–87 at least twice, and come back to them after Sensory Certainty (¶90–110), when you have seen the method at work.
 
 @map
 thesis: Consciousness contains its own standard of truth, so it can examine itself; when its knowledge fails the test, a new object and a new shape arise, and the necessary sequence of these is the science of the experience of consciousness.
@@ -55,7 +55,7 @@ The pairing to watch is *Gewissheit* and *Wahrheit*, certainty and truth. Every 
 @c 83 | objection | hegel
 gist: If we investigate the truth of knowledge, knowledge becomes *our* object; its “in-itself” would really be its being *for us*. The standard would lie in us, and what is examined need not accept it.
 
-why: The problem sharpened: an outside observer who tests consciousness by the observer’s own standards has not tested consciousness at all, merely compared it with the observer. Consciousness could reject the verdict as one more bare assurance (¶76).
+why: The problem sharpened: an outside observer who tests consciousness by the observer’s own standards has not tested consciousness at all, merely compared it with the observer. Consciousness could reject the verdict as one more bare claim (¶76).
 
 @c 84 | thesis | hegel
 gist: The nature of the object avoids this. Consciousness provides its own standard; the investigation is a comparison of consciousness with itself. Since consciousness distinguishes knowing (being-for-another) from truth (being-in-itself), what it declares to be the in-itself is the standard by which it measures its knowledge. Call knowing the concept and the object the true, and the test is whether the concept fits the object; call the in-itself the concept and the object as it is for another the object, and the test is whether the object fits its concept. Either way both moments fall within the knowledge examined, so we need not bring our own notions.
@@ -69,7 +69,7 @@ example: A scientist who claims her theory explains every observation can be tes
 
 misreading: This does not mean consciousness is always right, or that truth is whatever consciousness thinks. It means that consciousness can be shown wrong *by its own lights*. Nor is consciousness’s standard fixed: it can turn out that the standard itself was inadequate (¶85).
 
-returns: You will see the method at once: sense-certainty takes its object to be the immediate, singular *this*, and claims to know it immediately; testing this claim by its own standard is the whole of ¶90–110. Every chapter follows the same pattern, as the Shape at a Glance cards show.
+returns: You will see the method at once: sensory certainty takes its object to be the immediate, singular *this*, and claims to know it immediately; testing this claim by its own standard is the whole of ¶90–110. Every chapter follows the same pattern, as the Shape at a Glance cards show.
 
 @arg 84 | Hegel’s answer to the problem of the criterion
 P1: To examine a claim to knowledge we need a standard; an external standard begs the question against the claim examined (¶81–83).
@@ -90,7 +90,7 @@ example: Houlgate’s example: I take the animal on the lawn to be a squirrel an
 
 misreading: Hegel is not saying that the world changes when we change our minds, or that truth is subjective. The “object” here is the object *as a shape of consciousness conceives it*, the form of objectivity it takes for granted. That conception is what changes, irreversibly, because it has been shown not to hold up.
 
-returns: In Sense-Certainty the object changes from “this, here, now” to “what I mean by this” and then to a “simple complex” of many nows, until a new object, the thing with properties, emerges (¶90–111). Houlgate calls these steps the “micro-transitions” within a shape.
+returns: In Sensory Certainty the object changes from “this, here, now” to “what I mean by this” and then to a “simple complex” of many nows, until a new object, the thing with properties, emerges (¶90–111). Houlgate calls these steps the “micro-transitions” within a shape.
 
 @g 85 | simply to look on
 German *das reine Zusehen*, “pure looking on”: the role of the philosophical observer, who need not intervene because consciousness tests itself. Houlgate notes that the observer is not wholly passive: “we” name and order what consciousness experiences.
@@ -140,14 +140,14 @@ German *Gestalten des Bewusstseins*: whole configurations of experience, each de
 
 **A community of reasoners** (Pinkard, Pippin): “we” are the modern community of those who demand reasons for every claim, the heirs of the Enlightenment for whom the book is written. The “we” anticipates “the I that is We” of Spirit (¶177).
 
-**Your task.** Note the first appearance of “we” in Sense-Certainty (¶91–95). Is it doing work that consciousness could not do itself? Does it bring in anything beyond what the experience implies?
+**Your task.** Note the first appearance of “we” in Sensory Certainty (¶91–95). Is it doing work that consciousness could not do itself? Does it bring in anything beyond what the experience implies?
 
 @obj Heidemann’s circularity objection
 objection: Hegel claims to justify the standpoint of science without presupposing it. But the necessity of the sequence exists only “for us” (¶87), and “we” can see it only from the philosophical standpoint: “the path to science is itself already science” (¶88). The conclusion is used to make sense of the premises. Dietmar Heidemann (in Moyar & Quante) concludes that the *Phenomenology* fails as a theory of epistemic justification, though individual arguments within it may succeed.
 
 reply: Houlgate replies that “we” contribute only the *formal* recognition of what consciousness’s own experience produces; “we” do not supply content, and the phenomenologist suspends his philosophical views. The transitions are made necessary by what emerges in consciousness itself; our role is to render it explicit. On this view the circle is not vicious: the end is confirmed by the path, not presupposed by it.
 
-verdict: Test it yourself. At the transition from Sense-Certainty to Perception (¶109–111), does Hegel need anything that sense-certainty’s own experience has not provided?
+verdict: Test it yourself. At the transition from Sensory Certainty to Perception (¶109–111), does Hegel need anything that sensory certainty’s own experience has not provided?
 
 @now When paradigms change, the facts change
 Thomas Kuhn argued in *The Structure of Scientific Revolutions* (1962) that when scientists change paradigms, they do not simply correct beliefs about a fixed world: what counts as an object, a problem, even a fact, changes too. After Lavoisier, chemists did not just correct their views about phlogiston; there was no phlogiston to have views about. Kuhn compared this to a “gestalt switch”.
@@ -179,7 +179,7 @@ Any examination of knowledge seems to need a standard that has not yet been just
 
 @carry
 - **Consciousness provides its own standard** (¶84): every Shape at a Glance card names the shape’s standard.
-- **The object alters with the knowledge** (¶85): watch it happen three times in Sense-Certainty (¶95–108).
+- **The object alters with the knowledge** (¶85): watch it happen three times in Sensory Certainty (¶95–108).
 - **Experience** (¶86): the new object is the being-for-consciousness of the old.
 - **For it / for us** (¶87): the commentary’s Voice tags mark which perspective Hegel speaks from.
 - **Six questions to ask of every shape**: What is it certain of? What is its standard of truth? How does it test itself? What does it learn? What do “we” see that it does not? What new object emerges?

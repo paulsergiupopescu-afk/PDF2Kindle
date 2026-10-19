@@ -1,15 +1,53 @@
-# Placeholder 03_tools
+# A Map of the Whole Book
 
-To be written. See ¶90 and ¶¶1–5.
+The *Phenomenology* has 808 numbered paragraphs (the numbering is that of A. V. Miller’s translation, which Inwood follows). This volume covers ¶1–131.
 
-## A section
+| Part | Chapter | Paragraphs | In this volume |
+|---|---|---|---|
+| — | Preface: On Scientific Cognition | ¶1–72 | yes |
+| — | Introduction | ¶73–89 | yes |
+| A. Consciousness | I. Sensory Certainty: The This and Meaning | ¶90–110 | yes |
+| A. Consciousness | II. Perception: The Thing and Illusion | ¶111–131 | yes |
+| A. Consciousness | III. Force and Understanding | ¶132–165 | next volume |
+| B. Self-Consciousness | IV. The Truth of Certainty of Oneself (incl. lordship and bondage; stoicism, scepticism, the unhappy consciousness) | ¶166–230 | next volume |
+| C. (AA.) Reason | V. Certainty and Truth of Reason | ¶231–437 | — |
+| (BB.) Spirit | VI. Spirit | ¶438–671 | — |
+| (CC.) Religion | VII. Religion | ¶672–787 | — |
+| (DD.) Absolute Knowledge | VIII. Absolute Knowledge | ¶788–808 | — |
 
-Text with *italic* and **bold**.
+## The units of this volume
 
-@box guide | Test box
-Inside the box.
-@end
+| Unit | Paragraphs | Title |
+|---|---|---|
+| 1 | ¶1–5 | Why a Preface Cannot Say What Philosophy Is |
+| 2 | ¶6–16 | The Spirit of the Age and Its Two Temptations |
+| 3 | ¶17–25 | The True Not Only as Substance but Also as Subject |
+| 4 | ¶26–37 | The Ladder, the Familiar, and the Labour of the Negative |
+| 5 | ¶38–49 | Why the False Belongs to the Path, and Why Philosophy Is Not Geometry |
+| 6 | ¶50–57 | Against the Schema: How a Science Must Organize Itself |
+| 7 | ¶58–66 | The Effort of the Concept and the Speculative Sentence |
+| 8 | ¶67–72 | No Royal Road: Common Sense, Genius, and the Public |
+| 9 | ¶73–80 | The Fear of Error, the Way of Despair, and Determinate Negation |
+| 10 | ¶81–89 | The Criterion, Experience, and What Happens “Behind the Back” of Consciousness |
+| 11 | ¶90–110 | Sensory Certainty: “This, Here, Now” |
+| 12 | ¶111–131 | Perception: The Thing and Its Many Properties |
 
-| A | B |
+# A Short Timeline
+
+| Year | Event |
 |---|---|
-| one | two |
+| 1770 | Hegel born in Stuttgart (27 August). |
+| 1781 | Kant, *Critique of Pure Reason*. |
+| 1788–93 | Hegel at the Tübingen seminary with Hölderlin and Schelling. |
+| 1789 | The French Revolution begins. |
+| 1794 | Fichte, *Foundations of the Entire Science of Knowledge*. |
+| 1800 | Schelling, *System of Transcendental Idealism*. |
+| 1801 | Hegel moves to Jena; publishes *The Difference between Fichte’s and Schelling’s System of Philosophy*. |
+| 1802–3 | Hegel and Schelling edit the *Critical Journal of Philosophy*. |
+| 1806 | Battle of Jena (14 October); Hegel completes the *Phenomenology*. |
+| 1807 | *Phenomenology of Spirit* published. |
+| 1812–16 | *Science of Logic*. |
+| 1817 | *Encyclopaedia of the Philosophical Sciences*. |
+| 1818 | Hegel becomes professor in Berlin. |
+| 1820 | *Elements of the Philosophy of Right*. |
+| 1831 | Hegel dies in Berlin (14 November). |

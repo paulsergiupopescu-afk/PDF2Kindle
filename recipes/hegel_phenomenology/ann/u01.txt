@@ -95,7 +95,7 @@ why: This is the thesis of the whole Preface. Two claims are bundled together: a
 Not a filing cabinet of doctrines, but an organized whole in which each part is justified by its place and its connections. A truth that stands alone, unconnected, is for Hegel not yet fully true.
 
 @u 5 | Why truth must be a system
-step: Any single assertion (“God exists”, “everything is matter”) can be met by its opposite. If philosophy offers only assertions, it becomes a contest of what Hegel later calls “bare assurances”, each worth as much as the other (¶76). What breaks the stalemate is showing how claims hang together: what each presupposes, what follows from it, how it fails when isolated.
+step: Any single assertion (“God exists”, “everything is matter”) can be met by its opposite. If philosophy offers only assertions, it becomes a contest of what Hegel later calls “bare claims”, each worth as much as the other (¶76). What breaks the stalemate is showing how claims hang together: what each presupposes, what follows from it, how it fails when isolated.
 
 example: A single jigsaw piece on its own is unintelligible; you cannot even tell whether it is sky or sea. Among the others it becomes intelligible and necessary. Hegel thinks concepts are like that: “cause” means something only with “effect”, “freedom” only in relation to necessity, law and other people.
 

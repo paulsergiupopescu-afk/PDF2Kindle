@@ -1,0 +1,262 @@
+@unit 12 | Perception | 111-131
+@title Perception: The Thing and Its Many Properties
+
+@where
+Sensory certainty learned that its truth is the universal: what it could actually grasp of “this, here, now” was what every moment and place shares (¶96–110). Consciousness now accepts this and takes its object as universal from the start: it *perceives* things with general properties. This is the second shape of Consciousness, the world of common sense: tables, salt, apples, each one thing with many qualities.
+
+@guide
+**The question this section answers.** What is a thing? How can one thing have many properties? Is its unity real, or something we add? Are its properties really in it, or only in our senses?
+
+**What Hegel does.** He first derives the object of perception from the result of sensory certainty: the thing with many properties, which is at once an *Also* (a medium in which white, tart, cubical simply coexist) and a *One* (a unit that excludes other things and their properties) (¶111–115). Perception’s standard is that the thing is *self-identical*; if contradictions appear, the error must lie in the perceiver (¶116). Its experience then runs in three rounds. First, it swings between taking the thing as One and as many, blaming itself each time (¶117). Second, it consciously divides the work: the thing is One and the diversity is due to our senses (“white to our eyes, tart to our tongue”); then the reverse, the thing is the many properties and the unity is ours (¶118–122). Third, it puts both into the thing, but distributes them: the thing is One in itself and many only through its relations to other things; its essential property is distinguished from its inessential features (¶123–127). But the thing is a thing only through its relation to others, so its independence is destroyed by its own essential property; the “insofar” fails, and the thing is “for itself insofar as it is for another” (¶125–128). The universality of perception, still tied to the senses, gives way to an *unconditioned* universal: consciousness enters the realm of the *understanding* (¶129–131).
+
+**Watch for.** The **thing** and its **properties**; **thinghood**; the **Also** and the **One**; the **medium**; **free matters**; **illusion** (*Täuschung*); **equality-to-itself**; consciousness **taking upon itself**; the **Insofar**; **for itself** and **for another**; **essential** and **unessential**; **conditioned** and **unconditioned universality**; the **sophistry** of perception; **sound common sense**.
+
+**How to read it.** This chapter is more abstract than Sensory Certainty, and Hegel’s sentences are dense. Keep one concrete object in front of you (Hegel’s salt, or an apple) and test each move against it. Track a simple table: at each stage, where does consciousness locate the *unity* of the thing, and where its *diversity*: in the thing, or in itself?
+
+@shape
+certain: It perceives things with many properties: this salt is white and also tart and also cubical. It takes what is there as universal, and its only task is to take it truly.
+standard: Equality-to-itself: the thing is one and the same, consistent with itself. Any contradiction that appears must be an error of the perceiver.
+test: Hold the thing as One and its properties as Also; blame the many on the senses (“white to our eyes”), then blame the unity on ourselves; then attribute unity to the thing in itself and diversity to its relations with others; finally separate its essential property from inessential ones.
+learns: Each expedient (the “Also”, the “Insofar”, the essential and the unessential) fails. The thing is “for itself insofar as it is for another”: in one and the same respect its own contrary.
+behind: Perception’s universals are still sensory and so “conditioned”: they split into a One and an Also. Their truth is an unconditioned universal, a unity that exists only in relating to what is other: something that can only be thought, not seen.
+next: The understanding takes the unconditioned universal as its object: force and its expression, and the inner world behind appearances (¶132).
+
+@friendly What is an apple?
+Pick up an apple. It is red, sweet, round and crisp. So what is “the apple”? If it is just the redness plus the sweetness plus the roundness, why is it one thing rather than four? If it is something *underneath* its qualities that holds them together, what is that something, since you can never see, taste or touch it without its qualities?
+
+Common sense has quick answers. “The sweetness is really just in my tongue, the redness in my eyes; the apple itself is one thing.” Or: “The qualities are really in the apple; it’s me who bundles them into one.” Or: “The apple is an apple in itself; it only looks red because of the light, tastes sweet because of my tongue.” Hegel watches common sense switch between these answers whenever one gets into trouble, like someone who keeps changing the subject. His conclusion is surprising: the apple is what it is only through its relations to other things (to light, to tongues, to pears), and so the line between what it is “in itself” and what it is “for others” cannot be held. To understand the thing, we must think beyond what the senses show: about forces and laws.
+
+@c 111 | setup | we
+gist: Immediate certainty does not take what is true, since its truth is the universal and it wanted the This. Perception takes what is there as universal. Its moments, the I and the object, are universal too. For us this principle has *emerged*, so our taking up of perception is necessary, not a mere appearing. The two moments arise from the pointing-out: the movement is the *perceiving*, the same movement as simple is the *object*. In itself the universal is the essence of both; but since they are opposed, the object is taken as the essential, which is whether perceived or not, and the perceiving as the inconstant and unessential.
+
+why: Notice the difference from ¶90: sensory certainty was simply “found”; perception has been *derived*. And its structure mirrors sensory certainty’s starting point: the object is essential, the knower unessential (compare ¶93). Inwood: subject and object are again “dancing partners”, now both universal.
+
+@g 111 | Perception
+German *Wahrnehmung*, from *wahrnehmen*, which Hegel hears as “taking as true” (see the Translation Lens at ¶110).
+
+@c 112 | thesis | we
+gist: The object must be determined more precisely from the result reached. Since its principle, the universal, is a *mediated* universal, the object must express this in itself: it is *the thing with many properties*. The wealth of sensory knowledge belongs to perception, not to immediate certainty, where it was only by-play; only perception has negation, difference and manifoldness in its essence.
+
+why: The richness that sensory certainty claimed but could not hold (¶91) is now actually possessed: perception can say that the thing is white, tart and cubical. Inwood notes that this is *aufheben* in action: sensory content is not abolished but preserved and raised.
+
+@c 113 | definition | we
+gist: The This is posited as *not this*, as sublated: not as Nothing, but as a determinate Nothing, a Nothing *of* the This. The sensory remains, but as universal, as *property*. Sublation shows its true double meaning: negating and preserving. Many properties are posited at once, each indifferent to the others, related only to themselves. Their simple universality is the *medium* in which they interpenetrate without touching: *thinghood*, which is nothing but the Here and Now as they proved to be, a simple togetherness of many. This salt is a simple Here and also manifold: white *and also* tart, *also* cubical, *also* of a certain weight. The properties are all in one Here, yet do not affect each other; they are connected only by the indifferent *Also*, which is the medium, thinghood.
+
+why: The first model of the thing: a *bundle* of properties sharing a location. Stern compares it to the “bundle theory” of Hume, on which an object is nothing over and above its coexisting qualities. The phrase “a simple togetherness of many” links back to the “simple complex” of Heres and Nows (¶107–108): the pointing-out of sensory certainty has become the structure of the object.
+
+@g 113 | Sublation
+German *Aufhebung*: cancelling and preserving at once (see the Translation Lens at ¶21). Here Hegel spells out the “twofold significance” explicitly, for the first time in the body of the book.
+
+@g 113 | thinghood
+German *Dingheit*: the general character of being a thing, the medium in which properties coexist. Inwood: only when it is contrasted with other things does thinghood become a single *thing* (¶114).
+
+@u 113 | The thing as an “Also”
+step: Sensory certainty’s bare “this” is not simply lost; it survives as what can be *said* of the object, its properties. Each property (white, tart, cubical) is universal, since many things can share it. The first picture of the thing is then a place where many such properties happen to be together: the salt is white *and also* tart *and also* cubical. The properties do not compete or interfere: the whiteness does not affect the taste. What holds them together is just the “and also”, a neutral container. Hegel calls this the *Also* or *medium*, and the general form of being such a container *thinghood*.
+
+example: A shopping list: “bread, milk, eggs, apples”. The list holds them together, but the items do not affect each other; the list is nothing but its items plus the “and”. On the bundle view, a thing is like a list of qualities written on one spot.
+
+misreading: Stern warns against Charles Taylor’s reading that the “Also” view has no notion of a particular at all. It can still speak of “this salt”; it just takes the particular to be *nothing but* its coexisting qualities.
+
+returns: The “Also” comes back immediately as the “free matters” of ¶115 and ¶121, and is turned around in ¶119, where *we* become the medium in which the qualities are separate.
+
+@c 114 | argument | we
+gist: But there is another side. If the properties were wholly indifferent and related only to themselves, they would not be *determinate*: they are determinate only by differing from and opposing others. As opposed, they cannot be together in the simple medium; so the medium is not only an Also but a *One*, an exclusive unity. The One is the moment of negation, relating simply to itself and excluding an other; by it, thinghood is determined as *thing*.
+
+why: The second model: the thing as a *unit* that excludes. Why? Because a property like white is determinate only as *not* black (Spinoza: “all determination is negation”), and nothing can be white and black all over; so a thing must exclude some properties, and other things must have them. Stern reads this through F. H. Bradley’s lump of sugar: if the thing *is* white and *is* sweet, it seems to be many; so its unity must be something over and above its qualities.
+
+@g 114 | One
+German *Eins*: the thing as an exclusive unit, which “repels” other things and opposed properties. Contrast the *Also*, the thing as an inclusive container of properties.
+
+@u 114 | From “Also” to “One”
+step: A property is something definite only in contrast with others: white means not black, not red. If properties merely sat side by side in a container, without excluding anything, they would lose that definiteness. But a single thing cannot contain both opposites (it cannot be white and black all over). So a thing must also be a *One*: a unit that has some properties and excludes others, setting itself apart from other things that have them. A thing is thus two things at once: an inclusive *Also* (many properties together) and an exclusive *One* (this, not that). The problem of the chapter is how these fit together.
+
+example: A football team is the *Also* of its players, eleven people who happen to share a shirt. But it is also a *One*: it plays as a unit against another team, and a player cannot be on both sides. The team is a team only by being opposed to others.
+
+misreading: Hegel is not saying that a thing is a mysterious “bare particular” lurking behind its qualities. That is one horn of the dilemma perception will fall into (¶117), not his own view. Nor is the step from Also to One a sleight of hand; it follows from the determinacy of properties.
+
+returns: The One returns in perception’s experience as the pole consciousness keeps either blaming on itself or attributing to the thing (¶119–123). At the end, the opposition of One and Also is “unconditioned universality”, the object of Force and Understanding (¶129, ¶136).
+
+@c 115 | definition | we
+gist: So the thing is complete as the true of perception: (a) the indifferent, passive universality, the *Also* of many properties or rather *matters*; (b) negation, the *One*, excluding opposed properties; (c) the many *properties* themselves, the relation of the first two: negation relating to the indifferent element, the point of singularity radiating out into plurality. As belonging to the medium, properties are universal and indifferent; as belonging to the One, they exclude. Only this relation completes the *thing*.
+
+why: The finished definition, a little system. The word “matters” refers to the science of Hegel’s day, which treated heat, electricity and magnetism as distinct imponderable “matters” filling the pores of bodies (Inwood). The tension is now built in: the thing must be both a loose container and a tight unit.
+
+@g 115 | matters
+German *Materien*: independent “stuffs” such as caloric (heat-matter) or electrical matter, which the physics of around 1800 supposed to coexist in bodies. Hegel calls them “free matters” in ¶121.
+
+@c 116 | claim | c
+gist: Consciousness, as perceiver, has only to *take* the thing and behave as pure apprehension; whatever it adds or leaves out would alter the truth. Since the object is the true and self-equal and consciousness is alterable and unessential, consciousness may apprehend wrongly and deceive itself. The perceiver is aware of the possibility of illusion. Its criterion of truth is *equality-to-itself*; it relates the diverse moments of its apprehension to each other, and if a discrepancy arises, that is an untruth not of the object but of perceiving.
+
+why: Perception’s standard, in the sense of ¶84. Unlike sensory certainty, perception knows it can be wrong; error becomes thinkable for the first time. But it has decided in advance who is to blame: never the thing, always me. Inwood notes that the “illusion” at issue is not mainly the bent stick in water but an *intellectual* failure to keep the thing consistent.
+
+@g 116 | equality-to-itself
+German *Sichselbstgleichheit*, self-identity or self-consistency: the thing must be one and the same, free of contradiction. This is perception’s criterion of truth.
+
+@lens 116 | Täuschung: illusion, deception, self-deception
+Hegel’s subtitle is “The Thing and Illusion” (*Das Ding und die Täuschung*); Miller has “deception”, Pinkard “illusion”. *Täuschung* covers optical illusion, being deceived by another, and deceiving oneself (*sich täuschen*, “to be mistaken”). All three are in play. Perception takes illusion to be something that befalls the perceiver; Hegel will show that it is perception itself that keeps deceiving itself, by shuffling contradictions back and forth.
+
+There is a further twist. In ¶131 Hegel speaks of the “sophistry” of perceiving: the illusion is not in the senses but in the *logic* common sense uses to save its picture of things.
+
+@c 117 | experience | c
+gist: Let us see what consciousness experiences in actual perceiving. The object presents itself as purely *One*; but I notice the property, which is *universal* and goes beyond singularity, so I was wrong; it is a *community*. But the property is *determinate*, excluding others, so I must take the object as an excluding One. In the One I find many mutually indifferent properties, so it is a common medium. But then what I perceive is the *single property* for itself, which is neither property nor determinate, and I am left with mere sensory being and *meaning*: I have withdrawn into myself. But sensory being and meaning pass over into perception again, and I am thrown back to the beginning, into the same cycle.
+
+why: The first round: a dizzying cycle, told in the first person. Each time the thing turns out different from what I took it to be, I blame myself and switch to the other model. Inwood: consciousness even threatens to slide back into sensory certainty (“a meaning”). Note the ending: perception is “thrown back to the beginning”, not refuted; it will try again, more cleverly.
+
+@c 118 | reversal | mixed
+gist: So consciousness runs through the cycle again, but differently. It has learned that perceiving is not pure apprehension but is at the same time *reflected out of* the true *into itself*, and that this reflection alters the true. Consciousness recognizes this side as its own and takes it upon itself, so as to keep the true object pure. As with sensory certainty, consciousness is driven back into itself, but now not as the *truth* but as the *untruth* of perceiving, which it can recognize and correct.
+
+why: A crucial new capacity: *self-correction*. Sensory certainty retreated into the I as the source of truth (¶100); perception retreats into itself as the source of *error*, and so can correct for it. This is the birth of the critical, reflective attitude that will dominate the rest of the book: separating how things seem to me from how they are.
+
+@c 119 | experience | c
+gist: First I take the thing as *One* and treat any contradiction as my reflection. The diverse properties seem to belong to the thing; but the thing is One, so this diversity must fall in us. The thing is white only to *our* eyes, *also* tart to *our* tongue, *also* cubical to *our* touch. The diversity comes from us, because eye, tongue and so on are distinct. *We* are thus the universal medium in which these moments are separate; by taking the medium upon ourselves, we preserve the thing’s truth as One.
+
+why: The first strategy, and a famous philosophical one: the doctrine of “secondary qualities” (Galileo, Locke): colours, tastes and sounds exist only in the perceiver, while the thing itself is a unity. Inwood: the subject is now the mirror image of the thing, a medium of different senses.
+
+@c 120 | objection | c
+gist: But the diverse aspects which consciousness has taken upon itself are *determinate*: white only in opposition to black; and the thing is One by being opposed to others. It excludes others not as One (being One makes it like all others) but by its determinacy. So things are determinate in and for themselves; their properties are their *own*, and the thing has *several*. So it is in truth the thing itself that is white, *also* cubical, *also* tart: the thing is the Also in which the properties subsist apart.
+
+why: The first strategy collapses. A bare One with no properties of its own would be just like every other One; it is *this* thing only by its properties. So the properties must belong to the thing after all. Notice that the objection is consciousness’s own: “we” only watch.
+
+@c 121 | experience | c
+gist: Consciousness is aware that in perceiving it *also* reflects into itself, and that the moment opposite to the Also occurs: the *unity* of the thing. So it takes the unity upon itself. We say: the thing *is* white, *also* cubical, *also* tart. But *insofar as* it is white it is not cubical, and *insofar as* it is cubical it is not tart. The putting-into-one is due to consciousness alone, which uses the *Insofar* to keep the properties apart and the thing an Also. The properties become *free matters*, and the thing, instead of One, merely an enclosing surface.
+
+why: The second strategy, the mirror image of the first: now the thing is the many, and *we* supply the unity. This anticipates Kant’s view that the unity of objects comes from the synthesizing activity of the subject. The little word “insofar” becomes the hero of the rest of the chapter: the device by which common sense separates “respects” to avoid contradiction.
+
+@g 121 | Insofar
+German *insofern*, “in so far as”: the qualifying phrase that separates respects (“insofar as it is white, it is not cubical”). Together with the *Also*, it is perception’s chief tool for avoiding contradiction.
+
+@c 122 | result | mixed
+gist: Comparing what consciousness took upon itself before and now, it alternately makes itself, and the thing, into both: a pure plurality-free One and an Also of independent matters. So the comparison shows that not only *its* taking of the true has this double character, but the true itself, the thing: it presents itself in a determinate way for consciousness and *at the same time* is reflected out of that presentation back into itself. It has in itself an opposite truth.
+
+why: The second round ends with a discovery made by comparing the two strategies: since each pole can be assigned to either side, neither belongs only to consciousness. The doubleness is in the thing itself. Consciousness can no longer use itself as the dustbin for contradictions.
+
+@u 122 | “Taking it upon itself”
+step: Perception has a rule: the thing is consistent; if I find a contradiction, the mistake is mine. So when the thing seems both one and many, consciousness tries to relieve the thing of one side by taking it upon itself. Strategy one: the thing is one, and its many qualities come from my different senses. But then the thing has no qualities of its own and cannot be *this* thing. Strategy two: the thing is its many qualities, and *I* bundle them into one. But then the thing has no unity of its own. Having tried both, consciousness realizes it can put either side on itself, and so neither side really belongs only to it. The doubleness is in the thing.
+
+example: A couple arguing about whether their relationship is “really” loving or “really” tense. One partner says: “It’s fine; the tension is just your stress.” Later: “Actually, the problems are real; it’s just your hope that makes it look loving.” Once each side has been blamed on each person in turn, the honest conclusion is that the relationship *itself* is both.
+
+misreading: Hegel is not saying that perception is unreliable or that we never perceive things correctly. Inwood stresses that the target is the philosophical *account* of things and properties that common sense gives when it reflects, not ordinary perceiving.
+
+returns: The same structure, shifting a problem back and forth between self and object, recurs in the experience of the understanding (¶154–157) and, transformed, in the struggle between two self-consciousnesses, each of which tries to put its dependence onto the other (¶186–187).
+
+@c 123 | reversal | c
+gist: So consciousness gives up taking the thing as the self-equal and itself as the unequal; the object is now the whole movement. The thing is One, reflected into itself, *for itself*, but also *for an other*: a twofold being, yet also One. To avoid contradiction, consciousness would have to say: *insofar* as it is for itself, it is not for another. But oneness belongs to the thing itself. So the Also and the oneness both fall within things, but in *different* things: the contradiction is distributed between two objects. The thing is in and for itself, equal to itself, but this unity is disturbed by other things.
+
+why: The third round begins. Consciousness stops blaming itself and puts both sides into the world, but separates them: each thing is a unity in itself, and its diversity is due to its relations with other things. This is a recognisably scientific picture: things are what they are intrinsically, and their observable behaviour depends on interactions.
+
+@g 123 | for itself
+German *für sich*: being on its own account, independent, self-contained. Contrasted with *für ein Anderes*, “for another”, being in relation to something else. The pair will become central in Self-Consciousness (see the Translation Lens at ¶19).
+
+@c 124 | experience | c
+gist: Though the contradiction is distributed among different things, the distinction attaches to each thing. Each is diverse only from the others, and has its distinction from them as a *simple determinacy* that makes up its *essential* character. Since diversity is in it, it does have a manifold constitution, but this is *unessential*. So the thing has the twofold Insofar within its unity, but with unequal value; its opposition to others is outside it. The manifoldness is necessarily in it, but unessential.
+
+why: The last line of defence: distinguish a thing’s *essential* property, which makes it what it is and distinguishes it from all others, from its inessential features. Inwood notes the problem: the other things are in the same position, so where does each one’s susceptibility to being affected come from? It must be in the thing after all.
+
+@c 125 | argument | mixed
+gist: This determinacy, the thing’s essential character, puts it in opposition to other things, while it is supposed to maintain itself for itself in this opposition. But it is a thing, a One for itself, only insofar as it does *not* stand in relation to others; relation to an other is the end of being-for-itself. Yet it is precisely through its absolute character and its opposition that it enters into *relationship* with others, and is essentially just this relating. So it is through its essential property that the thing goes to ruin.
+
+why: The decisive paradox. What makes a thing *this* thing (its essential, distinguishing property) is precisely what relates it to others, since to be distinct is to be distinct *from* something. So the very feature that was supposed to secure its independence makes it dependent. Inwood’s image: a human body would burst if the surrounding atmosphere were removed.
+
+@g 125 | goes to ruin
+German *geht zugrunde*, “perishes”, literally “goes to the ground”. Hegel often plays on *zugrunde gehen* and *Grund* (“ground, reason”): what perishes reveals its ground.
+
+@c 126 | argument | we
+gist: The necessity of this experience can be seen briefly from the simple concept. The thing is posited as being-for-itself, the absolute negation of all otherness, so as negation relating only to itself; but self-related negation is the sublation *of itself*, or having its essence in an other.
+
+why: Hegel gives the logical skeleton, in his most compressed style. To be *for itself* is to negate everything else; but a negation that refers only to itself negates *itself*, and so depends on what it negates. Inwood’s image recalls Kant’s dove, which imagines it would fly better in empty space, not realizing that the air resisting it is what holds it up (*Critique of Pure Reason*, A5/B8–9).
+
+@c 127 | diagnosis | we
+gist: The determination of the object contains nothing more: it should have an essential property that makes up its simple being-for-itself, and alongside this a diversity that is *necessary* but not *essential*. But this is a distinction in words only; the unessential that is supposed to be necessary sublates itself.
+
+why: A sharp logical point. If something is necessary to the thing, in what sense is it inessential? The distinction “necessary but inessential” is, Inwood says, empty.
+
+@c 128 | result | mixed
+gist: With this the last *Insofar*, which separated being-for-itself from being-for-another, falls away. The object is *in one and the same respect the contrary of itself*: *for itself insofar as it is for another*, and *for another insofar as it is for itself*. Its being-for-itself is posited in unity with being-for-another, and so is as unessential as the relationship to another was supposed to be.
+
+why: The conclusion of perception’s experience. The law of non-contradiction says nothing can be F and not-F in the same respect; perception has kept the thing consistent by multiplying respects. Now that device fails: the thing is independent *by being* related. Hegel does not take this as absurdity but as a clue to a new kind of object, whose identity *consists in* its relations.
+
+@arg 128 | Why the last “insofar” fails
+P1: A thing is a thing only as a One that is for itself, independent of others (¶114, ¶123).
+P2: It is a determinate One only through its essential property, which distinguishes it from other things (¶124).
+P3: To be distinguished from others is to be related to them; so the essential property is a relation to others (¶125).
+P4: The thing’s other, manifold features are necessary to it, so they cannot be set aside as unessential (¶127).
+C: The thing is for itself insofar as it is for another; the distinction of respects (“insofar”) between its being-in-itself and its being-for-others collapses (¶128).
+weak: P3. One can reply that a thing can be *distinct* from others without being *constituted* by its relation to them: a stone would be a stone in an otherwise empty universe. Hegel needs the stronger claim that determinate identity is relational all the way down. Compare the Objections box.
+
+@c 129 | result | we
+gist: So the object in its pure determinacies is sublated, as it was in its sensory being. From sensory being it became a universal; but this universal derives from the sensory and is *conditioned* by it, not truly self-equal, but universality affected with an opposite; so it splits into the extremes of singularity and universality, the One of the properties and the Also of the free matters. These seem to express essentiality, but are only a being-for-itself burdened with being-for-another. Since the two are essentially in unity, the *unconditioned* absolute universality is now present, and consciousness here first really enters the realm of the understanding.
+
+why: The diagnosis of perception’s failure: its universals were *sensory* ones (white, tart, cubical), still tied to how things appear, and so they split into One and Also. What has emerged is a universal not conditioned by the senses: a unity that exists only as the unity of opposites. Such a thing cannot be perceived, only *thought*. Hence: understanding.
+
+@g 129 | unconditioned absolute universality
+A universal not dependent on sensory appearances: a unity of being-for-itself and being-for-another. The understanding will think of it as *force* (¶136).
+
+@c 130 | summary | we
+gist: So sensory singularity vanished into universality, but only *sensory* universality. Meaning has vanished; perceiving takes the object as it is in itself, as a universal; singularity emerges in the object as the being-in-itself of the One. But it is a *conditioned* being-for-itself, beside which stands the opposed universality; and the two are not merely side by side but in one unity. The *sophistry* of perceiving tries to save the moments from contradiction by distinguishing *respects*, by the *Also* and the *Insofar*, and by separating the *unessential* from an *essence*. But these expedients prove futile.
+
+why: A summary (Inwood). Hegel’s word for perception’s tactics is pointed: *sophistry*, clever reasoning that serves to protect a position rather than to find the truth.
+
+@c 131 | polemic | hegel
+gist: These empty abstractions of singularity and universality, essence and unessential, are the powers whose play is the perceptual understanding, so-called sound common sense. It takes itself for solid, real consciousness, but is only the play of these abstractions; it is poorest where it thinks itself richest. Driven from one to the other, it supposes that philosophy deals only with *things of thought*. Philosophy does deal with them, but recognizes them as pure essences and in their determinacy, and so is their master; common sense takes them for the true and is led by them from one error to another. It does not know that such simple essentialities rule it. Its everyday life is a perpetual alternation of determining the true and sublating that determining. It ought to *bring together* these thoughts and so sublate them; instead it keeps them apart with “insofar” and “respects”, and convicts itself of untruth.
+
+why: Hegel speaks in his own voice against “sound common sense”, which accuses philosophy of dealing in abstractions. His reply: common sense is itself run by abstractions (one, many, essential, inessential), but it does not know it, and so it is their prey rather than their master. Inwood: the point is not to stop perceiving, but to see the logical complexity that underlies everyday talk of things, which only a proper logic can master.
+
+@g 131 | things-of-thought
+German *Gedankendinge*: “mere abstractions”, the reproach common sense makes against philosophy. Hegel turns it around: the categories of thought are what common sense itself lives by.
+
+@lens 131 | Gesunder Menschenverstand: “sound common sense”
+The German phrase means literally “healthy human understanding”, the ordinary good sense of people who are not philosophers. In Hegel’s time it was a slogan of the “popular philosophy” of the late Enlightenment and of critics of idealism, such as Wilhelm Traugott Krug (see ¶102), who mocked philosophers for losing touch with the solid world.
+
+Hegel’s phrase here, *der wahrnehmende Verstand*, “the perceiving understanding”, makes his point in a single expression: what calls itself plain perception is already an *understanding*, a use of concepts. He had already set out the theme in the Preface: the familiar is not known just because it is familiar (¶31), and a common sense that appeals only to feeling “tramples underfoot the root of humanity” (¶69). Note the irony: in ¶69 it is common sense that dismisses whatever it cannot follow as “sophistries”; here Hegel returns the word, calling its own manoeuvres “the sophistry of perceiving” (¶130).
+
+@cross One thing, many properties: what is Hegel’s argument?
+**Bundle versus substratum** (Stern): Hegel stages the classic dispute between the *bundle* theory (a thing is nothing over and above its qualities: Hume) and the *substratum* theory (a thing is a unity in which qualities inhere: Locke’s “something I know not what”). Stern reads the move from Also to One through F. H. Bradley’s lump of sugar (*Appearance and Reality*, 1893): if the sugar *is* white and *is* sweet, it seems to be many; so its unity must lie beyond the qualities; but then it becomes a characterless “bare particular”. Bradley concluded that the thing is unintelligible; Hegel concludes that we need a richer concept of universality.
+
+**Particulars as conditions of properties** (Charles Taylor): Hegel shows that we could not have determinate property concepts without particulars, since only of particulars can we say “nothing can be red and green all over”. Stern objects that the “Also” view already has particulars; it just conceives them thinly.
+
+**The thing as relational** (Houlgate, Inwood): the decisive point comes in ¶125–128. The thing’s independence depends on its relations to others; what a thing is “in itself” cannot be separated from what it is “for others”. This prepares the shift from things to forces.
+
+**Your task.** Which of these readings best explains why the chapter ends with the understanding rather than with scepticism about things?
+
+@obj Does Hegel confuse two senses of “is”?
+objection: Brand Blanshard objected to Bradley, and the objection applies to Hegel on this reading, that the puzzle rests on a confusion. “The salt is white” uses the “is” of *predication* (the salt has whiteness), not the “is” of *identity* (the salt = whiteness). Once we see this, there is no mystery in one thing having many properties, and no need for a perplexing dialectic of One and Also.
+
+reply: Stern answers that the argument does not confuse the two senses but moves between them: it starts from the bundle theorist’s “is” of identity (the thing just is its qualities), shows its difficulty, and then moves to the “is” of predication (qualities inhere in a substratum), which in turn leads to the puzzle of a bare particular to which qualities are attached. The distinction of senses does not solve the problem; it restates it. A bundle theorist might reply that the thing is its qualities *in a certain relation*, such as “compresence”; but then the unity lies in a relation, which is close to Hegel’s own conclusion.
+
+verdict: Take an everyday object. Can you say what makes it one thing without mentioning either a relation among its qualities or its relations to other things?
+
+@now Intrinsic and relational properties
+The question of ¶123–128, whether a thing has an intrinsic nature apart from its relations to other things, is alive in contemporary metaphysics. David Lewis defined *intrinsic* properties as those a thing would have even if it were alone in the universe; critics have struggled to make the definition work. *Dispositional essentialists* such as Alexander Bird argue that fundamental properties are powers, defined by what they do to other things: a charge just is a disposition to attract and repel. And *structural realists* in the philosophy of physics (James Ladyman, Steven French) argue that physics reveals only relations, not intrinsic natures.
+
+Hegel’s conclusion, that a thing is “for itself insofar as it is for another”, takes the radical side of this debate. In the next chapter he identifies the relational nature of things with *force*, the central concept of Newtonian science, whose being consists in expressing itself on something else.
+
+@key
+- Perception takes its object as universal: the thing with many properties (¶111–112).
+- The thing is both an *Also*, a medium in which properties coexist indifferently, and a *One*, an exclusive unit; properties are determinate only by excluding others (¶113–115).
+- Perception’s criterion is the thing’s equality-to-itself; contradictions are blamed on the perceiver (¶116).
+- First round: consciousness oscillates between One and Also, blaming itself each time (¶117).
+- Second round: it takes diversity upon itself (“white to our eyes”), then unity upon itself; but finds the doubleness is in the thing (¶118–122).
+- Third round: unity in the thing, diversity in its relations to others; essential versus unessential. But the thing goes to ruin through its essential property (¶123–127).
+- The thing is “for itself insofar as it is for another”; the “Insofar” fails, and the unconditioned universal leads to the understanding (¶128–131).
+
+@q
+check: What are the “Also” and the “One” (¶113–114)? || The Also is the thing as a medium in which many indifferent properties coexist (white and also tart and also cubical); the One is the thing as an exclusive unity that excludes opposed properties and other things. The thing must be both.
+check: What is perception’s criterion of truth, and what follows for how it handles contradiction (¶116)? || Equality-to-itself: the thing must be self-consistent. So any contradiction is taken as an untruth of the perceiver, not of the object.
+check: Describe the two ways in which consciousness “takes upon itself” one side of the thing (¶119–121). || First it takes the diversity upon itself: the thing is One, and its qualities are due to our different senses. Then it takes the unity upon itself: the thing is an Also of free matters, and the unity is supplied by consciousness, keeping the properties apart with “insofar”.
+check: Why does the thing “go to ruin through its essential property” (¶125)? || Its essential property is what distinguishes it from all others, but to be distinguished from others is to be related to them; so the very feature that should make it independent makes it dependent on others.
+check: Why does perception lead to the understanding (¶129)? || Its universals are sensory and conditioned, so they split into One and Also; their unity is an unconditioned universal, which can only be grasped in thought, not perceived.
+think: Choose an object. Is its colour “in” it or “in you”? Does your answer change if you think about light, or about other observers?
+think: Is “insofar” a legitimate tool for avoiding contradiction, or a “sophistry”? When does distinguishing respects work, and when does it fail?
+push: Is it true that a thing’s identity depends on its relations to other things? Construct the best counter-example you can.
+push: Hegel accuses common sense of being ruled by abstractions it does not recognize (¶131). Is this fair, or philosophical arrogance (compare ¶69)?
+write: In about 400 words, explain the problem of “one thing, many properties” using an example of your own, and assess whether Hegel’s solution (things are constituted by their relations) is better than the bundle or substratum theories.
+
+@retell
+Perception takes its object as universal: a thing with many properties, which is both an Also in which white, tart and cubical coexist and a One that excludes opposed properties and other things. Its standard is the thing’s self-consistency, so whenever the thing appears both one and many, it blames itself and switches models. It then deliberately takes one side upon itself, first the diversity (the thing is white only to our eyes), then the unity (we bind its free matters together), and discovers that the doubleness belongs to the thing. Finally it places unity in the thing and diversity in its relations to other things, separating essential from inessential properties; but the essential property that makes the thing independent is precisely what relates it to others, so the thing is “for itself insofar as it is for another” and every “insofar” fails. What emerges is an unconditioned universal, a unity of opposites that can only be thought, and consciousness becomes understanding.
+
+@carry
+- **For itself / for another** (¶123–128): the pair becomes the axis of Self-Consciousness, where “being for itself” is something a self must win from others (¶186).
+- **The unconditioned universal** (¶129): the object of the understanding, conceived as *force* (¶136).
+- **Taking it upon itself** (¶118–122): the shifting of a problem between self and object returns in the struggle for recognition.
+- **The sophistry of common sense** (¶130–131): Hegel’s complaint is not against perceiving, but against an unexamined logic of things.
+- **Dialectic Tracker**: add the Perception card; note how the Here and Now of sensory certainty became the medium of properties.

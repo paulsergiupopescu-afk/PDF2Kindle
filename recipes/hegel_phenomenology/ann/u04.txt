@@ -56,7 +56,7 @@ example: A physicist who tells a beginner that solid tables are “mostly empty 
 
 misreading: The ladder is not a simplified popular version of the system, nor a mere psychological warm-up. Hegel insists that it is itself rigorous (“science”, ¶88) and that its steps are necessary. And it is not optional for the system: without it, science would remain an unjustified claim.
 
-returns: The Introduction develops this precisely: “one bare assurance is worth just as much as another” (¶76), so the book must examine consciousness on its own terms, with its own criterion (¶84). The idea of mutual inversion returns as “the inverted world” (¶157–160).
+returns: The Introduction develops this precisely: “one bare claim is worth just as much as another” (¶76), so the book must examine consciousness on its own terms, with its own criterion (¶84). The idea of mutual inversion returns as “the inverted world” (¶157–160).
 
 @arg 26 | Why the individual has a right to a ladder
 P1: In every shape of knowledge, the individual is the immediate certainty of himself: his own standpoint counts for him as unconditioned.
@@ -102,7 +102,7 @@ why: One of Hegel’s best aphorisms, and a programme for the whole book: every 
 @lens 31 | Bekannt and erkannt
 Hegel’s aphorism plays on two words from the same root: *bekannt* (familiar, well-known, “acquainted with”) and *erkannt* (known, cognized, recognized). “Das Bekannte überhaupt ist darum, weil es bekannt ist, nicht erkannt.” English can only half reproduce it: “the well-known is not known”. Inwood notes that he gave up the distinction between *wissen* (to know) and *erkennen* (to cognize) to keep the pun.
 
-The point is Socratic: Plato’s characters talk constantly about virtue and justice, but cannot say what they are until Socrates asks. For Hegel, *Bekanntschaft*, acquaintance, is exactly what sense-certainty will claim to have of its object (¶90ff.), and exactly what turns out not to be knowledge.
+The point is Socratic: Plato’s characters talk constantly about virtue and justice, but cannot say what they are until Socrates asks. For Hegel, *Bekanntschaft*, acquaintance, is exactly what sensory certainty will claim to have of its object (¶90ff.), and exactly what turns out not to be knowledge.
 
 @c 32 | argument | hegel
 gist: Analysis already sublated familiarity by breaking a representation into its elements, though it reached only fixed thoughts. Yet this separation is essential: the power of the understanding to divide is “the most astonishing and greatest of powers”, the tremendous power of the negative. Death is the most dreadful thing, and holding fast what is dead takes the greatest strength. The life of spirit does not shrink from death but endures it and maintains itself in it; spirit gains its truth only when it finds itself in absolute disintegration, by looking the negative in the face and dwelling on it.
@@ -160,7 +160,7 @@ why: A preview of the end of the book in a single paragraph. The engine of the j
 
 **Logic or history?** ¶28 suggests that the individual retraces the education of humanity. Michael Forster reads the book as a demanding philosophy of history; Stern and Houlgate insist that the order is logical, and history appears only where it illustrates a conceptual stage. Inwood points out that the book contains at least three different historical sequences, not one.
 
-**Your task.** As you read, notice when the text is clearly historical (Stoicism, ¶197ff.) and when it is not (Sense-Certainty, ¶90ff.). Does the mixture weaken the book or enrich it?
+**Your task.** As you read, notice when the text is clearly historical (Stoicism, ¶197ff.) and when it is not (Sensory Certainty, ¶90ff.). Does the mixture weaken the book or enrich it?
 
 @obj Does the individual really recapitulate world history?
 objection: ¶28 claims that the individual passes through the educational stages of the world-spirit. But children do not learn Egyptian religion before German; and Hegel himself never suggests that sensory certainty was the outlook of an early culture. The parallel is a seductive myth, popular in Hegel’s time (Lessing’s *Education of the Human Race*), not an argument.

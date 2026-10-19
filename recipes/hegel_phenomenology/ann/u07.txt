@@ -53,7 +53,7 @@ example: A doctor who says “it’s not appendicitis” has learned little; one
 
 misreading: Determinate negation does not mean that every failure automatically produces the right answer, or that criticism should be gentle. It means that a criticism made from *inside* a view, following its own commitments, yields information that a criticism from outside does not.
 
-returns: Named and defined in the Introduction: “the result is grasped as it is in truth, namely as a *determinate* negation, a new form has thereby immediately arisen” (¶79). Watch it at work in the transition from Sense-Certainty to Perception (¶109–111).
+returns: Named and defined in the Introduction: “the result is grasped as it is in truth, namely as a *determinate* negation, a new form has thereby immediately arisen” (¶79). Watch it at work in the transition from Sensory Certainty to Perception (¶109–111).
 
 @c 60 | argument | hegel
 gist: Ratiocination’s second, positive feature: it takes the Self as a represented subject, a fixed base to which content is attached as predicates, and moves back and forth along it. Conceptual thinking differs: the concept is the object’s own Self, which moves itself and takes its determinations back into itself; the fixed subject perishes into the content. So the predicate is not a property but the substance and essence of the subject. Representational thinking, expecting to go beyond the predicate, suffers a “counter-thrust”: it finds the subject gone into the predicate, and is weighed down by it.
@@ -88,7 +88,7 @@ why: Hegel turns a complaint into a description: rereading is not a sign of bad 
 @lens 63 | Meinen: opining, meaning, and “mine”
 German *meinen* means both “to opine, believe” and “to mean, intend”; the noun *Meinung* is “opinion”. Hegel exploits this here: opinion (*Meinung*) “learns by experience that the meaning is otherwise than it opined (*meinte*)”. What I *mean* and what I *think* collapse into what is merely *my* view.
 
-The pun becomes central in Sense-Certainty, whose subtitle is “The This and Meaning” (*das Meinen*). There Hegel adds a third association, *mein* (“mine”): sense-certainty insists on what it *means*, its own private this, but cannot *say* it, since language expresses only the universal (¶97, ¶110). Inwood translates *Meinung* as “opinion” here and *Meinen* as “meaning” there; keep both senses in mind.
+The pun becomes central in Sensory Certainty, whose subtitle is “The This and Meaning” (*das Meinen*). There Hegel adds a third association, *mein* (“mine”): sensory certainty insists on what it *means*, its own private this, but cannot *say* it, since language expresses only the universal (¶97, ¶110). Inwood translates *Meinung* as “opinion” here and *Meinen* as “meaning” there; keep both senses in mind.
 
 @c 64 | caution | hegel
 gist: A difficulty to be avoided arises from mixing the speculative and the ratiocinative modes, when what is said of a subject sometimes expresses its concept and sometimes only an accidental predicate. Only an exposition that strictly excluded the ordinary relation between the parts of a proposition would attain plasticity.
@@ -149,6 +149,6 @@ Hegel says that studying science requires the exertion of the concept: letting t
 @carry
 - **Determinate negation** (¶59): defined in ¶79; the engine of every transition from ¶90 on.
 - **The exertion of the concept** (¶58): the reader’s part, restated as “simply to look on” (¶85).
-- **Meinen** (¶63): central to Sense-Certainty, “The This and Meaning” (¶90–110).
+- **Meinen** (¶63): central to Sensory Certainty, “The This and Meaning” (¶90–110).
 - **The speculative proposition** (¶60–62): watch for sentences in which the predicate states an essence, e.g. “self-consciousness is desire” (¶174).
 - **Presentation instead of proof** (¶65): the task the body of the book takes on.

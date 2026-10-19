@@ -7,9 +7,9 @@ The Preface was written last and looks back over the whole system. The Introduct
 @guide
 **The question this section answers.** Shouldn’t philosophy begin by examining our capacity to know, before it claims to know anything? And if not, how can it justify itself without simply asserting its own superiority?
 
-**What Hegel does.** He starts with what seems “a natural idea”: before knowing the absolute, test the tool of knowing (¶73). This is the programme of Locke and, above all, of Kant. Hegel argues that the idea defeats itself: if knowing is an *instrument*, it alters its object; if it is a *medium*, it refracts it; and correcting for the distortion would just bring us back to where we started. Worse, the fear of error rests on unexamined assumptions, above all that knowing stands on one side and the absolute on the other: this “fear of error” is really “fear of truth” (¶74–75). But science cannot just dismiss rival views either, since “one bare assurance is worth just as much as another” (¶76). The only way is to present *knowledge as it appears* and let it examine itself: the path of natural consciousness to true knowledge (¶77). For consciousness this path is “the way of despair”, a “self-accomplishing scepticism” far more radical than ordinary doubt (¶78). What keeps it from ending in nothing is *determinate negation*: each collapse leaves a determinate result and a new shape (¶79). The goal is fixed: where concept and object correspond (¶80).
+**What Hegel does.** He starts with what seems “a natural idea”: before knowing the absolute, test the tool of knowing (¶73). This is the programme of Locke and, above all, of Kant. Hegel argues that the idea defeats itself: if knowing is an *instrument*, it alters its object; if it is a *medium*, it refracts it; and correcting for the distortion would just bring us back to where we started. Worse, the fear of error rests on unexamined assumptions, above all that knowing stands on one side and the absolute on the other: this “fear of error” is really “fear of truth” (¶74–75). But science cannot just dismiss rival views either, since “one bare claim is worth just as much as another” (¶76). The only way is to present *knowledge as it appears* and let it examine itself: the path of natural consciousness to true knowledge (¶77). For consciousness this path is “the way of despair”, a “self-accomplishing scepticism” far more radical than ordinary doubt (¶78). What keeps it from ending in nothing is *determinate negation*: each collapse leaves a determinate result and a new shape (¶79). The goal is fixed: where concept and object correspond (¶80).
 
-**Watch for.** The **instrument** and the **medium**; “fear of error” as “fear of truth”; **bare assurance**; **knowledge as it appears**; the **way of despair**; **self-accomplishing scepticism**; **determinate negation**; the **goal**; consciousness doing **violence to itself**.
+**Watch for.** The **instrument** and the **medium**; “fear of error” as “fear of truth”; **bare claim**; **knowledge as it appears**; the **way of despair**; **self-accomplishing scepticism**; **determinate negation**; the **goal**; consciousness doing **violence to itself**.
 
 **How to read it.** All eight paragraphs matter. Read ¶73–74 with Kant in mind, ¶76 slowly (it explains the method of the whole book), and ¶78–79 twice. These paragraphs are the best key to everything that follows.
 
@@ -19,7 +19,7 @@ target: The “critical” programme of Locke and Kant (examine the faculty of k
 step: The natural idea: test cognition, as instrument or medium, before knowing the absolute; this leads to the conviction that the absolute is unknowable (¶73).
 step: This fear of error presupposes much: an instrument or medium, a distinction between ourselves and cognition, and the absolute on one side, cognition on the other; it is fear of truth (¶74).
 step: Distinguishing absolute truth from some other truth only shows that the key words have not been understood (¶75).
-step: Science may not dismiss its rivals or appeal to hints of itself within them; one bare assurance is as good as another; so knowledge as it appears must be presented (¶76).
+step: Science may not dismiss its rivals or appeal to hints of itself within them; one bare claim is as good as another; so knowledge as it appears must be presented (¶76).
 step: This presentation is the path of natural consciousness to true knowledge (¶77).
 step: For consciousness it is the way of despair: a self-accomplishing scepticism, unlike ordinary doubt or the resolution to think for oneself (¶78).
 step: Its negations are determinate, so each yields a new shape; this secures the completeness of the series (¶79).
@@ -70,11 +70,11 @@ gist: One could escape by distinguishing: a cognition that does not grasp the ab
 why: The Kantian reply would be: we know appearances truly, though not things in themselves. Hegel suspects this “other kind of truth” is a consolation prize. His deeper point is that we do not yet know what “absolute”, “truth” or “cognition” mean; we cannot settle their relations before we have examined them.
 
 @c 76 | argument | hegel
-gist: We could reject all these ideas as arbitrary, or ignore them, since they vanish when science appears. But science, coming on the scene, is itself only an appearance alongside other knowledge. It cannot simply reject untrue knowledge as a vulgar view, for that knowledge can reply in kind: “one bare assurance is worth just as much as another.” Nor can it appeal to hints of something better within that knowledge, which would again appeal to mere existence, and to itself in an inferior form. That is why the presentation of knowledge as it appears must be undertaken.
+gist: We could reject all these ideas as arbitrary, or ignore them, since they vanish when science appears. But science, coming on the scene, is itself only an appearance alongside other knowledge. It cannot simply reject untrue knowledge as a vulgar view, for that knowledge can reply in kind: “one bare claim is worth just as much as another.” Nor can it appeal to hints of something better within that knowledge, which would again appeal to mere existence, and to itself in an inferior form. That is why the presentation of knowledge as it appears must be undertaken.
 
 why: The methodological core of the whole book. Hegel faces the oldest sceptical problem: when two parties each assert their view, neither can win without begging the question (the sceptics called it *equipollence*). His solution is neither to assert science nor to argue against rivals from outside, but to present the rival views themselves, and let them show their own limits.
 
-@g 76 | bare assurance
+@g 76 | bare claim
 German *trockenes Versichern*, literally “dry assuring”: asserting something without grounds. Two opposed assurances cancel each other out, a principle of ancient scepticism.
 
 @g 76 | knowledge as it appears
@@ -164,7 +164,7 @@ Hegel’s critique of the “instrument” is an early version of the same thoug
 @key
 - The “natural idea” that cognition must be tested before use (Locke, Kant) defeats itself: an instrument alters its object, a medium refracts it.
 - The fear of error presupposes much, above all a separation of cognition and the absolute; it is fear of truth.
-- Science cannot win by assertion: “one bare assurance is worth just as much as another.” So knowledge as it appears must be presented.
+- Science cannot win by assertion: “one bare claim is worth just as much as another.” So knowledge as it appears must be presented.
 - The book is the path of natural consciousness to true knowledge, a journey through stations of its own nature.
 - For consciousness it is the way of despair: a self-accomplishing scepticism, unlike Cartesian doubt or mere independent thinking.
 - Determinate negation: each failure yields a definite result, a new shape; this is Hegel’s claim to necessity and completeness.
@@ -173,7 +173,7 @@ Hegel’s critique of the “instrument” is an early version of the same thoug
 @q
 check: What is wrong with regarding cognition as an “instrument” or a “medium” (¶73)? || An instrument alters what it grasps and a medium refracts what passes through it, so either way we never know the thing as it is; and correcting for the distortion would remove the cognition itself, leaving us where we started.
 check: Why does Hegel say the fear of error is really fear of truth (¶74)? || Because it rests on unexamined presuppositions, above all that cognition is separated from the absolute, and so it guarantees in advance that truth is unreachable; its caution conceals a refusal to engage with the truth.
-check: Why can’t science simply declare its rivals to be mere appearances (¶76)? || Because when science appears it is one view among others, and its rivals can make the same declaration about it: one bare assurance is worth as much as another. So science must present the rival forms of knowledge and let them show their own untruth.
+check: Why can’t science simply declare its rivals to be mere appearances (¶76)? || Because when science appears it is one view among others, and its rivals can make the same declaration about it: one bare claim is worth as much as another. So science must present the rival forms of knowledge and let them show their own untruth.
 check: How does the “way of despair” differ from ordinary doubt (¶78)? || Ordinary doubt shakes a belief and then returns to it; the way of despair is the conscious insight into the untruth of knowledge as it appears, in which consciousness loses its certainties and does not get them back unchanged. It is carried out by consciousness itself, not adopted as a method.
 check: What is determinate negation (¶79)? || The negation of a definite shape, whose result is not empty nothing but the nothing *of that shape*: a determinate result with a content, which is immediately a new shape of consciousness.
 think: Hegel calls the critic’s caution “fear of truth”. Can you think of intellectual or personal situations where caution about error becomes a way of avoiding commitment?
@@ -183,11 +183,11 @@ push: Is determinate negation enough to make the sequence of shapes necessary an
 write: In about 300 words, describe a time when the failure of one of your beliefs pointed you to a specific new belief. Was the negation “determinate” in Hegel’s sense?
 
 @retell
-Hegel rejects the natural-seeming idea that we must examine cognition before using it, since picturing it as an instrument or medium makes the absolute unknowable, and correcting for the distortion would cancel the cognition. This caution rests on unexamined assumptions, above all the separation of knowing from the absolute, so the fear of error is really a fear of truth. Yet science cannot simply assert itself against rival views, because one bare assurance is worth as much as another; it must present knowledge as it appears and let it examine itself. For natural consciousness this path is the way of despair, a scepticism far more radical than ordinary doubt. It does not end in nothing because negation is determinate: each failure yields a new shape, until the goal is reached where concept and object correspond.
+Hegel rejects the natural-seeming idea that we must examine cognition before using it, since picturing it as an instrument or medium makes the absolute unknowable, and correcting for the distortion would cancel the cognition. This caution rests on unexamined assumptions, above all the separation of knowing from the absolute, so the fear of error is really a fear of truth. Yet science cannot simply assert itself against rival views, because one bare claim is worth as much as another; it must present knowledge as it appears and let it examine itself. For natural consciousness this path is the way of despair, a scepticism far more radical than ordinary doubt. It does not end in nothing because negation is determinate: each failure yields a new shape, until the goal is reached where concept and object correspond.
 
 @carry
-- **One bare assurance is worth just as much as another** (¶76): the reason the book must be an immanent critique.
+- **One bare claim is worth just as much as another** (¶76): the reason the book must be an immanent critique.
 - **Knowledge as it appears** (¶76–77): the subject matter of every chapter.
 - **The way of despair** (¶78): watch each shape lose its certainty; the bondsman’s fear (¶194) is its most intense form.
-- **Determinate negation** (¶79): check it at every transition, starting with Sense-Certainty to Perception (¶109–111).
+- **Determinate negation** (¶79): check it at every transition, starting with Sensory Certainty to Perception (¶109–111).
 - **The goal** (¶80): concept and object corresponding; “absolute knowing”, beyond this edition.

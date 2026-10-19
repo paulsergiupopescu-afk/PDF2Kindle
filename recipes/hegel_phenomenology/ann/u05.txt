@@ -146,7 +146,7 @@ German *räsonnierend*: arguing from reasons for and against, “reasoning” in
 
 **The constructive reading** (Houlgate; Stern): Hegel offers a different conception of rigour: immanent development, in which each step is motivated by the inadequacy of the previous one. Whether such development is really necessary is open, but it is not a mere refusal of rigour.
 
-**Your task.** As you read Sense-Certainty and Perception, ask whether each step really follows from the previous one, or whether Hegel, like the geometer, draws a line we must take on trust.
+**Your task.** As you read Sensory Certainty and Perception, ask whether each step really follows from the previous one, or whether Hegel, like the geometer, draws a line we must take on trust.
 
 @obj Does Hegel give up the law of non-contradiction?
 objection: Hegel says truth and falsity are not fixed opposites, that truth includes the negative, and later that contradiction drives everything. Karl Popper argued that a theory which welcomes contradictions can “prove” anything and so says nothing: dialectic is a licence for nonsense.

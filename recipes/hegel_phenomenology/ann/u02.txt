@@ -94,7 +94,7 @@ P1: A claim to deep knowledge must have some content that distinguishes it from 
 P2: Content is determinate: it is this and not that, and can be articulated and tested.
 P3: Enthusiastic “depth” refuses determination, concepts and necessity.
 C: So such depth has no content of its own; it is filled by the believer’s “contingency” and “wilfulness”, and is as superficial as empty breadth.
-weak: The mystic can reply that some truths exceed all articulation (as Otto argued for the experience of the holy). Hegel must show that the inexpressible is not deeper but poorer; he argues this in detail against Sense-Certainty (¶110: “what is called the unsayable is nothing other than the untrue”).
+weak: The mystic can reply that some truths exceed all articulation (as Otto argued for the experience of the holy). Hegel must show that the inexpressible is not deeper but poorer; he argues this in detail against Sensory Certainty (¶110: “what is called the unsayable is nothing other than the untrue”).
 
 @c 11 | image | hegel
 gist: Our time is a birth-time and a transition to a new era. Spirit has broken with its previous world. Like a child’s first breath after long, quiet growth, a qualitative leap follows gradual change; the old order crumbles with frivolity, boredom and foreboding until, like lightning, a sunrise reveals the new world.
@@ -139,7 +139,7 @@ example: Imagine a doctor who, for every symptom, replies: “Ultimately, all il
 
 misreading: Hegel does not reject the idea of an absolute or of an underlying unity. He rejects a unity that *swallows* differences instead of containing and explaining them. His alternative, announced in ¶17–18, is a unity that differentiates itself and returns to itself through its differences.
 
-returns: Pure identity without difference is exactly what Sense-Certainty discovers it cannot hold (¶90–110). The Understanding’s flight to an empty “inner world” repeats the error (¶146–147). And self-consciousness as the bare “I am I” is a “motionless tautology” (¶167).
+returns: Pure identity without difference is exactly what Sensory Certainty discovers it cannot hold (¶90–110). The Understanding’s flight to an empty “inner world” repeats the error (¶146–147). And self-consciousness as the bare “I am I” is a “motionless tautology” (¶167).
 
 @cross Was Hegel fair to Schelling?
 **Hegel’s official line.** In a letter to Schelling (May 1807) he insisted the target was the “shallowness” of Schelling’s imitators, not Schelling. Schelling replied coolly that he could not see the distinction, and never wrote to him again.
@@ -177,7 +177,7 @@ write: Write a short dialogue (about 300 words) between a Romantic who says “t
 Hegel admits that his claim that truth lives in concepts contradicts the age, which holds that the absolute is felt and intuited. He explains this demand historically: having lost its faith and passed through the Enlightenment, spirit now wants edification instead of insight, and the poverty of what satisfies it shows the depth of its loss. Philosophy must refuse to be edifying, since depth without expression is empty. Our age is a birth-time, but the new science is only a beginning, and it must become articulated and accessible to everyone. Its fashionable formalism, which applies one formula to everything until in the absolute all is one, is “the night in which all cows are black”.
 
 @carry
-- **Immediate knowledge** versus conceptual knowledge: the issue of Sense-Certainty (¶90–110), which claims to know without concepts.
+- **Immediate knowledge** versus conceptual knowledge: the issue of Sensory Certainty (¶90–110), which claims to know without concepts.
 - **The force of spirit is only as great as its expression** (¶10): returns in the claim that the unsayable is the untrue (¶110).
 - **Science open to everyone** (¶13): the reason for the “ladder” (¶26) and for the whole Phenomenology.
 - **Against formalism** (¶15–16): Hegel promises a principle that develops itself; watch whether his method lives up to this (¶50–53).

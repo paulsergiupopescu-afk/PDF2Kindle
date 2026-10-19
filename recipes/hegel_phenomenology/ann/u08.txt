@@ -99,7 +99,7 @@ why: A modest ending to an immodest Preface. Hegel presents himself not as a gen
 @obj Common sense can argue too
 objection: Hegel caricatures common-sense philosophy. Thomas Reid did not merely appeal to feeling: he analysed sceptical arguments and showed where they go wrong. G. E. Moore argued that he was more certain that he had two hands than he could ever be of any premise in a sceptical argument. Such philosophers do engage their opponents, and their appeal to common certainties is a reasoned position.
 
-reply: Hegel can grant that a *philosophical defence* of common sense is not the same as common sense itself, and that it is an achievement of “cultivated reason”. His deeper point remains: common-sense certainties, however secure they feel, are what the *Phenomenology* will examine. Sense-Certainty, the first chapter, is precisely the most common-sense of all certainties, and Hegel claims to show that it does not know what it thinks it knows.
+reply: Hegel can grant that a *philosophical defence* of common sense is not the same as common sense itself, and that it is an achievement of “cultivated reason”. His deeper point remains: common-sense certainties, however secure they feel, are what the *Phenomenology* will examine. Sensory Certainty, the first chapter, is precisely the most common-sense of all certainties, and Hegel claims to show that it does not know what it thinks it knows.
 
 verdict: Is Moore’s certainty that he has hands a counterexample to Hegel, or exactly the kind of “immediate certainty” that the book sets out to examine? Return to this question after ¶110.
 
@@ -122,7 +122,7 @@ check: Why does Hegel call the appeal to feeling “anti-human” (¶69)? || Bec
 check: What is “the labour of the concept”, and what does it produce (¶70)? || The disciplined work of developing concepts and their connections, as opposed to shortcuts through common sense or genius. It produces a universal knowledge, a truth that can be the property of all self-conscious reason.
 think: Hegel says humanity exists only in “the achieved community of consciousnesses”. What does “achieved” add? How might such a community be achieved?
 think: Is reading a good summary of a philosopher (as Hegel mocks in ¶70) always worthless? When might it help?
-push: Is Hegel fair to common sense? Read the Objections box and decide whether Sense-Certainty (¶90–110) is a fair target.
+push: Is Hegel fair to common sense? Read the Objections box and decide whether Sensory Certainty (¶90–110) is a fair target.
 push: Can Hegel consistently demand both long training and universal accessibility?
 write: In about 300 words, describe a disagreement you have witnessed that ended with an appeal to feeling. What would continuing the conversation have required, in Hegel’s terms?
 
@@ -131,6 +131,6 @@ Hegel argues that philosophy, like any craft, demands training, though people as
 
 @carry
 - **The community of consciousnesses** (¶69): becomes the theme of recognition (¶178–184) and Spirit (¶177).
-- **Immediate certainty** of common sense: the starting point of the book proper, Sense-Certainty (¶90).
+- **Immediate certainty** of common sense: the starting point of the book proper, Sensory Certainty (¶90).
 - **The labour of the concept** (¶70): what the reader must now undertake.
 - **The Preface in one line**: truth is the whole, a self-developing subject; it must be presented as a system, reached by a ladder through the experience of consciousness, and earned by the labour of the concept. Now the Introduction explains how the ladder works.

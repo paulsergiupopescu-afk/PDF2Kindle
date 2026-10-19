@@ -1,15 +1,87 @@
-# Placeholder 01_front
+# About This Edition
 
-To be written. See ¶90 and ¶¶1–5.
+This is a study edition of the opening of Hegel’s *Phenomenology of Spirit* (1807), built around Michael Inwood’s translation (Oxford University Press, 2018). It is meant for a reader who wants to read Hegel himself, not a summary of him, and who wants a companion at every step: someone to say where we are, what Hegel is trying to do, what the hard sentences mean, where interpreters disagree, and what to ask next.
 
-## A section
+## What this volume contains
 
-Text with *italic* and **bold**.
+Volume One covers **¶1–131**: the Preface, the Introduction, and the first two shapes of consciousness, *Sensory Certainty* and *Perception*. That is about 31,000 of Hegel’s words, roughly a sixth of the book. It stops at the end of Perception for a reason: that is where consciousness gives up trusting the senses and turns to the hidden world of forces and laws, the *Understanding* (¶132–165). Everything up to that point forms one arc: from Hegel’s account of what philosophy must be, through his method, to the first two tests of that method on the simplest forms of knowing.
 
-@box guide | Test box
-Inside the box.
+Hegel’s text is reproduced complete and unaltered, together with all of Inwood’s notes to these paragraphs (146 of them), which appear as pop-ups marked with numbers. Everything else is editorial and is always labelled as such.
+
+## Sources
+
+The commentary draws on Inwood’s notes and introduction; on Stephen Houlgate’s *Hegel’s Phenomenology of Spirit: A Reader’s Guide* (2013); on Robert Stern’s *The Routledge Guidebook to Hegel’s Phenomenology of Spirit* (2nd edn, 2013); and on the essays in Dean Moyar and Michael Quante (eds), *Hegel’s Phenomenology of Spirit: A Critical Guide* (2008), especially those by Willem deVries, Dietmar Heidemann, Hans Friedrich Fulda, Rolf-Peter Horstmann and Robert Pippin. Where an interpretation belongs to one of these scholars, it is named. Where none is named, the reading is the editor’s.
+
+## What this edition is not
+
+It is not a replacement for the text. Every aid can be skipped. The commentary is deliberately short at the level of each paragraph and fuller at the level of each section, so that you can always return to Hegel quickly.
+
+# How to Use This Book
+
+## Three markers in Hegel’s text
+
+- **The paragraph number** (¶17) at the start of each paragraph is a link: tap it for the **commentary** on that paragraph, with its *gist*, *why it matters*, and two tags: the **move** Hegel makes (claim, argument, objection, test, result…) and the **voice** in which he speaks (Hegel himself, consciousness “for itself”, or the observing “we”).
+- **Small letters** (a, b, c) after a word are **glosses**: short explanations of a term, often with the German.
+- **Small numbers** (1, 2, 3) are **Inwood’s own notes**, reproduced in full.
+
+Every pop-up has a ↩ link that returns you to where you were.
+
+## Four layers around the text
+
+Each reading unit has the same shape, and every box says which layer it belongs to.
+
+- **Orient**: *Where We Are*, *Before You Read* (the question, what Hegel does, what to watch for, how to read), an *Argument Map* (Preface and Introduction) or *The Shape at a Glance* (for each shape of consciousness), and *A Friendlier Explanation*.
+- **Read**: Hegel’s text with its markers, interrupted occasionally by *Pause and Unpack* (a hard passage in four steps: step by step, in everyday terms, misreading to avoid, where it returns), *Argument Reconstruction* (premises, conclusion, weakest step) and *Translation Lens* (what the German says that the English cannot).
+- **Argue**: *Critical Crossroads* (where interpreters divide), *Objections and Replies* (with a question for your own verdict) and *Then and Now* (where the idea lives on).
+- **Consolidate**: *Key Ideas*, *Questions for Study* (four tiers, with model answers for the first), *Retell It* (with a model retelling) and *Carry Forward* (what to keep in mind for what follows).
+
+## Three ways through
+
+@box guide | Reading paths
+**First reading.** Read *Where We Are*, *Before You Read* and *A Friendlier Explanation*; then Hegel’s text straight through, opening the commentary only when you are lost; then *Key Ideas*. About an hour per unit.
+
+**Study reading.** Everything in the Orient and Read layers; all commentary; then the Check and Think questions, and the Retell exercise. Two to three hours per unit.
+
+**Seminar reading.** Add the Argue layer, the Push Back and Write questions, and Inwood’s notes. Use the *Critical Crossroads* boxes to set up discussion.
 @end
 
-| A | B |
-|---|---|
-| one | two |
+If you have never read Hegel, start with the Editor’s Introduction, then go straight to Sensory Certainty (¶90) and come back to the Preface afterwards. Hegel himself warned that a preface cannot say what philosophy is (¶1–4); many readers find the Preface easier once they have seen the method at work.
+
+# The Reader’s Toolkit
+
+## Six questions to ask of every shape of consciousness
+
+Hegel’s method (¶84–87) is to let each way of knowing test itself by its own standard. These six questions, which the *Shape at a Glance* cards answer for you, are the best key to every chapter of the book.
+
+1. **What is it certain of?** What does this shape take itself to know, and what does it take its object to be?
+2. **What is its standard of truth?** What counts, for it, as the true?
+3. **How is it tested?** Which experience puts its certainty to the test?
+4. **What does it learn?** What happens to its object “for it”?
+5. **What do “we” see that it does not?** What goes on “behind its back” (¶87)?
+6. **What comes next?** What new object, and so what new shape, emerges from its failure?
+
+## Ten words to keep at hand
+
+@box key | Key terms
+**Immediate / mediated.** Immediate: simply there, on its own. Mediated: what it is only through a relation to something else.
+
+**In itself / for itself / for another.** In itself: implicitly, or as it is apart from relations. For itself: explicitly, or on its own account. For another: in relation to something else.
+
+**For consciousness / for us.** What the shape under examination experiences, versus what the philosophical observer sees.
+
+**Certainty / truth.** What consciousness is sure it knows, versus what its object turns out to be.
+
+**Concept** (*Begriff*). A determination of thought; in Hegel’s strong sense, the self-developing unity of a thing’s moments.
+
+**Universal / singular.** What is common to many, versus this one individual item.
+
+**Sublate** (*aufheben*). To cancel and preserve at once, raising to a higher level.
+
+**Determinate negation.** A negation that has a definite result: the failure of a view tells us something and points to its successor.
+
+**Shape of consciousness** (*Gestalt*). A whole way of being conscious: an object, a certainty, a standard and an experience.
+
+**Experience** (*Erfahrung*). The movement in which consciousness’s object proves untrue and a new object arises.
+@end
+
+A fuller account of each term appears in the gloss at its first occurrence.

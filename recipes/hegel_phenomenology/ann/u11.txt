@@ -1,0 +1,267 @@
+@unit 11 | Sensory Certainty | 90-110
+@title Sensory Certainty: “This, Here, Now”
+
+@where
+The method is set (¶84–87): each shape of consciousness is examined by its own standard, and we watch. The first shape must be the simplest possible claim to know: knowledge that adds nothing, uses no concepts, and simply takes in what is there. Hegel calls it *sensory certainty* (other translations: “sense-certainty”). This is the first of three shapes of Consciousness (¶90–165), the part of the book where the object is something other than the knower.
+
+@guide
+**The question this section answers.** Can we know things just by being directly in their presence, without concepts, descriptions or thought? Is the most immediate knowledge the richest and truest?
+
+**What Hegel does.** Sensory certainty thinks it has the whole concrete thing before it, “this, here, now”, and that this is the richest and truest knowledge (¶90–91). Hegel tests it three times. First, it locates truth in the *object*: but asked “What is the Now?”, its answer (“night”) goes stale by noon, and what survives is a Now indifferent to night or day, a *universal* (¶95–99). Second, it locates truth in the *I*, in my seeing: but another I sees a house where I see a tree, and the I turns out to be universal too (¶100–103). Third, it locates truth in the *whole* immediate relation, refusing to look elsewhere, so we must have the Now *pointed out*: but pointing turns out to be a movement that gathers many Nows into one, again a universal (¶104–108). Hegel concludes that what sensory certainty really experiences is the universal; those who defend the absolute truth of sensory things say the opposite of what they mean, since the “unsayable” individual is the untrue (¶109–110). Consciousness now takes its object as it truly is, as universal: it *perceives* (¶110).
+
+**Watch for.** **Immediate**/**mediated**; the **This**, the **Now**, the **Here**, the **I**; **What is the Now?**; writing a truth down; **universal** as “neither This nor That, a not-This”; **meaning** (*Meinen*) versus **saying**; “language is the more truthful”; **pointing out**; the **simple complex**; the **Eleusinian mysteries**; **this bit of paper**; the **inexpressible** as the **untrue**.
+
+**How to read it.** Read it slowly but not anxiously; this is the most self-contained section of the book and a perfect place to watch the method of ¶84–87 at work. Keep track of three things: where sensory certainty locates its truth each time (object, I, whole), what the test is, and what survives the test. The Shape at a Glance card below gives you the skeleton.
+
+@shape
+certain: It knows “this, here, now” directly, the whole concrete individual thing just as it is, without concepts, descriptions or inference; this is the richest and truest knowledge.
+standard: Immediacy: the true is what simply *is*, here and now, the singular This, grasped without mediation.
+test: “What is the Now?” “The Now is night.” Write it down and read it at noon; then turn round from the tree to the house; then let the Now be pointed out.
+learns: Each time, what remains is not the singular This but a universal: a Now, Here and I that are “neither This nor That” and indifferent to their content. Its truth is the universal, which language expresses.
+behind: The This is not a simple point but a movement: a “simple complex” of many Nows and Heres held together. Immediacy turned out to be mediated, and the object to be universal.
+next: Consciousness takes its object as it is in truth, as universal: a thing with many properties. Sensory certainty becomes *Perception* (¶111).
+
+@friendly “Back in five minutes”
+You go to a shop and find a sign on the door: “Back in five minutes.” When was it written? The sign is true for exactly five minutes and then becomes useless, and it gives you no clue which five minutes it meant. Its writer knew perfectly well what they meant; but what the sign *says* is something that could be pinned up at any time.
+
+This is Hegel’s first experiment. Sensory certainty thinks that the most direct knowledge is to stand before something and simply take it in: this, here, now. But try to hold on to that knowledge, write it down, tell it to someone, even point at it, and you find that “this”, “here”, “now” and even “I” can be used of anything, anywhere, at any time, by anyone. What you can actually grasp of the unique moment is only what it shares with every other moment. The richest knowledge turns out to be the poorest. And the way out is not to try harder to grasp the bare “this” but to describe the thing by its features: to perceive it as a thing with properties.
+
+@c 90 | setup | we
+gist: The knowledge that is our first object must be immediate knowledge, knowledge of the immediate, of what simply is. And we too must proceed immediately or receptively, altering nothing in the object as it presents itself and keeping conceptual comprehension out of our apprehension.
+
+why: Why start here? Because the first shape must presuppose as little as possible, and the most minimal claim to know is: I am simply aware of what is there. The second sentence applies the rule of ¶84–85 to “us”: we must describe sensory certainty as it takes itself, not import our concepts. Inwood notes the ambiguity: Hegel cannot help using concepts (he will soon speak of “Being”), but he must not credit sensory certainty with concepts it does not have.
+
+@g 90 | apprehension
+German *Auffassen*, “taking up”, “grasping”: receiving what is given, contrasted with *Begreifen*, conceptual comprehension. Sensory certainty claims to apprehend without comprehending.
+
+@c 91 | claim | mixed
+gist: Because of its concrete content, sensory certainty appears to be the richest knowledge, infinitely rich whether we go outwards in space and time or inwards by division, and the truest, because it has left nothing out. But in fact it proves the most abstract and poorest truth: all it says of what it knows is “it *is*”. The I is a pure This, the object a pure This; neither has developed through thought or has many qualities. The Thing *is*, simply because it *is*; this pure being, this simple immediacy, is its truth.
+
+why: The paragraph states the claim and announces the verdict in one breath. Sensory certainty’s pride is that it adds nothing; its poverty is the same fact seen from the other side. If you refuse all description, the only thing you can say about the object is *that* it is. Stern identifies the deeper assumption: sensory certainty believes that the individual thing has a unique “thisness” which concepts, being general, cannot reach, so only direct apprehension can grasp it.
+
+@g 91 | sensory certainty
+German *sinnliche Gewissheit*; Miller and Pinkard translate “sense-certainty”. “Certainty” matters: this is how consciousness is *sure* it knows, which is to be tested against its truth (see the Translation Lens at ¶82).
+
+@g 91 | singleton
+German *der Einzelne*, the single individual (here, the knowing I); its object is *das Einzelne*, “the singular”: one particular item as opposed to a kind or universal.
+
+@c 92 | complication | we
+gist: But in this pure being much more is “in play”, if we look. An actual sensory certainty is not just pure immediacy but an *example*, a “by-play”, of it. Among countless differences one is crucial: two Thises emerge from pure being, one as I and one as object. And if *we* reflect on this difference, each turns out to be mediated: I have certainty *through* the Thing, and the Thing is in the certainty *through* the I.
+
+why: The first crack, and Hegel marks it as our observation (“if *we* reflect”). Any actual experience is someone’s experience of something; that already introduces a relation, and each term of a relation depends on the other. But Hegel does not rest the argument on our reflection; the next paragraph shows that sensory certainty makes the distinction itself.
+
+@g 92 | mediated
+German *vermittelt*, “through a middle”. Something is mediated when it is what it is only through its relation to something else; immediate when it is simply there on its own. The pair *immediacy/mediation* runs through the whole book.
+
+@lens 92 | Beispiel: example and by-play
+The ordinary German word for “example” is *Beispiel*. Hegel hears in it *bei* (“beside”) and *Spiel* (“play”), and Inwood renders it “exemplifying by-play”. The point is a small philosophical joke with a serious edge. Sensory certainty wants pure being, pure immediacy; but every actual experience is an *example* of it, this night, this tree, and an example is always something “playing alongside” the pure essence, something more.
+
+Hegel uses the same word again: the Now is indifferent to “what is still in play by its side” (*was noch bei ihm herspielt*), night or day (¶96). The concrete content that sensory certainty prized as its wealth turns out to be mere by-play, interchangeable examples beside a Now that stays the same.
+
+@c 93 | claim | c
+gist: The distinction between essence and by-play, immediacy and mediation, is not only ours; sensory certainty draws it itself, and we must take it in its form. For sensory certainty the *object* is the simple, immediate essence; the I is unessential and mediated, a knowing that knows only because the object is, and that may or may not be. The object *is*, whether known or not; but knowledge is not, if the object is not.
+
+why: Now we hear sensory certainty’s own view: a robust realism. The thing is there anyway; my knowing depends on it, not the reverse. This sets up the first test, and it is the standard against which sensory certainty must be measured (¶84): is the object really the independent, immediate essence it is taken to be?
+
+@c 94 | test | we
+gist: So we must consider whether the object, in sensory certainty itself, is the kind of essence sensory certainty claims. We need not reflect on what the object might be in truth, only on how it is present in sensory certainty.
+
+why: The method of the Introduction stated in miniature: no external theory, only a comparison of sensory certainty’s concept of its object with how the object actually shows up for it.
+
+@c 95 | test | mixed
+gist: So we ask sensory certainty: *What is the This?* Take the This in its two forms, the Now and the Here. *What is the Now?* We answer, e.g., *The Now is night*. To test this, a simple experiment: write this truth down; a truth cannot lose anything by being written down or preserved. If *now*, at noon, we look again, we must say it has become stale.
+
+why: The famous experiment. Sensory certainty does not even name its object (to call it “night” would be to describe it); so “we” answer on its behalf. Inwood notes a slide from “now” as an adverb to “the Now” as a noun; Houlgate notes that the writing-down is dispensable: time itself does the work. The point is not that sensory certainty was careless, but that its truth was supposed to be the singular moment, and the moment does not stay.
+
+@g 95 | stale
+German *schal*, “flat”, as of beer left standing. Inwood has “stale”; Miller has “stale”; Pinkard “has gone flat”.
+
+@c 96 | result | we
+gist: The Now that is night was treated as a being, but it proves a non-being. The *Now* itself persists, but as a Now that is not night; and it persists against the day as a Now that is not day either: a *negative* in general. It is mediated, since it is determined as enduring by the fact that something else, day and night, is not. Yet it is still simple, *Now*, indifferent to what plays beside it. A simple thing of this kind, which is through negation, neither This nor That, a *not-This*, and indifferent to being This or That, we call a *universal*. So the universal is in fact the true of sensory certainty.
+
+why: The first result and the hinge of the chapter. What sensory certainty actually holds on to, as night gives way to day, is not *this* night but “now”, which survives every change. And that is the definition of a universal: something that stays the same across many instances. Houlgate: the Now becomes universal not because we say it but in the passage of time itself.
+
+@g 96 | universal
+German *das Allgemeine*, literally “what is common to all”. Here the bare universal of the Now: the same in every moment and indifferent to what fills it. Contrast the singular (*das Einzelne*) that sensory certainty wanted.
+
+@u 96 | How “Now” turned into a universal
+step: Sensory certainty claims to know this singular moment. Asked what the Now is, it can only say (through us) “night”. But the night passes. What remains true at noon? Not “the Now is night”, but simply that it is now. So the object sensory certainty really holds on to is a Now that can be night or day, any moment at all. Something that can be filled by any content and stays the same through all of them is a universal. Sensory certainty set out to know the unique, and found that all it knew was the most general thing possible.
+
+example: “Now” is like the “You are here” dot on a shopping-centre map. It is perfectly accurate wherever it is, and tells you nothing about any particular place; move the map and the dot is still “here”. Or think of the word “today” on a calendar app: it is always right, because it moves along with the days.
+
+misreading: Hegel is not saying that there are no individual moments or things, or that only universals exist (Stern rejects this reading, attributed to Löwith). Nor is the problem just that the sentence on the paper became false. The point is that sensory certainty, by refusing to describe its object, had nothing to hold on to but what any moment shares with every other.
+
+returns: The pattern repeats for the Here (¶98) and the I (¶102), and the universal reappears in Perception as the many properties of the thing (¶113). “Not-This” is an early form of determinate negation (¶79): the Now is defined by what it is not.
+
+@arg 96 | The argument from the Now
+P1: Sensory certainty claims to know the singular This immediately, and its truth is that this simply is (¶91).
+P2: Asked what the This is, it can only answer with “Now” (or “Here”), since any description would mediate the object (¶95).
+P3: What it holds as “the Now” persists when night turns to day, and is equally night and day, indifferent to both (¶96).
+P4: What persists unchanged through many instances and is indifferent to them is a universal (¶96).
+C: The truth of sensory certainty, by its own experience, is not the singular This but the universal.
+weak: P2. Feuerbach and many later critics object that sensory certainty *knows* far more than it can say; the problem may lie with the indexical words, not with direct experience. See the Objections box, and ask whether Houlgate’s reply (the Now becomes universal through time, not through words) answers the objection.
+
+@c 97 | claim | we
+gist: It is also as a universal that we *express* the sensory: we say *This*, the universal This, or *it is*, Being in general. We do not *represent* the universal This, but we *say* it; our speech does not express what we *mean*. But language is the more truthful: in it we refute our *meaning*; and since the universal is the true of sensory certainty and language expresses only this true, we can never say a sensory being that we mean.
+
+why: This is the sentence that provoked Feuerbach’s “verbal game” charge (see the Objections box). Read carefully, Hegel is not arguing from language to reality; he has already shown in ¶95–96 that the Now is universal, and now adds that language bears this out. Inwood: language’s truthfulness is not presupposed but confirmed by the experiment. What I *mean* (see the Translation Lens at ¶63) is mine alone, and precisely for that reason not a truth.
+
+@g 97 | mean
+German *meinen*: to mean, to intend, to have in mind; cognate with *mein*, “mine”, and *Meinung*, “opinion”. Hegel’s chapter title is “The This and Meaning” (*das Meinen*): what I privately have in mind, as opposed to what can be said and shared.
+
+@c 98 | result | we
+gist: The same holds for the Here. *The Here is*, e.g., *the tree*. Turn round, and this truth disappears: *the Here is not a tree, but a house*. The Here itself does not disappear; it endures through the disappearance of house and tree and is indifferent to both. The This again shows itself to be mediated simplicity, universality.
+
+why: The spatial twin of ¶96. Inwood notes the asymmetry: the problem about “here” looks more obviously linguistic than the problem about time, which is why Hegel led with the Now.
+
+@c 99 | result | we
+gist: So sensory certainty has shown within itself that the universal is the truth of its object. Pure being remains its essence, not as something immediate, but as something to which negation and mediation are essential: not what we *mean* by Being, but Being as abstraction, the purely universal. All that remains to oppose this empty, indifferent Now and Here is *our meaning*.
+
+why: The first test is complete. Sensory certainty still has “pure being”, but now as the emptiest abstraction (Inwood: the first category of Hegel’s *Logic*, which turns at once into nothing). Its only refuge is what it *means*, and so it retreats into the I.
+
+@c 100 | reversal | we
+gist: Compare how knowing and object first appeared with how they stand now: the relation is reversed. The object, supposed to be essential, is now inessential, since the universal it has become is not what it was supposed to be. Sensory certainty now places its truth in the opposite, in knowing: in the object as *my* object, in *my meaning*; it is because *I* know it. Expelled from the object, sensory certainty is not yet sublated, only driven back into the I.
+
+why: The first “micro-transition” (Houlgate): consciousness itself changes its account of where truth lies, exactly as ¶85 predicted. The realist who said “the object is, whether known or not” now says “it is, because I see it”. Notice that the shape survives: it is still sensory certainty, still committed to immediacy, but locating the immediacy elsewhere.
+
+@c 101 | test | mixed
+gist: So the force of its truth now lies in the I, in the immediacy of my *seeing, hearing*; the singular Now and Here are held fast because *I* hold them. *The Now is day* because I see daylight; *the Here is a tree* for the same reason. But the same dialectic recurs. *I*, this I, see the tree and affirm the Here as a tree; *another I* sees the house and affirms that the Here is a house. Both truths have the same warrant, the immediacy of seeing and the assurance of each; but the one vanishes in the other.
+
+why: The second test. If immediacy is guaranteed by my seeing, then your seeing has exactly the same guarantee, and neither can outweigh the other. Inwood adds an interesting qualification: “I” is not quite like “this” or “here”, since once you know who says “I”, you know who is referred to.
+
+@c 102 | result | we
+gist: What does not vanish is the I as *universal*, whose seeing is a simple seeing of neither tree nor house, indifferent to both. The I is universal like Now, Here or This. I *mean* a singular I, but I can no more say it than I can say the singular Now. When I say *this* Here, Now, a singular, I say *all* Thises, Heres, Nows; when I say *I*, this singular I, I say all I’s: everyone is what I say. And when science is challenged to deduce or construct a so-called *this thing* or *this man*, it is fair to ask the challenger to *say* which *this* he means; but that is impossible.
+
+why: The I fares no better than the Now: “I” is what everyone calls themselves. The final sentence is a barb at Wilhelm Traugott Krug, who in 1801 challenged the idealists to deduce his writing-pen. Hegel’s reply: the challenge cannot even be stated, since Krug cannot *say* which pen he means except in universal terms. (Hegel ridiculed Krug in a review of 1802.)
+
+@u 102 | “Everyone is what I say”
+step: Sensory certainty retreats from the object into the knower: the moment is guaranteed because *I* see it. But every knower can say exactly the same thing with exactly the same authority. “I see a tree here.” “I see a house here.” Each claim rests on immediate seeing; neither can override the other. So what survives is not my unique I but “I” in general: whoever is seeing. The word “I” names anyone who uses it. Sensory certainty meant a unique self and found an empty universal.
+
+example: Two people on the phone: “I’m here, by the fountain.” “So am I, I’m right here by the fountain!” They are at different fountains in different cities, and both are telling the truth. “I”, “here” and “now” are perfectly reliable and perfectly useless for telling them apart.
+
+misreading: Hegel is not denying that people are individuals or that self-awareness matters. Self-consciousness will become the theme of the whole next part of the book (¶166–230), and the I there is anything but empty. The point is narrower: the bare I of sensory certainty, with no content but “this one, seeing”, cannot individuate anything.
+
+returns: The universal I returns at the start of Self-Consciousness as “I am I” (¶167), and at the heart of the chapter as “I that is We, and We that is I” (¶177): there the universality of the I becomes the problem of how many I’s recognize each other.
+
+@c 103 | reversal | we
+gist: So sensory certainty learns that its essence is neither in the object nor in the I; in both, what I mean is inessential, and object and I are universals in which the Now, Here and I that I mean do not subsist. So we come to posit the *whole* of sensory certainty as its essence, not one of its moments: only sensory certainty as a whole holds firm as immediacy and excludes all the opposition that went before.
+
+why: The second micro-transition. Having failed to anchor immediacy in either pole, sensory certainty tries to anchor it in the relation itself: this-I-here-now as a single unbroken unit. Inwood: the I and the object are now “in the same boat”.
+
+@c 104 | claim | c
+gist: This pure immediacy no longer cares about the Here passing into a non-tree, the Now into night, or another I with another object. Its truth is a relation equal to itself, with no distinction of essential and unessential. So I, this I, affirm the Here as a tree and do not turn round; I take no notice that another I sees a non-tree, or that I myself at another time take the Here otherwise. I am pure intuiting; I stick to *one* immediate relation: the Now is day.
+
+why: Sensory certainty’s last stand is stubbornness: refuse to compare, refuse to turn round, refuse to listen to others. Notice the voice: Hegel writes in the first person, letting sensory certainty speak (“I stick to my claim”). This position cannot be refuted by being shown other Nows or other I’s, since it ignores them; so the test must change.
+
+@c 105 | test | we
+gist: Since this certainty will no longer come out when we point to a night, or to another I, we go up to it and have the Now it affirms *pointed out* to us. We must, because its truth is the truth of *this* I confined to one Now or Here; taken afterwards or at a distance it would mean nothing. So we must enter the same point of time and space and become the very same this I. Let us see what the immediate pointed out to us is like.
+
+why: The test adapts to the shape, as the method demands. The only way to check a claim that refuses all comparison is to stand where it stands. Houlgate notes Hegel’s German (*lassen uns … zeigen*): we have the Now pointed out *to* us; sensory certainty must point it out, to us and to itself.
+
+@c 106 | test | we
+gist: The *Now* is pointed out, *this* Now. *Now*: it has already ceased to be when it is pointed out. The Now that *is* is another than the one pointed out; the Now is just this, to be no more when it is. As pointed out, it is a Now that *has been*, and that is its truth; it has not the truth of Being. But what has been is no essence, no entity; *it is not*, and we were concerned with Being.
+
+why: The paradox of the present: by the time you point at the instant, it has gone. Inwood notes the pun on *gewesen* (“has been”) and *Wesen* (“essence”): a has-been is not an essence. Sensory certainty, which wanted pure *being*, is left holding a past.
+
+@c 107 | result | we
+gist: Pointing out is thus a movement: (1) I point out the Now as the true, but as a has-been, sublating the first truth; (2) I affirm as a second truth that it *has been*; (3) but what has been is not; I sublate the having-been and so return to the first claim, that *Now* is. Neither the Now nor the pointing is simple; each is a movement with moments. The first, now reflected into itself, is no longer immediate but a simple that stays itself in its otherness: a Now that is absolutely many Nows, like a day containing hours, an hour minutes, and so on. Pointing out is the experience of learning that Now is a *universal*.
+
+why: The three-step pattern (affirm, negate, negate the negation) is as close as Hegel comes to the “thesis-antithesis-synthesis” of popular legend, and it describes an experience, not a formula (compare ¶50–51). The result is subtle: the Now I can actually point to is always a stretch of time containing many nows, “a plurality of Nows all taken together”. Inwood: this point holds of any “thing”, which consists of many things.
+
+@u 107 | Pointing at the present
+step: Sensory certainty’s last resort is to point: “*This* now!” But in pointing, the instant has passed; what I point to has already been. Insisting that it is still now, I must take “now” as a stretch long enough to contain my pointing: this minute, this hour, this day. But each such stretch is made of many shorter nows, which are made of shorter ones still. So the Now that I actually grasp is not an indivisible point but a whole made of many nows held together, a “simple complex”. A whole that holds many units together as one is, again, a universal. Pointing does not escape the universal; it enacts it.
+
+example: Try to photograph “now”. Even the fastest shutter captures an interval: a thousandth of a second, which contains a millionth of a second, and so on. Or think of “the present” in a history book (“present-day Europe”) or in physics (the width of a measurement). Every usable “now” is a span.
+
+misreading: The movement of (1)–(3) is not a mechanical triad imposed on the material. Hegel describes what happens when someone actually tries to point at the present. Nor does the return to “Now is” cancel the journey: the Now we return to is enriched, a Now “reflected into itself”, containing its others.
+
+returns: The “simple complex of many Heres” (¶108) is the immediate ancestor of Perception’s thing: a single Here containing many properties, “white, and also tart, also cubical” (¶113). The structure “a simple that remains itself in its otherness” anticipates Hegel’s idea of *infinity* in Force and Understanding (¶160–163).
+
+@g 107 | reflected into itself
+A Hegelian phrase for what has passed through its other and returned to itself, and so is no longer simply immediate: here the Now that, having gone through many Nows, is the same Now containing them.
+
+@c 108 | result | we
+gist: Likewise the Here pointed out is *this* Here, which is really not this Here but a Before and Behind, Above and Below, Right and Left; and each of these is again a manifold. The Here meant would be a point; but the point *is* not. Pointing out shows itself to be not immediate knowledge but a movement from the Here meant, through many Heres, into the universal Here: a simple plurality of Heres, as the day is a simple plurality of Nows.
+
+why: Space repeats the lesson of time. Euclid defined the point as “that which has no part”; but any place you can actually point to has parts. The movement of pointing is itself what Hegel elsewhere calls mediation.
+
+@c 109 | polemic | hegel
+gist: The dialectic of sensory certainty is just the simple history of its movement or experience, and sensory certainty is nothing but this history. Natural consciousness always reaches this result, but forgets it and starts again. So it is astonishing that it is claimed, as universal experience, as philosophy, even as the result of scepticism, that the reality of external things as *these* sensory things has absolute truth for consciousness. The contrary is universal experience. And in the practical sphere such people should go back to the Eleusinian mysteries of Ceres and Bacchus and learn the secret of eating bread and drinking wine: the initiate despairs of the being of sensory things and brings about their nothingness. Even animals know this wisdom: they do not stand before sensory things as if they were in themselves, but fall to and eat them up.
+
+why: Hegel steps out of the experience to speak in his own voice, with relish. His targets include common-sense realism and, in “the result of scepticism”, probably G. E. Schulze, who held that only the immediately given is certain. The animals-and-mysteries passage is half joke, half anticipation: practical consumption of things will return in the theory of *desire* (¶174–175). Inwood warns that the conclusion here (sensory things are nothing) goes far beyond what the argument has shown.
+
+@g 109 | Eleusinian mysteries
+Secret rites at Eleusis near Athens in honour of Demeter (Roman Ceres), goddess of grain, and later associated with Dionysus (Bacchus), god of wine. Hegel turns bread and wine into a lesson in the “nothingness” of sensory things: they exist to be consumed. He had written a poem, “Eleusis”, for Hölderlin in 1796.
+
+@c 110 | conclusion | hegel
+gist: Those who make this assertion say the opposite of what they mean. They speak of external objects as actual, absolutely singular, wholly personal things, each unlike anything else. They mean *this* bit of paper on which I am writing, or have written; but they cannot *say* it, since the sensory This meant is inaccessible to language, which is inherently universal. The description would never be finished; it would rot away. What they actually say (“actual *things*”, “*external* objects”, “absolutely singular entities”) is only universal. So the inexpressible is the untrue, the irrational, the merely meant. Calling something “an actual thing” expresses its equality with everything; *this* bit of paper is every bit of paper. And if I help out speech, which has the divine nature of reversing the meaning, by *pointing*, I point out a Here of many Heres, a universal. I take the thing as it is in truth, and instead of knowing something immediate, I *perceive*.
+
+why: The conclusion turns the tables on a long tradition (from the Romantics to the existentialists) for which the ineffable individual is the deepest truth. For Hegel, what cannot be said cannot be true, because truth is something that can be shared, tested and held fast; the inexpressible is just my private meaning. The last word, *perceive* (German *wahrnehmen*, “take as true”), opens the next shape: knowing the thing *as* universal, by its properties.
+
+@u 110 | “The inexpressible is the untrue”
+step: Defenders of sensory certainty insist that the individual thing is unique, absolutely unlike anything else, and that only direct acquaintance can grasp it. Hegel replies: then tell us which thing you mean. Every word you use (“this”, “real”, “external”, “unique”, “bit of paper”) applies to countless things. If you go on adding descriptions, you never finish, and you are using universals all the way down. If you point, you point at a region made of many regions. So the claimed uniqueness is something you only *mean* and cannot express or justify. And what cannot in principle be expressed, checked or shared cannot count as truth.
+
+example: Someone says: “No one could ever understand my feeling; it is utterly unique.” But to tell us even that much they had to use the shared words “feeling” and “unique”. A poet, by contrast, conveys a unique experience precisely by finding the right combination of shared words. Uniqueness is achieved by rich description, not by refusing description.
+
+misreading: Hegel is not saying that individuals do not exist, that only words are real, or that our feelings do not matter. Stern’s gloss: the target is the view that an individual can be grasped only by apprehension *rather than* thought. Hegel assumes that we can know individuals, and shows that we do it through universals, not around them.
+
+returns: Hegel’s confidence in language is not naive: it returns in the theory of language as “the existence of spirit” in the sections on culture and conscience (¶508, ¶652), well beyond this volume. Within Part One, the next shape, Perception, takes up the universal openly (¶111).
+
+@lens 110 | Wahrnehmen: perceiving as “taking-true”
+The last word of the chapter, “I *perceive*”, translates *ich nehme wahr*. The German verb *wahrnehmen* is built from *wahr* (“true”) and *nehmen* (“to take”), so Hegel can hear in “perception” a “taking as true”. He exploits this at once: “I take it up as it is in truth” (*wie es in Wahrheit ist*), and in the next chapter perception “takes what is present to it as universal” (¶111).
+
+The pun has a serious point. Sensory certainty claimed simply to *receive*; perception actively *takes*, identifying the thing by its properties. Its subtitle, “The Thing and Illusion” (*Täuschung*, “deception”), shows the risk that comes with taking-true: one can take things falsely.
+
+@cross What is Hegel attacking in Sensory Certainty?
+**Foundationalism** (deVries): the idea that knowledge rests on a bedrock of immediate, non-inferential contact with the given, on which everything else is built. Hegel shows that even the most immediate contact is mediated.
+
+**Concept empiricism** (Kenneth Westphal): the view that concepts get their meaning from prior non-conceptual acquaintance with sensory items. Hegel shows that the would-be acquaintance already involves universals.
+
+**Naïve realism** (Edward Craig): the view that to know the world without distorting it, the mind must receive it passively, without conceptual activity.
+
+**The ineffable individual** (Stern): beneath all three, the assumption that an individual has a unique “thisness” (Latin *haecceitas*) that concepts, being general, cannot reach, so that apprehension is superior to comprehension. Stern argues this is Hegel’s deepest target, and fits the book’s larger theme: our one-sided handling of *individual* and *universal*.
+
+**Your task.** Which target best explains the last two paragraphs (¶109–110)? Is it possible to defeat sensory certainty on one of these readings but not the others?
+
+@obj Feuerbach: “a verbal game”
+objection: In 1839 Ludwig Feuerbach charged that Hegel’s argument is merely verbal. It shows that the *words* “this”, “here” and “now” do not single out their objects, but not that sensory consciousness fails to grasp the individual. For the senses, this tree is this tree, whatever language can say about it. Hegel “refutes” sensory certainty only by forcing it to speak, and so begs the question in favour of thought. (Many analytic critics later repeated the charge: indexicals are context-dependent, but in context they refer perfectly well.)
+
+reply: Houlgate replies that language does not create the universality; it reveals it. The Now becomes universal through the passage of time: what sensory certainty holds in view, as night gives way to day, is “now”, which stays the same. Language confirms this (¶97: “language is the more truthful”). Inwood adds that Hegel tried to establish the truthfulness of language through the time experiment, not presuppose it. And Stern points out that pointing (¶105–108) is a non-verbal test, and it fails too. Finally, an experience that cannot be articulated cannot *justify* anything, and sensory certainty claimed to be *knowledge*.
+
+verdict: Inwood concedes that Hegel is entitled at most to the claim that we cannot single out an individual in the meagre vocabulary of sensory certainty. Is that enough for Hegel’s purposes? Recall that sensory certainty itself *refuses* any richer vocabulary.
+
+@now From “this” to the Myth of the Given
+A century after Hegel, Bertrand Russell argued that the only genuine names, “logically proper names”, are words like “this”, which pick out what we are directly acquainted with, our momentary sense-data. Russell’s “knowledge by acquaintance” is sensory certainty’s claim made with modern logic. And David Kaplan’s work on indexicals (“I”, “here”, “now”) showed exactly the double structure Hegel saw: such words have a constant general meaning that delivers a different object in each context.
+
+The decisive modern echo is Wilfrid Sellars’s attack on “the Myth of the Given” in *Empiricism and the Philosophy of Mind* (1956), which Sellars himself called his “Meditations Hégéliennes”. Sellars argued that nothing can serve as knowledge just by being given to the senses: to know, even to *notice*, is to place something in “the logical space of reasons”, which requires concepts. Willem deVries (in Moyar & Quante) shows how Hegel’s analysis anticipates Sellars’s model of perception as “this-such”: a demonstrative is never knowledge by itself, but only together with a concept (“this *red cube*”). John McDowell’s *Mind and World* (1994) and Robert Brandom carried the argument forward, both describing their projects as Hegelian.
+
+@key
+- Sensory certainty claims to know the singular This immediately, without concepts, and takes this to be the richest and truest knowledge.
+- Its standard is immediacy: the true is what simply *is*, here and now.
+- First test (object): “Now is night” goes stale; what survives is a Now indifferent to night or day, a universal.
+- Second test (I): another I sees otherwise with equal authority; the I too is universal: “everyone is what I say”.
+- Third test (the whole relation): pointing at the Now shows it to be a movement, a simple complex of many Nows; again a universal.
+- Language, which can only say the universal, is “more truthful” than our private meaning; the inexpressible is the untrue.
+- Consciousness now takes its object as universal, as a thing with properties: it *perceives*.
+
+@q
+check: Why does sensory certainty think it is the richest and truest knowledge, and why does Hegel say it is the poorest (¶91)? || It thinks it has the whole concrete thing before it, having omitted nothing. But since it refuses to describe or conceptualize its object, all it can say of it is that it *is*: the emptiest possible truth.
+check: What does the experiment of writing down “The Now is night” show (¶95–96)? || That what sensory certainty holds on to is not this particular night but “Now”, which persists when night gives way to day, is indifferent to both, and is defined negatively as “not-This”: a universal.
+check: Where does sensory certainty locate its truth in each of its three attempts? || First in the object (¶93–99), then in the I and its seeing (¶100–103), then in the whole immediate relation of this I to this Here and Now (¶103–108).
+check: Why does pointing fail to secure the singular Now (¶106–107)? || The instant pointed out has already gone when it is pointed out; to insist that it is still Now, consciousness must take Now as a span containing many Nows. Pointing proves to be a movement that gathers a plurality into one, so the Now pointed out is a universal.
+check: What does Hegel mean by “the inexpressible is the untrue” (¶110)? || What cannot be said can only be privately meant; every attempt to say the singular This uses universal words, and pointing gives a universal Here. A claim to truth that cannot be expressed, shared or tested is not truth but mere meaning.
+think: Choose an object near you and try to say what makes it *this* object without using any general word. How far do you get? What does pointing add?
+think: Is the problem that sensory certainty uses words like “now”, or that time passes? Which reading makes Hegel’s argument stronger?
+push: Does Hegel show that individuals cannot be known, or only that they cannot be known without concepts? Use the Crossroads box.
+push: Is the Eleusinian passage (¶109) a joke, an argument, or a preview? Does it overreach, as Inwood says?
+write: In about 400 words, assess Feuerbach’s objection that Hegel’s argument is “a verbal game”, drawing on ¶97, ¶105–108 and the Objections box.
+
+@retell
+Sensory certainty claims to know the individual thing, “this, here, now”, directly and without concepts, and thinks this the richest and truest knowledge. Tested by its own standard, its first answer, “The Now is night”, goes stale at noon, and what survives is a Now indifferent to night and day: a universal. It retreats into the I (“it is, because I see it”), but another I sees otherwise with equal right, so the I is universal too. It then clings to one immediate relation and has the Now pointed out, but pointing proves to be a movement that gathers many Nows into one, again a universal. So the truth of sensory certainty is the universal, the singular it meant is unsayable and therefore untrue, and consciousness, taking its object as it truly is, begins to perceive.
+
+@carry
+- **The universal as “not-This”** (¶96): a unity that persists through many instances by negating each; Perception calls it the “medium” or “Also” of properties (¶113).
+- **The simple complex** (¶107–108): a one that contains a many. This is exactly the object of Perception, the thing with many properties.
+- **Micro- and macro-transitions**: sensory certainty itself moved from object to I to whole; the step to Perception is made by us (¶87), but only by accepting what its experience showed.
+- **The I as universal** (¶102): keep it in mind for Self-Consciousness (¶166–177).
+- **Desire in embryo** (¶109): the animals that “gobble up” sensory things return as desire, the first form of self-consciousness (¶174–175).

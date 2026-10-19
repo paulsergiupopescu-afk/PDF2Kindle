@@ -1,4 +1,4 @@
-"""Build the annotated study edition of the Phenomenology, Part One (¶1-230).
+"""Build the annotated study edition of the Phenomenology, Volume One (¶1-131).
 
 This is the "v2" study template: every aid belongs to one of four layers
 (Orient, Read, Argue, Consolidate) and is labelled as such, so a reader can
@@ -17,7 +17,7 @@ Output
 
 FORMAT of an annotation file.  A line beginning with "@" opens a block whose
 body runs to the next "@" line.  Bodies are paragraphs separated by blank
-lines; "- " starts a bullet; *x* is italic, **x** bold.  Any "¶N" (N <= 230)
+lines; "- " starts a bullet; *x* is italic, **x** bold.  Any "¶N" (N <= LAST_PARA)
 in the editor's prose becomes a link to that paragraph.  In labelled bodies a
 paragraph may begin with "label:" (e.g. "gist:"), which becomes a run-in head;
 unlabelled paragraphs continue the previous label.
@@ -79,12 +79,12 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-BOOK_TITLE = "Phenomenology of Spirit, Part One"
-BOOK_SUBTITLE = ("Preface, Introduction, Consciousness, Self-Consciousness (¶1–230). "
+BOOK_TITLE = "Phenomenology of Spirit, Volume One"
+BOOK_SUBTITLE = ("Preface, Introduction, Sensory Certainty, Perception (¶1–131). "
                  "An Annotated Study Edition")
 AUTHOR = "G. W. F. Hegel"
 TRANSLATOR = "Michael Inwood"
-LAST_PARA = 230
+LAST_PARA = 131          # last paragraph of this volume (end of Perception)
 
 # --------------------------------------------------------------------------
 # Inline markup
@@ -876,7 +876,7 @@ def main(src_path: str, out_path: str) -> None:
         if kids:
             text.append((gtitle, kids[0][1], kids))
     if text:
-        b.toc.append(("The Phenomenology of Spirit, ¶1–230", text[0][1], text))
+        b.toc.append((f"The Phenomenology of Spirit, ¶1–{LAST_PARA}", text[0][1], text))
 
     b.matter(os.path.join(mdir, "04_back.txt"))
     orig: list = []
