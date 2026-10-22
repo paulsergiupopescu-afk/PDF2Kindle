@@ -26,8 +26,9 @@ PDF's typography and geometry to *reconstruct* the book.
 Every chapter opens the way a well-typeset print book does: a small
 letter-spaced chapter number over a large serif title, then the opening
 paragraph set with a drop cap and a small-caps lead-in. Block quotes run in a
-quiet italic inset; a chapter's endnotes are introduced by a centered dinkus
-(`· · ·`) instead of a plain rule. None of it is decoration bolted on after
+quiet italic inset; every note in the book is gathered on one *Notes* page
+at the end of the book, introduced by a centered dinkus (`· · ·`) instead of
+a plain rule. None of it is decoration bolted on after
 the fact — every flourish is generated from the same structural analysis that
 finds chapters and footnotes, and degrades to plain, correct text whenever a
 heading or paragraph doesn't cleanly fit the pattern (see `pdf2kindle/html.py`
@@ -80,7 +81,9 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
 - **Footnote management** — detects superscript reference markers and the
   matching notes at the foot of the page, then re-links them as EPUB3
   `noteref`/`footnote` pairs so Kindle shows them as tappable pop-ups (with
-  back-links) instead of stranding them mid-text. A block quote or epigraph
+  back-links) instead of stranding them mid-text. Note bodies never stay
+  inside a chapter: all of them move to a single *Notes* page at the end of
+  the book, grouped under their chapter's title. A block quote or epigraph
   set at the same small size as footnotes, sitting just above them, is
   recognized and kept in the body rather than taking the real footnotes down
   with it.

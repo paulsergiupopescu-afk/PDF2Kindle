@@ -16,7 +16,8 @@ from typing import Dict, List
 from lxml import etree
 
 _CHAP_RE = re.compile(r"^EPUB/chap_\d+\.xhtml$")
-_NOTEREF_RE = re.compile(r'epub:type="noteref"[^>]*href="#([^"]+)"')
+# Markers point into the book-end notes page ("notes.xhtml#id").
+_NOTEREF_RE = re.compile(r'epub:type="noteref"[^>]*href="[^"#]*#([^"]+)"')
 _NOTE_RE = re.compile(r'epub:type="footnote" id="([^"]+)"')
 _PARA_RE = re.compile(r"<p[^>]*>(.*?)</p>", re.S)
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -71,6 +72,11 @@ def audit_epub(path: str) -> Audit:
         chapters = [n for n in names if _CHAP_RE.match(n)]
         a.chapters = len(chapters)
         linked = True
+        note_ids = set()
+        for n in names:
+            if n.endswith(".xhtml"):
+                note_ids |= set(_NOTE_RE.findall(z.read(n).decode("utf-8", "replace")))
+        a.notes = len(note_ids)
 
         for n in names:
             if n.endswith((".xhtml", ".opf", ".ncx", ".xml")):
@@ -84,17 +90,15 @@ def audit_epub(path: str) -> Audit:
             if "style.css" not in c:
                 linked = False
             refs = set(_NOTEREF_RE.findall(c))
-            notes = set(_NOTE_RE.findall(c))
             a.noterefs += len(refs)
-            a.notes += len(notes)
             a.tables += len(re.findall(r"<table(?:\\s|>)", c, re.IGNORECASE))
-            a.dead_links += [f"{n}#{r}" for r in sorted(refs - notes)]
+            a.dead_links += [f"{n}#{r}" for r in sorted(refs - note_ids)]
             a.unlinked_markers += len(re.findall(r"<sup>(?!<a)", c))
             a.pagebreaks += len(re.findall(r'epub:type="pagebreak"', c))
             links = re.findall(r'<a[^>]+href="#([^"]+)"', c)
             a.internal_links += len(links)
             ids = set(re.findall(r'\bid="([^"]+)"', c))
-            a.dead_internal_links += [f"{n}#{target}" for target in links if target not in ids and target not in notes]
+            a.dead_internal_links += [f"{n}#{target}" for target in links if target not in ids]
 
             body = c[: c.find("<section")] if "<section" in c else c
             for p in _PARA_RE.findall(body):

@@ -4,8 +4,9 @@ The visual design follows the conventions of well-typeset print books, kept
 inside the conservative CSS subset Kindle's renderer actually honours: a
 two-part chapter opening (a small letter-spaced number over a large serif
 title), a drop cap with a small-caps lead-in on the chapter's first
-paragraph, a quotation-mark ornament on block quotes, and a footnote section
-set off by a centered dinkus rather than a plain rule. Every flourish
+paragraph, a quotation-mark ornament on block quotes, and all notes gathered
+on one page at the end of the book, set off by a centered dinkus rather than
+a plain rule. Every flourish
 degrades gracefully -- an unmatched heading shape or an unusually short
 opening paragraph just falls back to plain rendering, never breaking content
 for the sake of style.
@@ -18,6 +19,16 @@ from typing import Callable, List, Optional
 from xml.sax.saxutils import escape, quoteattr
 
 from .model import Chapter, Element, ElementKind, InlineRun
+
+# Every note lives on one page at the end of the book, never inside a chapter;
+# the in-text markers still open them as Kindle pop-ups.
+NOTES_FILE = "notes.xhtml"
+
+_NOTES_TITLE = {"ro": "Note", "fr": "Notes", "de": "Anmerkungen", "it": "Note", "es": "Notas"}
+
+
+def notes_title(language: str) -> str:
+    return _NOTES_TITLE.get((language or "en").split("-")[0].lower(), "Notes")
 
 # Kindle's renderer honours a conservative subset of CSS. Justification plus
 # automatic hyphenation gives the clean "book" look; we avoid absolute units,
@@ -197,8 +208,11 @@ p.dinkus {
   letter-spacing: 0.6em;
   color: #999;
 }
+section.footnotes h1 { margin-bottom: 0.8em; }
 section.footnotes h2 {
-  display: none;
+  font-size: 1em;
+  margin: 1.4em 0 0.5em 0;
+  text-align: left;
 }
 aside.footnote {
   margin: 0 0 0.55em 0;
@@ -256,7 +270,7 @@ def _render_runs(runs: List[InlineRun]) -> str:
             ref_id = escape(r.noteref)
             out.append(
                 f'<sup><a class="noteref" epub:type="noteref" '
-                f'id="{ref_id}-ref" href="#{ref_id}">{escape(r.text)}</a></sup>'
+                f'id="{ref_id}-ref" href="{NOTES_FILE}#{ref_id}">{escape(r.text)}</a></sup>'
             )
             continue
         if r.href:
@@ -383,23 +397,32 @@ def _render_element(
     return f"<p{cls}>{_render_runs(el.runs)}</p>\n"
 
 
-def render_footnotes(chapter: Chapter) -> str:
-    if not chapter.footnotes:
-        return ""
+def render_notes_page(chapters: List[tuple], language: str = "en") -> str:
+    """The book-end notes page: every chapter's notes, grouped under its title.
+
+    ``chapters`` is a list of ``(chapter, chapter_file)`` pairs; each note
+    links back to its marker in ``chapter_file``.
+    """
+    title = notes_title(language)
+    head = _DOC_HEAD.format(lang=quoteattr(language), title=escape(title))
     parts = [
-        '<section class="footnotes" epub:type="footnotes">\n'
-        f'<p class="dinkus">{_DINKUS}</p>\n<h2>Notes</h2>\n'
+        '<section class="footnotes" epub:type="endnotes">\n'
+        f'<p class="dinkus">{_DINKUS}</p>\n<h1>{escape(title)}</h1>\n'
     ]
-    for note in chapter.footnotes:
-        nid = escape(note.note_id or "")
-        label = escape(note.note_label or "*")
-        body = _render_runs(note.runs)
-        parts.append(
-            f'<aside class="footnote" epub:type="footnote" id="{nid}">'
-            f'<p><a href="#{nid}-ref">{label}.</a> {body}</p></aside>\n'
-        )
+    for chapter, chap_file in chapters:
+        if not chapter.footnotes:
+            continue
+        parts.append(f"<h2>{escape(chapter.title or '')}</h2>\n")
+        for note in chapter.footnotes:
+            nid = escape(note.note_id or "")
+            label = escape(note.note_label or "*")
+            body = _render_runs(note.runs)
+            parts.append(
+                f'<aside class="footnote" epub:type="footnote" id="{nid}">'
+                f'<p><a href="{chap_file}#{nid}-ref">{label}.</a> {body}</p></aside>\n'
+            )
     parts.append("</section>\n")
-    return "".join(parts)
+    return head + "".join(parts) + "</body>\n</html>\n"
 
 
 def render_chapter(chapter: Chapter, image_href_for: Callable[[Element], str], language: str = "en") -> str:
@@ -411,5 +434,4 @@ def render_chapter(chapter: Chapter, image_href_for: Callable[[Element], str], l
         body.append(_render_element(el, image_href_for, prev_heading, prev_h1))
         prev_h1 = el.kind == ElementKind.HEADING and min(max(el.level, 1), 4) == 1
         prev_heading = el.kind == ElementKind.HEADING
-    body.append(render_footnotes(chapter))
     return head + "".join(body) + "</body>\n</html>\n"

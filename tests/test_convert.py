@@ -67,9 +67,11 @@ def test_footnotes_are_linked(sample_pdf, tmp_path):
     convert_pdf(sample_pdf, str(out))
     with zipfile.ZipFile(out) as z:
         body = _read(z, "chap_000.xhtml")
+        notes = _read(z, "notes.xhtml")
     assert 'epub:type="noteref"' in body
-    assert 'epub:type="footnote"' in body
-    assert 'id="n0-1"' in body and 'href="#n0-1"' in body
+    assert 'epub:type="footnote"' in notes
+    assert 'id="n0-1-ref"' in body and 'href="notes.xhtml#n0-1"' in body
+    assert 'id="n0-1"' in notes and 'href="chap_000.xhtml#n0-1-ref"' in notes
 
 
 def test_running_header_stripped(sample_pdf, tmp_path):
@@ -110,6 +112,7 @@ def test_academic_features(academic_pdf, tmp_path):
     with zipfile.ZipFile(out) as z:
         body = _read(z, "chap_000.xhtml")
         nav = _read(z, "nav.xhtml")
+        notes_page = _read(z, "notes.xhtml")
         # References is a named top-level division like any other (see
         # _CHAPTER_RE) and may land in its own chapter rather than staying a
         # sub-heading, so check across every chapter rather than assuming it
@@ -118,15 +121,15 @@ def test_academic_features(academic_pdf, tmp_path):
             z.read(n).decode() for n in z.namelist()
             if n.startswith("EPUB/chap_") and n.endswith(".xhtml")
         )
-    assert "<h1" in body and "<h2" in body           # multi-level headings
+    assert "<h1" in body and "<h3" in body           # multi-level headings
     assert "<blockquote>" in body                     # block quote detected
     assert 'class="caption"' in body                  # figure caption
     assert 'class="reference"' in all_bodies           # bibliography entries
     # Endnotes extracted from the "Notes" section and linked as pop-ups,
     # with every marker resolving to a real note:
-    assert 'epub:type="noteref"' in body and 'epub:type="footnote"' in body
-    refs = set(re.findall(r'epub:type="noteref"[^>]*href="#([^"]+)"', body))
-    notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', body))
+    assert 'epub:type="noteref"' in body and 'epub:type="footnote"' in notes_page
+    refs = set(re.findall(r'epub:type="noteref"[^>]*href="notes.xhtml#([^"]+)"', body))
+    notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', notes_page))
     assert refs and not (refs - notes)
     # Nested table of contents with sub-section links:
     assert 'href="chap_000.xhtml#sec-0-' in nav
@@ -186,20 +189,38 @@ def test_page_furniture_is_stripped(bookish_epub):
 
 
 def test_no_dead_footnote_links(bookish_epub):
-    """Every noteref must resolve to a real note in the same file."""
+    """Every noteref must resolve to a real note on the notes page, and every
+    note must link back to a real marker."""
     with zipfile.ZipFile(bookish_epub) as z:
+        notes_page = _read(z, "notes.xhtml")
+        notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', notes_page))
+        markers = set()
         for n in z.namelist():
             if not (n.startswith("EPUB/chap_") and n.endswith(".xhtml")):
                 continue
             c = z.read(n).decode()
-            refs = set(re.findall(r'epub:type="noteref"[^>]*href="#([^"]+)"', c))
-            notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', c))
+            refs = set(re.findall(r'epub:type="noteref"[^>]*href="notes.xhtml#([^"]+)"', c))
             assert not (refs - notes), f"{n}: dead note links {refs - notes}"
+            markers |= {(n[len("EPUB/"):], m) for m in re.findall(r'id="([^"]+-ref)"', c)}
+    backs = set(re.findall(r'<a href="([^"#]+)#([^"]+)">', notes_page))
+    assert backs and backs <= markers
+
+
+def test_notes_are_at_end_of_book_not_in_chapters(bookish_epub):
+    """General rule: no note body inside a chapter; all of them on one page
+    that comes last in the reading order."""
+    with zipfile.ZipFile(bookish_epub) as z:
+        for n in z.namelist():
+            if n.startswith("EPUB/chap_"):
+                assert 'epub:type="footnote"' not in z.read(n).decode(), n
+        opf = _read(z, ".opf")
+    spine = re.findall(r'<itemref idref="([^"]+)"', opf)
+    assert spine[-1] == "notes"
 
 
 def test_all_footnotes_are_captured(bookish_epub):
     with zipfile.ZipFile(bookish_epub) as z:
-        body = _read(z, "chap_000.xhtml")
+        body = _read(z, "notes.xhtml")
     assert len(re.findall(r'epub:type="footnote"', body)) == 3
 
 
@@ -231,8 +252,9 @@ def test_endnotes_all_linked(endnotes_epub):
     end, including notes that spill onto a second page."""
     with zipfile.ZipFile(endnotes_epub) as z:
         body = _read(z, "chap_000.xhtml")
-    refs = set(re.findall(r'epub:type="noteref"[^>]*href="#([^"]+)"', body))
-    notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', body))
+        notes_page = _read(z, "notes.xhtml")
+    refs = set(re.findall(r'epub:type="noteref"[^>]*href="notes.xhtml#([^"]+)"', body))
+    notes = set(re.findall(r'epub:type="footnote" id="([^"]+)"', notes_page))
     assert len(notes) == 10, f"expected 10 endnotes, got {len(notes)}"
     assert len(refs) == 10
     assert not (refs - notes)
@@ -242,7 +264,7 @@ def test_endnote_continuation_lines_are_joined(endnotes_epub):
     """A hanging-indent continuation belongs to the note above it, and a word
     split across the line break is rejoined."""
     with zipfile.ZipFile(endnotes_epub) as z:
-        body = _read(z, "chap_000.xhtml")
+        body = _read(z, "notes.xhtml")
     text = re.sub(r"<[^>]+>", "", body)
     assert "Human Knowledge: Its Scope and Limits" in text  # de-hyphenated
     assert "originally published 1832" in text              # continuation kept
@@ -636,11 +658,12 @@ def test_opening_paragraph_falls_back_for_lowercase_or_styled_start():
     assert _render_opening_paragraph(italic_start) is None
 
 
-def test_footnote_section_has_dinkus_not_a_visible_notes_label(bookish_epub):
+def test_notes_page_has_dinkus_and_a_group_per_chapter(bookish_epub):
     with zipfile.ZipFile(bookish_epub) as z:
-        body = _read(z, "chap_000.xhtml")
+        body = _read(z, "notes.xhtml")
     assert 'class="dinkus"' in body
-    assert "<h2>Notes</h2>" in body  # kept for semantics, hidden via CSS
+    assert "<h1>Notes</h1>" in body
+    assert "<h2>" in body  # notes grouped under their chapter's title
 
 
 def test_stylesheet_keeps_required_kindle_properties():

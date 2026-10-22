@@ -11,7 +11,7 @@ from typing import Dict
 
 from ebooklib import epub
 
-from .html import STYLESHEET, render_chapter
+from .html import NOTES_FILE, STYLESHEET, notes_title, render_chapter, render_notes_page
 from .model import Document, Element, ElementKind
 
 _IMAGE_MEDIA = {
@@ -69,8 +69,10 @@ def build_epub(doc: Document, out_path: str) -> str:
 
     epub_chapters = []
     toc = []
+    chapter_files = []
     for i, chapter in enumerate(doc.chapters):
         fname = f"chap_{i:03d}.xhtml"
+        chapter_files.append((chapter, fname))
         item = epub.EpubHtml(
             title=chapter.title or f"Chapter {i + 1}",
             file_name=fname,
@@ -92,6 +94,16 @@ def build_epub(doc: Document, out_path: str) -> str:
             toc.append((item, children))
         else:
             toc.append(item)
+
+    # All notes go on a single page at the end of the book.
+    if any(ch.footnotes for ch in doc.chapters):
+        title = notes_title(doc.language or "en")
+        notes = epub.EpubHtml(uid="notes", title=title, file_name=NOTES_FILE, lang=doc.language or "en")
+        notes.content = render_notes_page(chapter_files, doc.language or "en").encode("utf-8")
+        notes.add_item(css)
+        book.add_item(notes)
+        epub_chapters.append(notes)
+        toc.append(notes)
 
     if doc.cover is not None:
         ext = doc.cover.ext or "jpg"
