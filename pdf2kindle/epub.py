@@ -31,11 +31,18 @@ def _media_type(ext: str) -> str:
 
 def build_epub(doc: Document, out_path: str) -> str:
     book = epub.EpubBook()
-    book.set_identifier(f"urn:uuid:{uuid.uuid4()}")
+    book.set_identifier(doc.identifier or f"urn:uuid:{uuid.uuid4()}")
     book.set_title(doc.title or "Untitled")
     book.set_language(doc.language or "en")
     if doc.author:
-        book.add_author(doc.author)
+        book.add_author(doc.author, file_as=doc.author_sort or None)
+    for name, value, attrs in doc.metadata:
+        attrs = dict(attrs)
+        role = attrs.pop("role", "")
+        book.add_metadata("DC", name, value, attrs or None)
+        if role and attrs.get("id"):
+            book.add_metadata(None, "meta", role,
+                              {"refines": "#" + attrs["id"], "property": "role", "scheme": "marc:relators"})
 
     css = epub.EpubItem(
         uid="style",
@@ -69,6 +76,9 @@ def build_epub(doc: Document, out_path: str) -> str:
 
     epub_chapters = []
     toc = []
+    nested = None  # children list of the open top-level entry, if any
+    listed = [ch for ch in doc.chapters if ch.toc_depth >= 0]
+    listed_pos = {id(ch): k for k, ch in enumerate(listed)}
     for i, chapter in enumerate(doc.chapters):
         fname = f"chap_{i:03d}.xhtml"
         item = epub.EpubHtml(
@@ -83,19 +93,36 @@ def build_epub(doc: Document, out_path: str) -> str:
         book.add_item(item)
         epub_chapters.append(item)
 
-        # Nested table of contents: sub-headings become child links.
-        if chapter.subheads:
-            children = [
-                epub.Link(f"{fname}#{sh.anchor}", sh.title, f"{fname}-{sh.anchor}")
-                for sh in chapter.subheads
-            ]
-            toc.append((item, children))
+        # Nested table of contents: sub-headings become child links, and a
+        # top-level chapter followed by toc_depth=1 chapters (a part and its
+        # chapters) becomes a section holding them.
+        if chapter.toc_depth < 0:
+            continue
+        children = [
+            epub.Link(f"{fname}#{sh.anchor}", sh.title, f"{fname}-{sh.anchor}")
+            for sh in chapter.subheads
+        ]
+        entry = (item, children) if children else item
+        if chapter.toc_depth > 0 and nested is not None:
+            nested.append(entry)
+            continue
+        k = listed_pos[id(chapter)]
+        if k + 1 < len(listed) and listed[k + 1].toc_depth > 0:
+            nested = children
+            toc.append((epub.Section(item.title, href=fname), nested))
         else:
-            toc.append(item)
+            nested = None
+            toc.append(entry)
 
     if doc.cover is not None:
         ext = doc.cover.ext or "jpg"
         book.set_cover(f"cover.{ext}", doc.cover.data, create_page=False)
+
+    # Where Kindle's "Beginning" lands: the first listed chapter, past any
+    # front matter.
+    start = next((c for c, ch in zip(epub_chapters, doc.chapters) if ch.toc_depth >= 0), None)
+    if start is not None:
+        book.guide.append({"type": "text", "href": start.file_name, "title": start.title})
 
     book.toc = tuple(toc)
     book.add_item(epub.EpubNcx())

@@ -8,6 +8,7 @@ The converter now performs document-level analysis before semantic reconstructio
 - optional source-page EPUB page-break landmarks (--preserve-page-breaks)
 - conservative intra-chapter section cross-reference links
 - EPUB quality auditing for malformed XML, missing images, dead note links, page furniture, page breaks, and dead internal links
+- re-typesetting an existing EPUB for Kindle (`pdf2kindle optimize`)
 - regression tests and GitHub Actions CI
 
 # pdf2kindle
@@ -129,6 +130,40 @@ Both are driven by the same engine.
 pdf2kindle convert book.pdf -o book.epub --title "My Book" --author "Jane Doe"
 ```
 
+### Optimizing an EPUB you already have
+
+```bash
+pdf2kindle optimize book.epub              # writes book.kindle.epub
+```
+
+Many retail and Calibre/Sigil-era EPUBs read badly on a Kindle even though
+they are valid: every paragraph pins an embedded font, pixel indents and
+pure-black text (so the reader's font, margin and dark-mode settings stop
+working), chapter titles are styled paragraphs the table of contents never
+lists, and footnotes are bare link pairs. `optimize` reads the book back into
+the same model a PDF conversion produces and writes it out the same way:
+
+- **Real chapters and a nested contents** — headings are recovered from the
+  book's own stylesheet (short lines set clearly larger than body text) and
+  its NCX/nav; a book of parts over chapters gets a part title page and its
+  chapters nested under each part. Each chapter becomes its own file, rejoined
+  across the arbitrary size-based splits older tools made.
+- **Pop-up footnotes** — a marker and a note that link to each other become an
+  EPUB3 `noteref`/`footnote` pair, placed in the chapter of their marker.
+- **The reader's settings win** — embedded fonts, fixed colours and pixel
+  measurements are dropped in favour of the one Kindle-tuned stylesheet; the
+  shapes that carry meaning (centred and right-aligned lines, verse, inset
+  letters, spacing breaks) are kept as classes.
+- **Metadata repaired, not lost** — an ASCII-folded title is replaced by the
+  book's own accented spelling of it; identifier, ISBN, publisher, rights and
+  translator are kept; Romanian cedilla `ş`/`ţ` become the correct comma-below
+  `ș`/`ț` so Kindle search and dictionary lookup work (`--keep-diacritics` to
+  opt out).
+- Front matter stays in the book but out of the contents, and Kindle's
+  "Beginning" points at the first chapter.
+
+DRM-protected (encrypted) EPUBs cannot be read and are not supported.
+
 ### 2. Local web app
 
 A drag-and-drop web UI (TypeScript + React) served by the local FastAPI backend:
@@ -173,6 +208,7 @@ pdf2kindle/
   html.py        semantic, Kindle-tuned XHTML + CSS generation
   epub.py        EPUB3 assembly (ebooklib): nav, ncx, metadata, cover
   audit.py       quality report over a produced EPUB
+  optimize.py    existing EPUB → Document, for re-typesetting it for Kindle
   convert.py     orchestrator
   cli.py         command line
   server.py      FastAPI app + static frontend

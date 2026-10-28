@@ -207,6 +207,23 @@ aside.footnote {
   padding-left: 1.4em;
 }
 aside.footnote a { text-decoration: none; font-style: normal; }
+
+/* Paragraph shapes carried over from an optimized EPUB ---------------------*/
+
+p.center { text-align: center; text-indent: 0; }
+p.right { text-align: right; text-indent: 0; }
+p.large { font-size: 1.3em; margin: 0.6em 0; }
+p.verse {
+  text-align: left;
+  text-indent: 0;
+  margin-left: 2em;
+  -webkit-hyphens: none;
+  hyphens: none;
+}
+p.inset { margin: 0 1.5em; text-indent: 0; }
+p.inset + p.inset { text-indent: 1.3em; }
+p.inset.right + p.inset.right, p.inset + p.inset.right { text-indent: 0; }
+p.gap { margin-top: 1em; }
 """
 
 _DOC_HEAD = (
@@ -252,6 +269,9 @@ def _split_chapter_heading(text: str) -> Optional[tuple]:
 def _render_runs(runs: List[InlineRun]) -> str:
     out: List[str] = []
     for r in runs:
+        if r.br:
+            out.append("<br/>")
+            continue
         if r.noteref:
             ref_id = escape(r.noteref)
             out.append(
@@ -375,11 +395,14 @@ def _render_element(
             rows.append(f"<tr>{cells}</tr>")
         return '<div class="table-wrap"><table>\\n' + "\\n".join(rows) + '\\n</table></div>\\n'
     # paragraph
-    if prev_h1:
+    if prev_h1 and not set(el.classes) - {"noindent", "gap"}:
         rendered = _render_opening_paragraph(el)
         if rendered is not None:
             return rendered
-    cls = ' class="noindent"' if prev_heading else ""
+    classes = list(el.classes)
+    if prev_heading and "noindent" not in classes:
+        classes.append("noindent")
+    cls = f' class="{" ".join(classes)}"' if classes else ""
     return f"<p{cls}>{_render_runs(el.runs)}</p>\n"
 
 

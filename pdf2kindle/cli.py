@@ -60,6 +60,21 @@ def _add_audit(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--json", action="store_true", help="Emit the report as JSON")
 
 
+def _add_optimize(sub: argparse._SubParsersAction) -> None:
+    p = sub.add_parser("optimize", help="Re-typeset an existing EPUB for Kindle")
+    p.add_argument("input", help="Path to the input .epub")
+    p.add_argument("-o", "--output", help="Output .epub path (default: <input>.kindle.epub)")
+    p.add_argument("--title", default="", help="Override book title")
+    p.add_argument("--author", default="", help="Override author")
+    p.add_argument("--lang", default="", help="Override language code (default: the book's own)")
+    p.add_argument(
+        "--keep-diacritics",
+        action="store_true",
+        help="leave legacy cedilla ş/ţ in a Romanian book as they are "
+        "(converted to comma-below ș/ț by default)",
+    )
+
+
 def _add_serve(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("serve", help="Run the local drag-and-drop web app")
     p.add_argument("--host", default="127.0.0.1")
@@ -72,6 +87,7 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     _add_convert(sub)
     _add_audit(sub)
+    _add_optimize(sub)
     _add_serve(sub)
 
     args = parser.parse_args(argv)
@@ -83,6 +99,38 @@ def main(argv=None) -> int:
 
         report = audit_epub(args.epub)
         print(_json.dumps(report.as_dict(), indent=2) if args.json else format_audit(report))
+        return 0 if report.ok else 1
+
+    if args.command == "optimize":
+        from .audit import audit_epub, format_audit
+        from .optimize import OptimizeOptions, optimize_epub
+
+        output_path = args.output or (os.path.splitext(args.input)[0] + ".kindle.epub")
+        opts = OptimizeOptions(
+            title=args.title,
+            author=args.author,
+            language=args.lang,
+            fix_diacritics=not args.keep_diacritics,
+        )
+        if not os.path.isfile(args.input):
+            sys.stderr.write(f"error: input file not found: {args.input}\n")
+            return 2
+        try:
+            result = optimize_epub(args.input, output_path, opts)
+        except Exception as exc:  # pragma: no cover
+            sys.stderr.write(f"error: optimization failed: {exc}\n")
+            return 1
+        print(f"Wrote {result.output_path}")
+        print(
+            f"  title: {result.title or '(none)'} | author: {result.author or '(none)'}\n"
+            f"  {result.chapters} chapters, {result.footnotes} pop-up notes, {result.images} images"
+            + (f", {result.dropped_fonts} embedded fonts dropped" if result.dropped_fonts else "")
+        )
+        for w in result.warnings:
+            print(f"  warning: {w}")
+        report = audit_epub(result.output_path)
+        print("\nQuality report:")
+        print(format_audit(report))
         return 0 if report.ok else 1
 
     if args.command == "serve":

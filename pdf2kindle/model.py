@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 BBox = Tuple[float, float, float, float]  # (x0, y0, x1, y1)
 
@@ -132,6 +132,8 @@ class InlineRun:
     noteref: Optional[str] = None
     # Optional intra-EPUB hyperlink target (for reconstructed cross-references).
     href: Optional[str] = None
+    # A forced line break (verse, an address block); carries no text.
+    br: bool = False
 
 
 @dataclass
@@ -148,6 +150,9 @@ class Element:
     # footnote payload
     note_id: Optional[str] = None
     note_label: str = ""
+    # Extra presentation classes for a paragraph (center, right, verse,
+    # inset, noindent, gap, large) -- see html.STYLESHEET.
+    classes: List[str] = field(default_factory=list)
 
     @property
     def text(self) -> str:
@@ -169,6 +174,10 @@ class Chapter:
     elements: List[Element] = field(default_factory=list)
     footnotes: List[Element] = field(default_factory=list)
     subheads: List[SubHead] = field(default_factory=list)
+    # Table-of-contents placement: 0 top level, 1 nested under the preceding
+    # top-level chapter (a novel's chapters under its parts), -1 left out
+    # (front matter: title page, copyright notice).
+    toc_depth: int = 0
 
 
 @dataclass
@@ -178,3 +187,8 @@ class Document:
     author: str = ""
     language: str = "en"
     cover: Optional[ImageBlock] = None
+    identifier: str = ""  # a fresh urn:uuid when empty
+    author_sort: str = ""  # "Surname, Given names"
+    # Further Dublin Core entries to keep: (name, value, attributes); a
+    # "role" attribute on a contributor becomes its MARC relator.
+    metadata: List[Tuple[str, str, Dict[str, str]]] = field(default_factory=list)
