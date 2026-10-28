@@ -244,6 +244,8 @@ _CHAPTER_SPLIT_RE = re.compile(
     r"^\s*(chapter|part|book)\s+([\divxlc]+)\s*[:.\-–]?\s*(.*)$", re.IGNORECASE
 )
 _NUM_SPLIT_RE = re.compile(r"^\s*(\d+(?:\.\d+){0,3})\.?\s+(\S.*)$")
+# "IV - CEL DE-AL TREILEA FIU": a bare roman numeral, a dash, the title.
+_ROMAN_DASH_RE = re.compile(r"^\s*([IVXLC]{1,7})\s*[-–—]\s+(\S.*)$")
 
 # Small ornament marking a footnote section -- a classic printer's dinkus.
 _DINKUS = "· · ·"
@@ -260,7 +262,7 @@ def _split_chapter_heading(text: str) -> Optional[tuple]:
         label = f"{m.group(1).title()} {m.group(2)}"
         title = m.group(3).strip()
         return (label, title) if title else None
-    m = _NUM_SPLIT_RE.match(text)
+    m = _NUM_SPLIT_RE.match(text) or _ROMAN_DASH_RE.match(text)
     if m:
         return m.group(1), m.group(2).strip()
     return None

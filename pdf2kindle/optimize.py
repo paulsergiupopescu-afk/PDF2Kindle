@@ -213,7 +213,29 @@ def _local(el) -> str:
     return etree.QName(el).localname.lower() if isinstance(el.tag, str) else ""
 
 
+_XML_ENTITIES = {"amp", "lt", "gt", "quot", "apos"}
+_ENTITY_RE = re.compile(rb"&([A-Za-z][A-Za-z0-9]*);")
+
+
+def _html_entities_to_chars(data: bytes) -> bytes:
+    """Replace HTML named entities (&ndash; &bdquo; &nbsp;) with characters.
+
+    Many EPUBs rely on the XHTML DTD to define them, which an XML parser
+    never loads -- left alone they surface as literal "&ndash;" text.
+    """
+    from html.entities import name2codepoint
+
+    def repl(m: "re.Match[bytes]") -> bytes:
+        name = m.group(1).decode("ascii")
+        if name in _XML_ENTITIES or name not in name2codepoint:
+            return m.group(0)
+        return chr(name2codepoint[name]).encode("utf-8")
+
+    return _ENTITY_RE.sub(repl, data)
+
+
 def _parse_xml(data: bytes):
+    data = _html_entities_to_chars(data)
     parser = etree.XMLParser(recover=True, resolve_entities=False, huge_tree=True)
     root = etree.fromstring(data, parser)
     if root is None:  # not even recoverable XML: fall back to the HTML parser
@@ -314,6 +336,8 @@ class _Block:
     image: Optional[ImageBlock] = None
     image_path: str = ""
     signature: str = ""  # tag + classes, to group a multi-paragraph note
+    # Characters per inline size multiplier (a heading sized on its <span>).
+    char_sizes: Dict[float, int] = field(default_factory=dict)
 
     @property
     def text(self) -> str:
@@ -388,6 +412,8 @@ class _DocReader:
         self._inline(el, block, bold=bool(style.bold), italic=bool(style.italic), sup=False,
                      ids=set(), images=found_images)
         block.runs = _tidy_runs(block.runs, block.links)
+        if block.char_sizes:
+            block.size *= max(block.char_sizes, key=block.char_sizes.get)
         if block.text or not found_images:
             self.blocks.append(block)
         for src in found_images:
@@ -395,7 +421,8 @@ class _DocReader:
             if img is not None:
                 self.blocks.append(_Block(self.path, "img", [], style, 1.0, image=img, image_path=src))
 
-    def _inline(self, el, block: _Block, bold: bool, italic: bool, sup: bool, ids: Set[str], images: List[str]):
+    def _inline(self, el, block: _Block, bold: bool, italic: bool, sup: bool, ids: Set[str], images: List[str],
+                scale: float = 1.0):
         """Append *el*'s content (not its tail) to *block* as styled runs."""
         tag = _local(el)
         if el.get("id"):
@@ -416,6 +443,7 @@ class _DocReader:
             bold = bold or tag in ("b", "strong") or bool(st.bold)
             italic = (italic or tag in ("i", "em", "cite")) if st.italic is None else st.italic
             sup = sup or tag == "sup" or st.sup
+            scale *= st.size
         if tag == "a" and el.get("href") and not re.match(r"^[a-z]+:", el.get("href")):
             # A same-book link: keep its text as one run and remember where it
             # points, so footnote pairs can be recognized once every block of
@@ -428,10 +456,14 @@ class _DocReader:
             return
         if el.text:
             block.runs.append(InlineRun(el.text, bold=bold, italic=italic, sup=sup))
+            if el.text.strip():
+                block.char_sizes[round(scale, 3)] = block.char_sizes.get(round(scale, 3), 0) + len(el.text)
         for child in el:
-            self._inline(child, block, bold, italic, sup, ids, images)
+            self._inline(child, block, bold, italic, sup, ids, images, scale)
             if child.tail:
                 block.runs.append(InlineRun(child.tail, bold=bold, italic=italic, sup=sup))
+                if child.tail.strip():
+                    block.char_sizes[round(scale, 3)] = block.char_sizes.get(round(scale, 3), 0) + len(child.tail)
 
 
 def _tidy_runs(runs: List[InlineRun], links: List[_Link]) -> List[InlineRun]:
@@ -521,6 +553,7 @@ def _link_footnotes(blocks: List[_Block]) -> Dict[int, Tuple[str, List[InlineRun
     for i, b in enumerate(blocks):
         where.setdefault((b.doc, ""), i)  # a bare file href means its first block
 
+    linked = {where[lk.target] for b in blocks for lk in b.links if lk.target in where}
     notes: Dict[int, Tuple[str, List[InlineRun]]] = {}
     count = 0
     for i, b in enumerate(blocks):
@@ -533,27 +566,33 @@ def _link_footnotes(blocks: List[_Block]) -> Dict[int, Tuple[str, List[InlineRun
             if t is None or t == i or t in notes:
                 continue
             target = blocks[t]
+            # The back-link may point at the marker itself or at an empty
+            # anchor beside it ("<a id=a5/><a href=notes#a133>") -- any id
+            # in the marker's paragraph confirms the pair.
             backlink = next((tl for tl in target.links
-                             if tl.target[0] == b.doc and tl.target[1] in lk.own_ids), None)
+                             if tl.target[0] == b.doc and tl.target[1] in (lk.own_ids | b.ids)), None)
             if backlink is None and not lk.noteref:
                 continue
-            count += 1
-            nid = f"fn{count}"
             runs = [InlineRun(r.text, bold=r.bold, italic=r.italic, sup=r.sup, br=r.br)
                     for k, r in enumerate(target.runs) if backlink is None or k != backlink.run]
             if runs:
-                runs[0].text = runs[0].text.lstrip(" .) ")
-            # A note continued over further paragraphs of the same style.
+                runs[0].text = runs[0].text.lstrip(" .)\u00a0")
+            if not "".join(r.text for r in runs).strip():
+                continue  # a heading linking back to a contents page, not a note
+            count += 1
+            nid = f"fn{count}"
+            # A note continued over further paragraphs of the same style: ones
+            # with no back-link of their own that nothing links to.
             j = t + 1
             while (j < len(blocks) and blocks[j].doc == target.doc and blocks[j].signature == target.signature
-                   and not any(tl.target[0] == b.doc for tl in blocks[j].links) and blocks[j].text):
+                   and not blocks[j].links and j not in linked and blocks[j].text):
                 runs += [InlineRun("", br=True)] + blocks[j].runs
                 notes[j] = ("", [])
                 j += 1
             notes[t] = (nid, runs)
             marker = b.runs[lk.run]
             marker.noteref, marker.sup = nid, False
-            marker.text = marker.text.strip() or "*"
+            marker.text = marker.text.strip().strip("{}[]()") or "*"
     return notes
 
 
@@ -626,11 +665,20 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
         for ident in b.ids:
             index.setdefault((b.doc, ident), i)
     toc_targets: Dict[int, int] = {}
-    for _label, path, frag, depth in pkg.toc:
+    titled: List[int] = []  # targets whose text is the entry's own label
+    for label, path, frag, depth in pkg.toc:
         i = index.get((path, frag), index.get((path, "")))
-        if i is not None:
-            toc_targets.setdefault(i, depth)
-    start = min(toc_targets) if toc_targets else 0
+        if i is None:
+            continue
+        # An anchor often sits on blank padding just above the heading.
+        while i + 1 < len(blocks) and blocks[i].blank and blocks[i + 1].doc == path:
+            i += 1
+        toc_targets.setdefault(i, depth)
+        if label and _fold(_clean_label(label)) in _fold(" ".join(blocks[i].text.split())):
+            titled.append(i)
+    # An entry labelled "Title page" or "Cover" points at a page, not at a
+    # heading: front matter runs up to the first entry that names its target.
+    start = min(titled) if titled else (min(toc_targets) if toc_targets else 0)
     while start < len(blocks) and (blocks[start].doc in skip_docs):
         start += 1
 
@@ -644,7 +692,9 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
             head_size[i] = 10.0 - int(b.tag[1])
         elif b.size / body_size >= _HEADING_MIN_SIZE and len(b.text) <= _HEADING_MAX_CHARS:
             head_size[i] = b.size / body_size
-        elif i in toc_targets and len(b.text) <= _HEADING_MAX_CHARS:
+        elif i in toc_targets and len(b.text) <= 3 * _HEADING_MAX_CHARS:
+            # The book's contents vouches for it, however plainly it is set
+            # (body-size bold) or however long the title runs.
             head_size[i] = 0.0  # placed below, at its contents depth
     for i, depth in toc_targets.items():
         if i in head_size and depth == 1:
@@ -652,24 +702,30 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
     ranks = sorted({round(s, 2) for s in head_size.values()}, reverse=True)
     level = {i: ranks.index(round(s, 2)) + 1 for i, s in head_size.items()}
 
-    # Two levels where every top-level heading is straight away followed by a
-    # second-level one are parts over chapters: the part gets a title page of
-    # its own and the chapters nest under it in the contents. Otherwise the
-    # top level is the chapter and anything deeper is a section within it.
+    # A top-level heading straight away followed by a second-level one (past
+    # blank padding and at most a short epigraph) is a part: it gets a title
+    # page of its own and the chapters after it nest under it in the
+    # contents. A top-level heading followed by text -- a foreword -- is a
+    # chapter in its own right. Below the chapter level, headings are
+    # sections within the chapter.
     def next_heading(i: int) -> Optional[int]:
-        for j in range(i + 1, min(i + 6, len(blocks))):
+        short = 0
+        for j in range(i + 1, len(blocks)):
             if j in level:
                 return j
-            if not blocks[j].blank and len(blocks[j].text) > 200:
+            if blocks[j].blank or j in notes:
+                continue
+            short += 1
+            if len(blocks[j].text) > 200 or short > 3:
                 return None
         return None
 
-    tops = [i for i, lv in level.items() if lv == 1]
-    parts = bool(tops) and len(ranks) >= 2 and all(
-        (n := next_heading(i)) is not None and level[n] == 2 for i in tops)
+    part_heads = {i for i, lv in level.items()
+                  if lv == 1 and (n := next_heading(i)) is not None and level[n] == 2}
+    parts = bool(part_heads)
     chapter_level = 2 if parts else 1
 
-    title = tr(opts.title or _choose_title(pkg))
+    title = tr(opts.title or _restore_diacritics(_choose_title(pkg), blocks))
     author = tr(opts.author or next((e.text.strip() for e in dc("creator") if e.text), ""))
 
     chapters: List[Chapter] = []
@@ -685,7 +741,7 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
             images_used += 1
             return Element(ElementKind.IMAGE, image=b.image)
         if b.blank:
-            gap = True
+            gap = bool(current and current.elements and current.elements[-1].kind != ElementKind.HEADING)
             return None
         runs = [InlineRun(tr(r.text), bold=r.bold, italic=r.italic, sup=r.sup, noteref=r.noteref, br=r.br)
                 for r in b.runs]
@@ -724,7 +780,9 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
             heading_runs = [InlineRun(tr(" ".join(b.text.split())))]
             label = _clean_label(tr(b.text))
             if lv <= chapter_level:
-                is_part = parts and lv == 1
+                is_part = i in part_heads
+                if lv == 1 and not is_part:
+                    in_part = False  # a standalone top-level chapter closes the part
                 current = Chapter(title=label, toc_depth=1 if (in_part and not is_part) else 0)
                 in_part = in_part or is_part
                 chapters.append(current)
@@ -758,13 +816,21 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
                         runs=[InlineRun(tr(n.text), bold=n.bold, italic=n.italic, sup=n.sup, br=n.br)
                               for n in bodies.pop(r.noteref)]))
 
+    # A source page of nothing but blank padding leaves an empty chapter.
+    chapters = [ch for ch in chapters if ch.elements or ch.footnotes]
+
+    warnings: List[str] = []
+    if cover is None:
+        cover = _make_cover(title, author)
+        if cover is not None:
+            warnings.append("source has no cover; generated a plain title cover")
+
     doc = Document(chapters=chapters, title=title, author=author, language=language, cover=cover,
                    identifier=_identifier(md), metadata=_extra_metadata(md, tr))
     doc.author_sort = next((e.get("{%s}file-as" % _NS["opf"]) for e in dc("creator")
                             if e.get("{%s}file-as" % _NS["opf"])), "")
     build_epub(doc, output_path)
 
-    warnings: List[str] = []
     if not pkg.toc:
         warnings.append("source has no table of contents; front matter could not be told apart")
     if not any(ch.toc_depth >= 0 for ch in chapters):
@@ -775,6 +841,119 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
         footnotes=sum(len(ch.footnotes) for ch in chapters),
         images=images_used, dropped_fonts=dropped_fonts, warnings=warnings,
     )
+
+
+_COVER_FONTS = (
+    "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+    "/usr/share/fonts/TTF/DejaVuSerif.ttf",
+    "/Library/Fonts/Georgia.ttf",
+    "/System/Library/Fonts/Supplemental/Georgia.ttf",
+    "C:/Windows/Fonts/georgia.ttf",
+)
+
+
+def _make_cover(title: str, author: str) -> Optional[ImageBlock]:
+    """A plain typographic cover for a book that has none.
+
+    Without one the Kindle library shows a blank tile. Kindle's recommended
+    1600x2560: author above, the title set large and wrapped, two thin rules.
+    """
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError:  # pragma: no cover
+        return None
+    import os
+
+    path = next((f for f in _COVER_FONTS if os.path.isfile(f)), None)
+
+    def font(size: int):
+        if path:
+            return ImageFont.truetype(path, size)
+        try:
+            return ImageFont.load_default(size=size)
+        except TypeError:  # Pillow < 10.1 has no scalable default font
+            return ImageFont.load_default()
+
+    w, h, margin = 1600, 2560, 170
+    ink, paper = (40, 36, 32), (246, 241, 230)
+    im = Image.new("RGB", (w, h), paper)
+    draw = ImageDraw.Draw(im)
+
+    def wrap(text: str, f) -> List[str]:
+        lines: List[str] = []
+        for word in text.split():
+            trial = f"{lines[-1]} {word}" if lines else word
+            if lines and draw.textlength(trial, font=f) <= w - 2 * margin:
+                lines[-1] = trial
+            else:
+                lines.append(word)
+        return lines
+
+    # "Frații Karamazov - Vol.1": the part after the dash is a subtitle, set
+    # smaller under the title rather than left dangling at a line end.
+    title, subtitle = (re.split(r"\s+[-–—]\s+|:\s+", title, maxsplit=1) + [""])[:2]
+    size = 150
+    title_font = font(size)
+    lines = wrap(title, title_font)
+    while size > 70 and (len(lines) > 4 or any(draw.textlength(ln, font=title_font) > w - 2 * margin
+                                                 for ln in lines)):
+        size -= 10
+        title_font = font(size)
+        lines = wrap(title, title_font)
+    y = h // 2 - len(lines) * size * 6 // 10
+    draw.line([(w // 2 - 220, y - 120), (w // 2 + 220, y - 120)], fill=ink, width=4)
+    for ln in lines:
+        draw.text((w // 2, y), ln, font=title_font, fill=ink, anchor="ma")
+        y += size * 12 // 10
+    if subtitle:
+        sub_font = font(80)
+        for ln in wrap(subtitle, sub_font):
+            draw.text((w // 2, y + 20), ln, font=sub_font, fill=ink, anchor="ma")
+            y += 100
+        y += 40
+    draw.line([(w // 2 - 220, y + 60), (w // 2 + 220, y + 60)], fill=ink, width=4)
+    if author:
+        author_font = font(72)
+        for k, ln in enumerate(wrap(author, author_font)):
+            draw.text((w // 2, 420 + k * 95), ln, font=author_font, fill=ink, anchor="ma")
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", quality=88)
+    return ImageBlock(data=buf.getvalue(), ext="jpg", bbox=(0, 0, w, h), width=w, height=h)
+
+
+def _restore_diacritics(title: str, blocks: List[_Block]) -> str:
+    """Give an ASCII-only title the accents the book itself spells it with.
+
+    "Fratii Karamazov" becomes "Frații Karamazov" when the text says
+    "Frații" far more often than "Fratii"; a word the book never writes with
+    accents is left alone.
+    """
+    if not title.isascii():
+        return title
+    forms: Dict[str, Dict[str, int]] = {}
+    for b in blocks:
+        for word in re.findall(r"\w+", b.text):
+            if not word.isascii():
+                forms.setdefault(_fold(word), {}).setdefault(word.lower(), 0)
+                forms[_fold(word)][word.lower()] += 1
+            else:
+                forms.setdefault(word.lower(), {}).setdefault(word.lower(), 0)
+                forms[word.lower()][word.lower()] += 1
+
+    def fix(m: "re.Match[str]") -> str:
+        word = m.group(0)
+        seen = forms.get(word.lower())
+        if not seen:
+            return word
+        best = max(seen, key=seen.get)
+        if best == word.lower():
+            return word
+        if word.isupper():
+            return best.upper()
+        return best[0].upper() + best[1:] if word[0].isupper() else best
+
+    return re.sub(r"[A-Za-z]+", fix, title)
 
 
 def _refuse_encrypted(z: zipfile.ZipFile) -> None:

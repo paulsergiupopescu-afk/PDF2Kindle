@@ -243,3 +243,145 @@ def test_drm_encrypted_book_is_refused(legacy_epub, tmp_path):
                      '</enc:EncryptedData></encryption>')
     with pytest.raises(ValueError, match="DRM"):
         optimize_epub(str(locked), str(tmp_path / "out.epub"))
+
+
+# The shape of a word-processor export: no cover, HTML named entities the
+# XML parser cannot resolve, headings sized on inner spans or set as
+# body-size bold that only the NCX identifies, a "Title page" NCX entry, a
+# foreword before the first part, and endnotes in their own file whose
+# back-links target an empty anchor beside the marker.
+_WP_CSS = """p { text-indent: 1.3em; font-family: "Bookman Old Style" }
+.p0 { text-indent: 0; text-align: center }
+.t1 { font-size: 1.8em }
+.t3 { font-size: .65em; vertical-align: super }
+.t4 { font-size: 2.4em }
+.t5 { font-size: .91em }
+"""
+_WP_HEAD = ('<?xml version="1.0" encoding="utf-8"?>\n'
+            '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
+            '<html xmlns="http://www.w3.org/1999/xhtml"><head>'
+            '<link rel="stylesheet" type="text/css" href="style.css"/><title></title></head><body>')
+_LONG_TITLE = ("II - ÎNTÂMPLĂRI DIN VIAŢA IEROMONAHULUI STAREŢ ZOSIMA RĂPOSAT ÎNTRU DOMNUL, "
+               "POVESTITE DE EL ÎNSUŞI")
+_WP_DOCS = {
+    "001.html": _WP_HEAD + '<p class="p0">&nbsp;</p><p class="p0"><span class="t1"><b>Autorul</b></span></p>'
+                           '<p class="p0">&nbsp;</p></body></html>',
+    "002.html": _WP_HEAD + '<p class="p0"><a id="ncx1"></a><span class="t1"><b>DIN PARTEA AUTORULUI</b></span></p>'
+                           '<p>&nbsp;</p><p>Cuvânt înainte &ndash; despre fraţii lui<a id="a4"></a>'
+                           '<a href="notes.html#a132"><span class="t3"><b>{1}</b></span></a>.</p></body></html>',
+    "003.html": _WP_HEAD + '<p class="p0">&nbsp;</p><p class="p0"><a id="ncx2"></a><span class="t4"><b>PARTEA ÎNTÂI'
+                           '</b></span></p><p class="p0">&nbsp;</p></body></html>',
+    "004.html": _WP_HEAD + '<p>&nbsp;</p><p><a id="ncx3"></a><b>I - FIODOR PAVLOVICI</b></p><p>&nbsp;</p>'
+                           '<p>Fraţii Karamazov erau trei &bdquo;fraţi&rdquo;<a id="a9"></a>'
+                           '<a href="notes.html#a136"><span class="t3"><b>{2}</b></span></a>.</p>'
+                           f'<p><a id="ncx4"></a><b>{_LONG_TITLE}</b></p>'
+                           '<p>Un capitol cu titlu lung.</p></body></html>',
+    "notes.html": _WP_HEAD + '<p><a id="a132"></a><a href="002.html#a4"><span class="t3"><b>{1}</b></span></a>'
+                             '<span class="t5">&nbsp; Prima notă.</span></p>'
+                             '<p><a id="a136"></a><a href="004.html#a9"><span class="t3"><b>{2}</b></span></a>'
+                             '<span class="t5">&nbsp; A doua notă.</span></p></body></html>',
+}
+_WP_NCX = """<?xml version="1.0" encoding="UTF-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>
+<navPoint id="n1"><navLabel><text>Title page</text></navLabel><content src="001.html"/></navPoint>
+<navPoint id="n2"><navLabel><text>DIN PARTEA AUTORULUI</text></navLabel><content src="002.html#ncx1"/></navPoint>
+<navPoint id="n3"><navLabel><text>PARTEA ÎNTÂI</text></navLabel><content src="003.html#ncx2"/>
+  <navPoint id="n4"><navLabel><text>I - FIODOR PAVLOVICI</text></navLabel><content src="004.html#ncx3"/></navPoint>
+  <navPoint id="n5"><navLabel><text>II - LONG</text></navLabel><content src="004.html#ncx4"/></navPoint>
+</navPoint>
+</navMap></ncx>"""
+
+
+@pytest.fixture(scope="module")
+def wordproc_epub(tmp_path_factory):
+    path = tmp_path_factory.mktemp("data") / "wp.epub"
+    names = list(_WP_DOCS)
+    items = "\n".join(f'<item id="d{i}" href="{n}" media-type="application/xhtml+xml"/>' for i, n in enumerate(names))
+    refs = "\n".join(f'<itemref idref="d{i}"/>' for i in range(len(names)))
+    opf = f"""<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="BookId">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
+<dc:title>Fratii Karamazov - Vol.1</dc:title><dc:creator>F. M. Dostoievski</dc:creator>
+<dc:identifier id="BookId">awp2011</dc:identifier><dc:language>ro</dc:language></metadata>
+<manifest><item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+<item id="style" href="style.css" media-type="text/css"/>{items}
+<item id="f1" href="fonts/B.TTF" media-type="application/vnd-ms-opentype"/></manifest>
+<spine toc="ncx">{refs}</spine></package>"""
+    with zipfile.ZipFile(path, "w") as z:
+        z.writestr(zipfile.ZipInfo("mimetype"), "application/epub+zip", zipfile.ZIP_STORED)
+        z.writestr("META-INF/container.xml",
+                   '<?xml version="1.0"?><container version="1.0" '
+                   'xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles>'
+                   '<rootfile full-path="Ops/content.opf" media-type="application/oebps-package+xml"/>'
+                   '</rootfiles></container>')
+        z.writestr("Ops/content.opf", opf)
+        z.writestr("Ops/toc.ncx", _WP_NCX)
+        z.writestr("Ops/style.css", _WP_CSS)
+        z.writestr("Ops/fonts/B.TTF", b"\0" * 64)
+        for n, body in _WP_DOCS.items():
+            z.writestr(f"Ops/{n}", body)
+    return str(path)
+
+
+@pytest.fixture(scope="module")
+def wordproc(wordproc_epub, tmp_path_factory):
+    out = str(tmp_path_factory.mktemp("out") / "wp.epub")
+    result = optimize_epub(wordproc_epub, out)
+    with zipfile.ZipFile(out) as z:
+        files = {n: z.read(n).decode("utf-8", "replace") for n in z.namelist() if not n.endswith(".jpg")}
+        has_cover = any(n.endswith(".jpg") for n in z.namelist())
+    return result, out, files, has_cover
+
+
+def test_wordproc_book_passes_audit_with_generated_cover(wordproc):
+    result, out, _, has_cover = wordproc
+    assert audit_epub(out).ok
+    assert has_cover
+    assert any("generated" in w for w in result.warnings)
+
+
+def test_html_entities_become_characters(wordproc):
+    _, _, files, _ = wordproc
+    body = "".join(_chapters(files))
+    assert "&ndash;" not in body and "&bdquo;" not in body and "&amp;" not in body
+    assert "</span> – despre frații lui" in body and "„frați”" in body
+
+
+def test_endnotes_with_sibling_anchor_backlinks_become_popups(wordproc):
+    result, _, files, _ = wordproc
+    assert result.footnotes == 2
+    chapters = _chapters(files)
+    foreword = next(c for c in chapters if "DIN PARTEA AUTORULUI" in c)
+    assert "Prima notă." in foreword and 'href="#fn1">1</a>' in foreword  # braces dropped
+    # The endnotes page itself is gone: every note found its marker.
+    assert not any("A doua notă" in c and "<h1" not in c for c in chapters)
+
+
+def test_contents_entries_drive_plain_and_long_headings(wordproc):
+    _, _, files, _ = wordproc
+    nav = files["EPUB/nav.xhtml"]
+    toc = nav[nav.index('epub:type="toc"'):]
+    toc = toc[:toc.index("</nav>")]
+    labels = re.findall(r"<a [^>]*>([^<]+)</a>", toc)
+    # "Title page" points at a page, not a heading: front matter, unlisted.
+    # The foreword stays top level; the part nests its chapters.
+    assert labels[0] == "DIN PARTEA AUTORULUI"
+    assert labels[1] == "PARTEA ÎNTÂI"
+    assert labels[2] == "I - FIODOR PAVLOVICI"
+    assert labels[3].startswith("II - ÎNTÂMPLĂRI DIN VIAȚA")
+    part = toc[toc.index("PARTEA ÎNTÂI"):]
+    assert part.count("<ol>") == 1 and "DIN PARTEA" not in part
+    # Roman-numeral chapter titles get the two-tier opening.
+    body = "".join(_chapters(files))
+    assert '<span class="chnum">I</span><span class="chtitle">FIODOR PAVLOVICI</span>' in body
+
+
+def test_title_page_sized_on_spans_keeps_its_large_type(wordproc):
+    _, _, files, _ = wordproc
+    assert '<p class="center large"><strong>Autorul</strong></p>' in "".join(_chapters(files))
+
+
+def test_ascii_title_regains_the_books_own_diacritics(wordproc):
+    result, _, files, _ = wordproc
+    assert result.title == "Frații Karamazov - Vol.1"
+    assert "<dc:title>Frații Karamazov - Vol.1</dc:title>" in files["EPUB/content.opf"]
