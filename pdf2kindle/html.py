@@ -392,10 +392,10 @@ def _render_element(
     if el.kind == ElementKind.TABLE:
         rows = []
         for ri, row in enumerate(el.table_rows):
-            tag = "th" if ri == 0 else "td"
-            cells = "".join(f"<{tag}>{escape(cell)}</{tag}>" for cell in row)
+            tag = "th" if ri == 0 and el.table_header else "td"
+            cells = "".join(f"<{tag}>{escape(cell).replace(chr(10), '<br/>')}</{tag}>" for cell in row)
             rows.append(f"<tr>{cells}</tr>")
-        return '<div class="table-wrap"><table>\\n' + "\\n".join(rows) + '\\n</table></div>\\n'
+        return '<div class="table-wrap"><table>\n' + "\n".join(rows) + '\n</table></div>\n'
     # paragraph
     if prev_h1 and not set(el.classes) - {"noindent", "gap"}:
         rendered = _render_opening_paragraph(el)

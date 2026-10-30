@@ -147,6 +147,7 @@ class Element:
     image: Optional[ImageBlock] = None
     # table payload: each inner list is one row, each string one cell.
     table_rows: List[List[str]] = field(default_factory=list)
+    table_header: bool = True  # render the first row as <th> cells
     # footnote payload
     note_id: Optional[str] = None
     note_label: str = ""

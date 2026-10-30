@@ -335,6 +335,8 @@ class _Block:
     links: List[_Link] = field(default_factory=list)
     image: Optional[ImageBlock] = None
     image_path: str = ""
+    table: Optional[List[List[str]]] = None  # rows of cell texts
+    table_header: bool = False  # first row is <th> cells
     signature: str = ""  # tag + classes, to group a multi-paragraph note
     # Characters per inline size multiplier (a heading sized on its <span>).
     char_sizes: Dict[float, int] = field(default_factory=dict)
@@ -345,7 +347,8 @@ class _Block:
 
     @property
     def blank(self) -> bool:
-        return self.image is None and not self.text.replace(" ", "").strip()
+        return (self.image is None and self.table is None
+                and not self.text.replace("\u00a0", "").strip())
 
 
 class _DocReader:
@@ -391,6 +394,8 @@ class _DocReader:
             tag = _local(child)
             if tag in _SKIP or not tag:
                 pass
+            elif tag == "table":
+                self._emit_table(child)
             elif tag in _BLOCK_LEAVES or (tag in _CONTAINERS and not self._has_block_child(child)):
                 self._emit(child)
             elif tag in _CONTAINERS:
@@ -399,6 +404,25 @@ class _DocReader:
                 self._emit(child)
             if child.tail and child.tail.strip():
                 self._emit_loose(child.tail, el)
+
+    def _emit_table(self, table) -> None:
+        """A table as rows of cell text; a cell's own paragraphs become lines."""
+        rows: List[List[str]] = []
+        header = False
+        for tr_el in (el for el in table.iter() if _local(el) == "tr"):
+            cells = []
+            for cell in tr_el:
+                if _local(cell) not in ("td", "th"):
+                    continue
+                header = header or (not rows and _local(cell) == "th")
+                parts = [el for el in cell.iter() if el is not cell and _local(el) in _BLOCK_LEAVES]
+                lines = ["".join(el.itertext()) for el in parts] or ["".join(cell.itertext())]
+                cells.append("\n".join(" ".join(ln.split()) for ln in lines if ln.strip()))
+            if any(cells):
+                rows.append(cells)
+        if rows:
+            self.blocks.append(_Block(self.path, "table", [], self._style(table), 1.0,
+                                      table=rows, table_header=header))
 
     def _emit_loose(self, text: str, parent) -> None:
         self.blocks.append(_Block(self.path, "p", [InlineRun(text)], self._style(parent),
@@ -596,6 +620,101 @@ def _link_footnotes(blocks: List[_Block]) -> Dict[int, Tuple[str, List[InlineRun
     return notes
 
 
+def _centred_headings(blocks: List[_Block], notes, body_size: float) -> List[int]:
+    def shaped(i: int) -> bool:
+        b = blocks[i]
+        if (b.image is not None or b.table is not None or b.blank or i in notes or b.style.align != "center"
+                or len(b.text) > _HEADING_MAX_CHARS or _SEPARATOR_RE.match(b.text)
+                or b.size / body_size < 0.95):
+            return False
+        for step in (-1, 1):  # not one of a run of centred lines alike (verse)
+            j = i + step
+            while 0 <= j < len(blocks) and blocks[j].blank:
+                j += step
+            if 0 <= j < len(blocks) and blocks[j].signature == b.signature:
+                return False
+        return True
+
+    by_style: Dict[str, List[int]] = {}
+    for i, b in enumerate(blocks):
+        if not b.blank and b.image is None and b.table is None:
+            by_style.setdefault(b.signature, []).append(i)
+    found: List[int] = []
+    for idx in by_style.values():
+        hits = [i for i in idx if shaped(i)]
+        if len(hits) >= 3 and len(hits) >= 0.8 * len(idx):
+            found += hits
+    return found
+
+
+def _opens_prose(blocks: List[_Block], i: int, head_size: Dict[int, float]) -> bool:
+    """Whether real prose follows heading *i* before the next heading."""
+    seen = 0
+    for j in range(i + 1, len(blocks)):
+        if j in head_size:
+            return False
+        b = blocks[j]
+        if b.blank:
+            continue
+        if len(b.text) > 200:
+            return True
+        seen += 1
+        if seen >= 10:
+            return False
+    return False
+
+
+def _printed_contents(blocks: List[_Block], start: int, head_size: Dict[int, float], notes) -> Set[int]:
+    """Blocks of a printed contents list in the front matter, to drop.
+
+    Its page numbers (if any) mean nothing once text reflows, and the
+    Kindle contents replaces it. It is recognized as a stretch of short
+    front-matter lines most of which name the book's own headings, plus the
+    "Contents" title set above it.
+    """
+    entry = re.compile(r"[\s.·…]*\d*\s*$")  # dot leaders and a page number
+    headings = sorted(head_size)
+    by_text: Dict[str, List[int]] = {}
+    for i in headings:
+        by_text.setdefault(_fold(" ".join(blocks[i].text.split())), []).append(i)
+
+    def named(i: int) -> Optional[int]:
+        """The first later heading entry *i* names (an entry set large is a
+        heading candidate in itself, so only later ones count)."""
+        text = _fold(" ".join(entry.sub("", blocks[i].text).split()))
+        return next((h for h in by_text.get(text, []) if h > i), None) if text else None
+
+    targets = {i: t for i in range(start) if not blocks[i].blank and i not in notes
+               and (t := named(i)) is not None}
+    matches = sorted(targets)
+    if len(matches) < 5:
+        return set()
+    # Clusters of matches no more than three lines apart; a contents list
+    # comes before every heading it names.
+    clusters: List[List[int]] = [[matches[0]]]
+    for i in matches[1:]:
+        gap = sum(1 for j in range(clusters[-1][-1] + 1, i) if not blocks[j].blank)
+        if gap <= 3:
+            clusters[-1].append(i)
+        else:
+            clusters.append([i])
+    best = next((c for c in clusters if len(c) >= 5 and c[-1] < min(targets[i] for i in c)), None)
+    if best is None:
+        return set()
+    lo, hi = best[0], best[-1]
+    # Widen over the unmatched entries at either end: short lines, up to the
+    # list's title (a larger line) above and the end of the front matter.
+    body = min(blocks[i].size for i in best)
+    while lo > 0 and (blocks[lo - 1].blank or len(blocks[lo - 1].text) <= 120):
+        lo -= 1
+        if not blocks[lo].blank and blocks[lo].size >= _HEADING_MIN_SIZE * body:
+            break
+    while (hi + 1 < start and (blocks[hi + 1].blank or len(blocks[hi + 1].text) <= 120)
+           and not (not blocks[hi + 1].blank and blocks[hi + 1].size >= _HEADING_MIN_SIZE * body)):
+        hi += 1
+    return set(range(lo, hi + 1))
+
+
 def _paragraph_classes(block: _Block, body_size: float) -> List[str]:
     st, rel, text = block.style, block.size / body_size, block.text
     classes: List[str] = []
@@ -676,17 +795,10 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
         toc_targets.setdefault(i, depth)
         if label and _fold(_clean_label(label)) in _fold(" ".join(blocks[i].text.split())):
             titled.append(i)
-    # An entry labelled "Title page" or "Cover" points at a page, not at a
-    # heading: front matter runs up to the first entry that names its target.
-    start = min(titled) if titled else (min(toc_targets) if toc_targets else 0)
-    while start < len(blocks) and (blocks[start].doc in skip_docs):
-        start += 1
-
     # Headings: real <hN> tags, or short lines set clearly larger than body.
     head_size: Dict[int, float] = {}
-    for i in range(start, len(blocks)):
-        b = blocks[i]
-        if b.image is not None or b.blank or i in notes:
+    for i, b in enumerate(blocks):
+        if b.image is not None or b.table is not None or b.blank or i in notes or b.doc in skip_docs:
             continue
         if b.tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
             head_size[i] = 10.0 - int(b.tag[1])
@@ -696,6 +808,28 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
             # The book's contents vouches for it, however plainly it is set
             # (body-size bold) or however long the title runs.
             head_size[i] = 0.0  # placed below, at its contents depth
+    # Section titles set at body size, only centred: a paragraph style used
+    # again and again for short, centred lines that stand alone between
+    # ordinary paragraphs (a run of centred lines is verse, not headings).
+    for i in _centred_headings(blocks, notes, body_size):
+        if i not in head_size:
+            head_size[i] = 0.0
+
+    # An entry labelled "Title page" or "Cover" points at a page, not at a
+    # heading: front matter runs up to the first entry that names its target.
+    # Without a contents, it runs up to the first heading that some real
+    # prose follows -- past title-page lines and a printed contents list.
+    if titled or toc_targets:
+        start = min(titled) if titled else min(toc_targets)
+        dropped = _printed_contents(blocks, start, head_size, notes)
+    else:
+        # A printed contents list means the front matter is still running.
+        dropped = _printed_contents(blocks, len(blocks), head_size, notes)
+        after = max(dropped) + 1 if dropped else 0
+        start = next((i for i in sorted(head_size) if i >= after and _opens_prose(blocks, i, head_size)), after)
+    while start < len(blocks) and (blocks[start].doc in skip_docs):
+        start += 1
+    head_size = {i: sz for i, sz in head_size.items() if i >= start}
     for i, depth in toc_targets.items():
         if i in head_size and depth == 1:
             head_size[i] = max(head_size.values())
@@ -740,6 +874,10 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
             gap = False
             images_used += 1
             return Element(ElementKind.IMAGE, image=b.image)
+        if b.table is not None:
+            gap = False
+            return Element(ElementKind.TABLE, table_rows=[[tr(c) for c in row] for row in b.table],
+                           table_header=b.table_header)
         if b.blank:
             gap = bool(current and current.elements and current.elements[-1].kind != ElementKind.HEADING)
             return None
@@ -748,7 +886,7 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
         classes = _paragraph_classes(b, body_size)
         if _SEPARATOR_RE.match(b.text):
             glyph = next(c for c in b.text if not c.isspace())
-            runs, classes = [InlineRun(" ".join(glyph * 8))], ["center"]
+            runs, classes = [InlineRun(" ".join(glyph * (3 if glyph == "*" else 8)))], ["center"]
         if gap:
             classes.append("gap")
             gap = False
@@ -758,7 +896,7 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
     front_doc = None
     for i in range(0, start):
         b = blocks[i]
-        if b.doc in skip_docs or i in notes:
+        if b.doc in skip_docs or i in notes or i in dropped:
             continue
         if b.doc != front_doc:
             front_doc, gap = b.doc, False
@@ -832,7 +970,7 @@ def optimize_epub(input_path: str, output_path: str, options: Optional[OptimizeO
     build_epub(doc, output_path)
 
     if not pkg.toc:
-        warnings.append("source has no table of contents; front matter could not be told apart")
+        warnings.append("source has no table of contents; front matter and headings were inferred from layout")
     if not any(ch.toc_depth >= 0 for ch in chapters):
         warnings.append("no chapter headings recognized")
     return OptimizeResult(

@@ -385,3 +385,133 @@ def test_ascii_title_regains_the_books_own_diacritics(wordproc):
     result, _, files, _ = wordproc
     assert result.title == "Frații Karamazov - Vol.1"
     assert "<dc:title>Frații Karamazov - Vol.1</dc:title>" in files["EPUB/content.opf"]
+
+
+# The shape of a Calibre conversion with no NCX at all: a title page and a
+# printed contents list ahead of the text, three heading tiers (two by size,
+# one only centred), and a table whose cells hold two lines.
+_CAL_CSS = """.big { font-size: 1.67em; text-align: center }
+.mid { font-size: 1.29em; text-align: center }
+.sec { font-size: 1em; text-align: center }
+.toc { font-size: 1em; text-indent: -54pt; margin-left: 54pt }
+.tocbig { font-size: 1.67em; text-indent: -54pt; margin-left: 54pt }
+.title { font-size: 2em; text-align: center }
+.verse { font-size: 1em; text-align: center }
+.body { font-size: 1em; text-indent: 18pt }
+"""
+_PROSE = ("This paragraph is long enough to read as running prose rather than as a title-page line or a "
+          "contents entry, which is what tells the front matter apart from the text. ")
+
+
+def _cal_doc(body):
+    return ('<html xmlns="http://www.w3.org/1999/xhtml"><head><title>x</title>'
+            '<link href="stylesheet.css" rel="stylesheet" type="text/css"/></head><body>' + body + "</body></html>")
+
+
+def _sec(title, n=1):
+    return f'<p class="sec">{title}</p>' + f'<p class="body">{_PROSE * 2}</p>' * n
+
+
+_CAL_DOCS = {
+    "a.html": _cal_doc(
+        '<p class="big">AN INTRODUCTION</p><p class="mid">TO LATIN</p>'
+        '<p class="verse">Disce quod doceas.</p><p class="verse">Scribimus indocti.</p>'
+        '<p class="title">Contents</p>'
+        + "".join(f'<p class="toc">{t}</p>' for t in
+                  ("Syntax", "Sentences", "Nouns", "Mood", "Tense", "Voice", "Extracts"))
+        + '<p class="big">Preface</p>' + f'<p class="body">{_PROSE * 3}</p>'
+        + '<p class="big">Syntax</p><p class="mid">Sentences</p>' + f'<p class="body">{_PROSE * 2}</p>'
+        + '<p class="mid">Nouns</p>' + _sec("Mood") + _sec("Tense") + _sec("Voice")
+        + '<table><tr><td><p>Past simple</p><p>I loved.</p></td><td>Present</td></tr></table>'
+        + '<p class="big">Extracts</p>' + _sec("Visiones Perpetuae") + _sec("De bono fidei")
+        + _sec("Somnium Hieronymi")),
+}
+
+
+@pytest.fixture(scope="module")
+def calibre_epub(tmp_path_factory):
+    path = tmp_path_factory.mktemp("data") / "cal.epub"
+    opf = """<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="uuid_id" version="2.0">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
+<dc:title>An Introduction to Latin</dc:title><dc:creator>Nunn</dc:creator><dc:language>en</dc:language>
+<dc:identifier id="uuid_id" opf:scheme="uuid">245f750d-0423-499f-934a-ee1ec8f29f06</dc:identifier>
+<meta name="cover" content="cover"/></metadata>
+<manifest><item href="a.html" id="a" media-type="application/xhtml+xml"/>
+<item href="stylesheet.css" id="css" media-type="text/css"/>
+<item href="cover.png" id="cover" media-type="image/png"/></manifest>
+<spine><itemref idref="a"/></spine></package>"""
+    with zipfile.ZipFile(path, "w") as z:
+        z.writestr(zipfile.ZipInfo("mimetype"), "application/epub+zip", zipfile.ZIP_STORED)
+        z.writestr("META-INF/container.xml",
+                   '<?xml version="1.0"?><container version="1.0" '
+                   'xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles>'
+                   '<rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>'
+                   '</rootfiles></container>')
+        z.writestr("content.opf", opf)
+        z.writestr("stylesheet.css", _CAL_CSS)
+        z.writestr("cover.png", _PNG)
+        for n, body in _CAL_DOCS.items():
+            z.writestr(n, body)
+    return str(path)
+
+
+@pytest.fixture(scope="module")
+def calibre(calibre_epub, tmp_path_factory):
+    out = str(tmp_path_factory.mktemp("out") / "cal.epub")
+    result = optimize_epub(calibre_epub, out)
+    with zipfile.ZipFile(out) as z:
+        files = {n: z.read(n).decode("utf-8", "replace") for n in z.namelist() if not n.endswith(".png")}
+    return result, out, files
+
+
+def _toc_tree(files):
+    nav = files["EPUB/nav.xhtml"]
+    toc = nav[nav.index('epub:type="toc"'):]
+    toc = toc[:toc.index("</nav>")]
+    out, depth = [], 0
+    for tok in re.findall(r"<ol>|</ol>|<a [^>]*>[^<]*</a>", toc):
+        if tok == "<ol>":
+            depth += 1
+        elif tok == "</ol>":
+            depth -= 1
+        else:
+            out.append("  " * (depth - 1) + re.sub(r"<[^>]+>", "", tok))
+    return out
+
+
+def test_headings_without_a_contents_are_inferred_in_three_tiers(calibre):
+    result, out, files = calibre
+    assert audit_epub(out).ok
+    assert _toc_tree(files) == [
+        "Preface",
+        "Syntax",
+        "  Sentences",
+        "  Nouns",
+        "    Mood",
+        "    Tense",
+        "    Voice",
+        "Extracts",
+        "  Visiones Perpetuae",
+        "  De bono fidei",
+        "  Somnium Hieronymi",
+    ]
+    assert any("inferred" in w for w in result.warnings)
+
+
+def test_title_page_is_front_matter_and_printed_contents_is_dropped(calibre):
+    _, _, files = calibre
+    chapters = _chapters(files)
+    front = chapters[0]
+    assert "AN INTRODUCTION" in front and "Disce quod doceas." in front
+    body = "".join(chapters)
+    assert "Contents" not in body
+    assert body.count(">Mood<") == 1  # the heading itself, not a contents line
+
+
+def test_table_cells_keep_their_lines(calibre):
+    _, _, files = calibre
+    body = "".join(_chapters(files))
+    assert "<td>Past simple<br/>I loved.</td><td>Present</td>" in body
+    assert "<th>" not in body  # no header row in the source
+    assert "\\n" not in body  # no literal escape sequences in the markup
