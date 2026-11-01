@@ -83,8 +83,41 @@ def _in_fraction(line: Line, idx: int) -> bool:
     return prev[-1:].isdigit()
 
 
-def find_markers(line: Line, body_size: float = 0.0) -> List[Tuple[int, str]]:
-    """Return (span_index, label) for footnote reference markers on a line."""
+def _is_flattened_marker(line: Line, idx: int) -> bool:
+    """A marker an OCR text layer kept small but dropped onto the baseline.
+
+    ABBYY FineReader and similar record a superscript note number at its
+    real, much smaller size but on the surrounding line's baseline, so
+    _is_raised finds nothing to measure. What is left is a digit run set at
+    well under the line's size, fused straight onto the word or punctuation
+    before it ("porcōrum¹" as "porcorum" + small "1").
+    """
+    span = line.spans[idx]
+    dom, base = _line_metrics(line)
+    if dom <= 0 or span.size > dom * _FLAT_MARKER_RATIO:
+        return False
+    if span.origin[1] > base + dom * 0.12:
+        return False  # set below the baseline: a subscript, not a marker
+    if idx == 0 or span.text[:1].isspace():
+        return False
+    prev = line.spans[idx - 1].text
+    return bool(prev) and not prev[-1].isspace() and not prev[-1].isdigit()
+
+
+# A flattened marker (see _is_flattened_marker) is at most this fraction of
+# its line's dominant size. Real superscripts run 50-65% of body size; body
+# text never shrinks that far mid-line.
+_FLAT_MARKER_RATIO = 0.7
+
+
+def find_markers(line: Line, body_size: float = 0.0,
+                 known_labels: Optional[set] = None) -> List[Tuple[int, str]]:
+    """Return (span_index, label) for footnote reference markers on a line.
+
+    *known_labels* -- the labels of notes parsed on the same page -- also
+    admits markers that lost their raised position in an OCR text layer (see
+    _is_flattened_marker); those are only trusted when such a note exists.
+    """
     markers: List[Tuple[int, str]] = []
     for idx, span in enumerate(line.spans):
         t = span.text.strip()
@@ -95,7 +128,9 @@ def find_markers(line: Line, body_size: float = 0.0) -> List[Tuple[int, str]]:
         if not (has_digit or is_symbol):
             continue
         if not (span.superscript or _is_raised(span, line)):
-            continue
+            if not (known_labels and _norm_label(t) in known_labels
+                    and _is_flattened_marker(line, idx)):
+                continue
         if has_digit and _in_fraction(line, idx):
             continue
         markers.append((idx, _norm_label(t)))
@@ -183,17 +218,20 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
             )
         cur_label, cur_parts = None, []
 
-    for line in note_lines:
+    for line, run_in in _run_in_segments(note_lines):
         txt = line.text.strip()
         if not txt:
             continue
         split = _label_from_spans(line, body_size)
-        if split is None:
+        if split is None and not run_in:
             m = _LABEL_RE.match(txt)
             split = (_norm_label(m.group(1)), m.group(2)) if m else None
         opens = False
         if split is not None and not _CONTINUES_SENTENCE.match(split[1]):
-            opens = (line.x0 <= label_max_x) if hanging else _starts_note(split[0], last_num)
+            if run_in:
+                opens = _starts_note(split[0], last_num)
+            else:
+                opens = (line.x0 <= label_max_x) if hanging else _starts_note(split[0], last_num)
         if opens:
             flush()
             cur_label, cur_parts = split[0], [split[1]]
@@ -203,6 +241,42 @@ def parse_page_notes(note_lines: List[Line], body_size: float = 0.0) -> List[Not
             cur_parts.append(txt)  # continuation line of the current note
     flush()
     return [n for n in notes if n.text]
+
+
+def _run_in_segments(note_lines: List[Line]):
+    """Yield (line, run_in) pieces, splitting lines that hold several notes.
+
+    Glosses and short notes are often set run-in -- one note straight after
+    another on the same line ("¹porcus, porci, m. pig ²impetus, ..."). A
+    smaller digit span standing alone mid-line, right before a word, starts
+    a new piece; run_in marks the pieces that did not begin their line, so
+    the caller only lets them open a note when the numbering advances.
+    """
+    for line in note_lines:
+        dom, _ = _line_metrics(line)
+        cuts = []
+        for idx in range(1, len(line.spans)):
+            span = line.spans[idx]
+            t = span.text.strip()
+            if not t or not t.isdigit() or len(t) > 3 or span.text != t:
+                continue
+            if not (span.superscript or (dom > 0 and span.size <= min(dom - 0.8, dom * 0.92))):
+                continue
+            before = "".join(sp.text for sp in line.spans[:idx])
+            after = line.spans[idx + 1].text if idx + 1 < len(line.spans) else ""
+            if before.strip() and before[-1:].isspace() and after[:1].strip():
+                cuts.append(idx)
+        if not cuts:
+            yield line, False
+            continue
+        bounds = [0] + cuts + [len(line.spans)]
+        for k in range(len(bounds) - 1):
+            spans = line.spans[bounds[k]:bounds[k + 1]]
+            if k == 0:
+                yield Line(spans=spans, bbox=line.bbox), False
+                continue
+            x0 = min(sp.bbox[0] for sp in spans)
+            yield Line(spans=spans, bbox=(x0, line.bbox[1], line.bbox[2], line.bbox[3])), True
 
 
 # A note body never opens mid-sentence. Text that does is the continuation of

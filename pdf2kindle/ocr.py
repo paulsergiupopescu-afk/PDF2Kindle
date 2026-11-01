@@ -10,7 +10,7 @@ for paragraph and heading heuristics downstream.
 from __future__ import annotations
 
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pymupdf
 
@@ -76,6 +76,97 @@ def ocr_words(page: "pymupdf.Page", *, lang: str = "eng", dpi: int = 300,
             "y1": (data["top"][i] + data["height"][i]) / scale,
         })
     return words
+
+
+def _words_from_data(data: dict, scale: float, min_conf: float) -> List[dict]:
+    words: List[dict] = []
+    for i in range(len(data["text"])):
+        text = data["text"][i]
+        if not text or not text.strip():
+            continue
+        try:
+            conf = float(data["conf"][i])
+        except (ValueError, TypeError):
+            conf = -1.0
+        if conf >= 0 and conf < min_conf:
+            continue
+        words.append({
+            "text": text,
+            "x0": data["left"][i] / scale,
+            "y0": data["top"][i] / scale,
+            "x1": (data["left"][i] + data["width"][i]) / scale,
+            "y1": (data["top"][i] + data["height"][i]) / scale,
+        })
+    return words
+
+
+def ocr_words_many(doc: "pymupdf.Document", indices: List[int], *, lang: str = "eng",
+                   dpi: int = 300, min_conf: float = 0.0,
+                   workers: Optional[int] = None, progress=None) -> Dict[int, List[dict]]:
+    """ocr_words() for many pages at once, running Tesseract in parallel.
+
+    Rendering stays on the calling thread (PyMuPDF objects are not thread
+    safe); only the Tesseract subprocesses run concurrently, each pinned to
+    one thread so they don't fight over cores. Setting PDF2KINDLE_OCR_CACHE
+    to a directory caches results there, keyed by the rendered bitmap, so
+    re-running a conversion while tuning later stages costs no OCR time.
+    """
+    if not is_available() or not indices:
+        return {}
+    import hashlib
+    import io
+    import json
+    import os
+    from concurrent.futures import ThreadPoolExecutor
+
+    import pytesseract
+    from PIL import Image
+
+    os.environ.setdefault("OMP_THREAD_LIMIT", "1")
+    workers = workers or max(1, os.cpu_count() or 1)
+    cache_dir = os.environ.get("PDF2KINDLE_OCR_CACHE")
+    if cache_dir:
+        os.makedirs(cache_dir, exist_ok=True)
+    scale = dpi / 72.0
+
+    def run(png: bytes, cache_path: Optional[str]) -> List[dict]:
+        img = Image.open(io.BytesIO(png))
+        data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DICT)
+        if cache_path:
+            with open(cache_path, "w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+        return _words_from_data(data, scale, min_conf)
+
+    out: Dict[int, List[dict]] = {}
+    pending = {}
+    done = 0
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for n, idx in enumerate(indices):
+            pix = doc[idx].get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
+            png = pix.tobytes("png")
+            cache_path = None
+            if cache_dir:
+                key = hashlib.sha1(png + lang.encode() + str(dpi).encode()).hexdigest()
+                cache_path = os.path.join(cache_dir, key + ".json")
+                if os.path.exists(cache_path):
+                    with open(cache_path, encoding="utf-8") as fh:
+                        out[idx] = _words_from_data(json.load(fh), scale, min_conf)
+                    done += 1
+                    continue
+            pending[idx] = pool.submit(run, png, cache_path)
+            # Bound the bitmaps held in memory to a few per worker.
+            while len(pending) >= 2 * workers:
+                first = next(iter(pending))
+                out[first] = pending.pop(first).result()
+                done += 1
+                if progress:
+                    progress(done, len(indices))
+        for idx, fut in pending.items():
+            out[idx] = fut.result()
+            done += 1
+            if progress:
+                progress(done, len(indices))
+    return out
 
 
 def ocr_page(page: "pymupdf.Page", *, number: int, lang: str = "eng", dpi: int = 300) -> Optional[Page]:

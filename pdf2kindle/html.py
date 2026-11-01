@@ -200,7 +200,7 @@ p.dinkus {
 section.footnotes h2 {
   display: none;
 }
-aside.footnote {
+aside.footnote, div.footnote {
   margin: 0 0 0.55em 0;
   text-align: left;
   text-indent: -1.4em;
@@ -390,14 +390,24 @@ def render_footnotes(chapter: Chapter) -> str:
         '<section class="footnotes" epub:type="footnotes">\n'
         f'<p class="dinkus">{_DINKUS}</p>\n<h2>Notes</h2>\n'
     ]
+    cited = {r.noteref for el in chapter.elements for r in el.runs if r.noteref}
     for note in chapter.footnotes:
         nid = escape(note.note_id or "")
         label = escape(note.note_label or "*")
         body = _render_runs(note.runs)
-        parts.append(
-            f'<aside class="footnote" epub:type="footnote" id="{nid}">'
-            f'<p><a href="#{nid}-ref">{label}.</a> {body}</p></aside>\n'
-        )
+        if note.note_id in cited:
+            parts.append(
+                f'<aside class="footnote" epub:type="footnote" id="{nid}">'
+                f'<p><a href="#{nid}-ref">{label}.</a> {body}</p></aside>\n'
+            )
+        else:
+            # Nothing in the text points here (its marker was lost or
+            # misread). Readers hide epub:type="footnote" asides from the
+            # flow, which would make the note unreachable, so it is set as
+            # an ordinary visible note with no back-link to a missing marker.
+            parts.append(
+                f'<div class="footnote" id="{nid}"><p>{label}. {body}</p></div>\n'
+            )
     parts.append("</section>\n")
     return "".join(parts)
 

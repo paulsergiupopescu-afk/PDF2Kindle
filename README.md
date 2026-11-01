@@ -118,6 +118,27 @@ pdf2kindle convert novel.pdf  -o novel.epub --profile general
   or Slavonic quotation in a Romanian book is never "corrected" into Romanian.
   Needs Tesseract plus a hunspell dictionary for `--ocr-lang` (for Romanian:
   `apt-get install tesseract-ocr-ron hunspell-ro`).
+- **Restoring accents a scan's OCR dropped** (`--restore-diacritics`) — the
+  same kind of text layer often flattens diacritics: a Latin primer's macrons
+  come out as plain vowels or look-alike letters (`laudō` as `laudd`). A
+  fresh Tesseract pass sees the marks but reads everything else worse, so
+  only the *marks* are copied, character by character, onto letters the
+  existing layer already agrees on; spans, styles, note numbers and every
+  other character stay as they were. With `--ocr-lang` including `lat`, any
+  accent Tesseract reports on a vowel is written as a macron. Pages are
+  OCR'd in parallel; set `PDF2KINDLE_OCR_CACHE=/some/dir` to reuse results
+  across runs. Example:
+  `pdf2kindle convert primer.pdf --ocr-lang eng+lat --restore-diacritics`
+  (needs `tesseract-ocr-lat`).
+- **Textbook layouts** — two-column stretches are found per region of the
+  page (a vocabulary list under single-column prose), with the gutter located
+  from the text itself rather than assumed at mid-page; hanging-indent lists
+  (glossaries, vocabularies, indexes) keep one entry per paragraph; run-in
+  glosses ("¹porcus … ²impetus …") become separate pop-up notes, linked even
+  when OCR dropped their superscript position; running heads that carry the
+  page's printed number are removed even when set larger than body text; and
+  back matter set a size below the chapter titles still opens its own
+  chapter when it starts on a fresh page.
 
 ## Two ways to run it
 

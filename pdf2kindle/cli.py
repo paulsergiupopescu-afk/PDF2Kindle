@@ -41,6 +41,13 @@ def _add_convert(sub: argparse._SubParsersAction) -> None:
              "wrong (needs Tesseract plus a hunspell dictionary for --ocr-lang)",
     )
     p.add_argument(
+        "--restore-diacritics",
+        action="store_true",
+        help="on a scanned PDF, copy accents (Latin macrons with --ocr-lang lat) that "
+             "a fresh Tesseract pass sees onto the existing text layer, which often "
+             "drops them; nothing else in the text is changed",
+    )
+    p.add_argument(
         "--preserve-page-breaks",
         action="store_true",
         help="emit EPUB page-break landmarks at source PDF page boundaries",
@@ -115,6 +122,7 @@ def main(argv=None) -> int:
         ocr_lang=args.ocr_lang,
         dpi=args.dpi,
         repair_ocr=args.repair_ocr,
+        restore_diacritics=args.restore_diacritics,
         profile=args.profile,
         keep_print_nav=args.keep_print_nav,
         preserve_page_breaks=args.preserve_page_breaks,

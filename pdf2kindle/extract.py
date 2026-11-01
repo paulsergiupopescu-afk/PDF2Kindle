@@ -17,6 +17,7 @@ from typing import Dict, List, Optional
 import pymupdf
 
 from .model import ImageBlock, Line, Page, Span
+from . import diacritics
 from . import ocr as ocr_mod
 from . import spelling
 
@@ -446,6 +447,52 @@ def _holds_a_word(token: str, lex: "spelling.Lexicon") -> bool:
     return core is not None and len(core) >= _MIN_SWAP_LEN and lex.is_known(core)
 
 
+def _restore_diacritics(doc: "pymupdf.Document", pages: List[Page], *,
+                        lang: str, dpi: int) -> int:
+    """Copy accents a fresh OCR pass sees onto scanned pages' existing text.
+
+    Only pages that are photographs carrying someone else's OCR layer are
+    touched (see _is_scanned_page). The text layer keeps every span, style
+    flag and character it had; a letter only gains the mark the fresh reading
+    put on the same letter -- see diacritics.transfer for the exact rules.
+    Returns how many lines changed.
+    """
+    targets = [i for i, p in enumerate(pages) if p.lines and not p.ocr and _is_scanned_page(p)]
+    if not targets:
+        return 0
+    log.info("Re-reading %d scanned page(s) for diacritics", len(targets))
+    latin = any(part.strip().lower() in ("lat", "la") for part in lang.split("+"))
+    words_by_page = ocr_mod.ocr_words_many(doc, [pages[i].number for i in targets],
+                                          lang=lang, dpi=dpi, min_conf=0)
+    changed = 0
+    for i in targets:
+        page = pages[i]
+        words = words_by_page.get(page.number)
+        if not words:
+            continue
+        grouped = _assign_words_to_lines(words, page.lines)
+        for idx, line in enumerate(page.lines):
+            if _is_other_script(line.text):
+                continue
+            cand = " ".join(w["text"] for w in sorted(grouped.get(idx, []), key=lambda w: w["x0"]))
+            if not cand:
+                continue
+            original = line.text
+            fixed = diacritics.transfer(original, cand, latin=latin)
+            if fixed == original:
+                continue
+            # transfer() keeps the length, so each span takes back its own slice.
+            pos = 0
+            for si, span in enumerate(line.spans):
+                n = len(span.text)
+                piece = fixed[pos:pos + n]
+                if piece != span.text:
+                    line.spans[si] = replace(span, text=piece)
+                pos += n
+            changed += 1
+    return changed
+
+
 def _column_count(lines: List[Line], tol: float = 5.0) -> int:
     """Count distinct left-edge x-positions, merging ones within *tol* points.
 
@@ -533,6 +580,7 @@ def extract(
     ocr_lang: str = "eng",
     dpi: int = 300,
     repair_ocr: bool = False,
+    restore_diacritics: bool = False,
     progress=None,
 ) -> tuple[List[Page], dict]:
     """Return (pages, metadata) extracted from the PDF at *path*."""
@@ -611,6 +659,15 @@ def extract(
         pages.append(p)
         if progress:
             progress(i + 1, doc.page_count)
+
+    restored = 0
+    if restore_diacritics:
+        if not ocr_available:
+            log.warning("--restore-diacritics needs Tesseract, which is unavailable; skipping.")
+        else:
+            restored = _restore_diacritics(doc, pages, lang=ocr_lang, dpi=dpi)
+            log.info("Diacritic restoration changed %d line(s)", restored)
+    meta["_restored_lines"] = restored
 
     doc.close()
     if repair_ocr:

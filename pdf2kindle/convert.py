@@ -27,6 +27,7 @@ class ConvertOptions:
     ocr_lang: str = "eng"
     dpi: int = 300
     repair_ocr: bool = False  # re-read badly-OCR'd lines of a scanned PDF
+    restore_diacritics: bool = False  # copy accents a fresh OCR sees onto a scan's text layer
     profile: str = "academic"  # "academic" | "general"
     keep_print_nav: bool = False  # keep the printed Contents/Index chapters
 
@@ -67,6 +68,7 @@ def convert_pdf(
         ocr_lang=opts.ocr_lang,
         dpi=opts.dpi,
         repair_ocr=opts.repair_ocr,
+        restore_diacritics=opts.restore_diacritics,
         progress=lambda done, total: report("Extracting pages", 0.05 + 0.45 * done / max(total, 1)),
     )
 

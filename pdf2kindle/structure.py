@@ -13,9 +13,10 @@ and hanging-indent bibliography entries.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from typing import Dict, List, Optional, Tuple
 
-from .analyze import Analyzed, PageContent
+from .analyze import Analyzed, PageContent, column_layout
 from .extract import _column_count
 from .footnotes import find_embedded_markers, find_markers, parse_page_notes
 from .text import drop_break_hyphen, ends_hyphenated, normalize
@@ -129,7 +130,7 @@ def _paragraph_runs(
     """Build inline runs for a paragraph spanning *lines*, linking note markers."""
     runs: List[InlineRun] = []
     for li, line in enumerate(lines):
-        markers = {idx: label for idx, label in find_markers(line, body_size)}
+        markers = {idx: label for idx, label in find_markers(line, body_size, known_labels)}
 
         if li > 0 and runs:
             tail = _tail_text(runs).rstrip()
@@ -217,7 +218,9 @@ def _is_heading(line: Line, body_size: float) -> Optional[int]:
     # real (larger) title on the next line or two -- so unlike a numbered or
     # roman heading below, this is let through at body size rather than
     # required to be larger than it, on the strength of the word alone.
-    if _CHAPTER_RE.match(text) and ratio >= 0.98:
+    # A line that closes a parenthesis it never opened is the tail of a
+    # wrapped sentence ("... (see" / "Section 105)."), not a division title.
+    if _CHAPTER_RE.match(text) and ratio >= 0.98 and text.count(")") <= text.count("("):
         return 1
 
     # Numbered sections: depth of the number sets the level. Guard against body
@@ -286,45 +289,105 @@ def _is_wrapped_heading(group: List[Line], body_size: float) -> Optional[int]:
 # Paragraph grouping
 # --------------------------------------------------------------------------- #
 
-def _group_paragraphs(page: PageContent, body_size: float, line_height: float) -> List[List[Line]]:
+def _margin_stats(lines: List[Line]) -> Tuple[float, float]:
+    """(left margin, right edge) of a block of lines, robust to stray marks.
+
+    The left margin is the leftmost x where a real share of lines start (a
+    speck at the page edge does not move it), the right edge the 90th
+    percentile of line ends (a table row poking past the block does not
+    either).
+    """
+    bins = Counter(round(ln.x0 / 2.0) * 2.0 for ln in lines)
+    need = max(2, len(lines) // 10) if len(lines) >= 4 else 1
+    starts = sorted(x for x, n in bins.items() if n >= need) or sorted(bins)
+    ends = sorted(ln.x1 for ln in lines)
+    return starts[0], ends[min(len(ends) - 1, int(len(ends) * 0.9))]
+
+
+def _group_paragraphs(page: PageContent, body_size: float, line_height: float,
+                      hanging_out: Optional[set] = None) -> List[List[Line]]:
     """Split a page's body lines into paragraph groups.
 
     A new paragraph starts on a wide vertical gap, a first-line indent (a line
     indented relative to the *previous* line), or after a short final line.
     Indent is measured against the previous line so an evenly-indented block
     (a block quote) stays together instead of fragmenting per line.
+
+    Each column of a two-column stretch is measured on its own, and one set
+    as a hanging-indent list (glossary, vocabulary, index -- many indented
+    lines, ragged right edge) is grouped the other way round: an indented
+    line continues the entry above, and a line back at the margin starts the
+    next one. The first line of each such entry's group is added to
+    *hanging_out* (by id) so the caller can style it accordingly.
     """
     lines = page.body_lines
     if not lines:
         return []
-    right_edge = max(ln.x1 for ln in lines)
-    left_margin = min(ln.x0 for ln in lines)
-    text_width = max(1.0, right_edge - left_margin)
-    indent_min = max(6.0, text_width * 0.02)
+    # Body lines arrive in column_layout's reading order; recover each one's
+    # region/column so margins and list style are judged per column.
+    keys_by_id = {id(ln): key for ln, key in column_layout(lines, page.width)}
+    cols = [keys_by_id.get(id(ln), (0, 0)) for ln in lines]
+    # Prose regions above and below a two-column stretch share one geometry.
+    two_col_regions = {k[0] for k in cols if k[1] == 1}
+    cols = [k if k[0] in two_col_regions else (-1, 0) for k in cols]
+    geo = {}
+    for c in set(cols):
+        col_lines = [ln for ln, k in zip(lines, cols) if k == c]
+        left_margin, right_edge = _margin_stats(col_lines)
+        text_width = max(1.0, right_edge - left_margin)
+        indent_min = max(6.0, text_width * 0.02)
+        geo[c] = [left_margin, right_edge, text_width, indent_min, False]
+    # List style is decided per two-column region, pooling both columns
+    # (each measured against its own margins): a short vocabulary block may
+    # hold only a handful of lines per column.
+    for region in two_col_regions:
+        indented = flush = total = 0
+        for c in [c for c in geo if c[0] == region]:
+            left_margin, right_edge, text_width, indent_min, _ = geo[c]
+            col_lines = [ln for ln, k in zip(lines, cols) if k == c]
+            total += len(col_lines)
+            indented += sum(1 for ln in col_lines if ln.x0 > left_margin + indent_min)
+            flush += sum(1 for ln in col_lines if ln.x1 >= right_edge - text_width * 0.04)
+        if total >= 8 and indented / total >= 0.2 and flush / total < 0.5:
+            for c in geo:
+                if c[0] == region:
+                    geo[c][4] = True
     gap_threshold = line_height * 0.6
 
     groups: List[List[Line]] = []
     cur: List[Line] = []
     prev: Optional[Line] = None
-    for ln in lines:
+    prev_col = cols[0]
+    for ln, col in zip(lines, cols):
+        left_margin, right_edge, text_width, indent_min, hanging = geo[col]
         start_new = False
         if prev is None:
             start_new = True
         else:
-            gap = ln.y0 - prev.y1
-            first_line_indent = ln.x0 > prev.x0 + indent_min
-            prev_short = prev.x1 < right_edge - text_width * 0.18
-            if gap > gap_threshold:
-                start_new = True
-            elif first_line_indent:
-                start_new = True
-            elif prev_short and ln.text[:1].isupper():
-                start_new = True
+            same_col = col == prev_col
+            gap = ln.y0 - prev.y1 if same_col else 0.0
+            if hanging:
+                start_new = gap > gap_threshold or ln.x0 <= left_margin + indent_min
+            else:
+                if same_col:
+                    first_line_indent = ln.x0 > prev.x0 + indent_min
+                else:
+                    first_line_indent = ln.x0 > left_margin + indent_min
+                p_left, p_right, p_width = geo[prev_col][:3]
+                prev_short = prev.x1 < p_right - p_width * 0.18
+                if gap > gap_threshold:
+                    start_new = True
+                elif first_line_indent:
+                    start_new = True
+                elif prev_short and ln.text[:1].isupper():
+                    start_new = True
         if start_new and cur:
             groups.append(cur)
             cur = []
+        if start_new and hanging and hanging_out is not None:
+            hanging_out.add(id(ln))
         cur.append(ln)
-        prev = ln
+        prev, prev_col = ln, col
     if cur:
         groups.append(cur)
     return groups
@@ -479,6 +542,36 @@ def _is_headless_toc_page(page: PageContent) -> bool:
     return bool(_TOC_KEYWORDS_RE.search(combined))
 
 
+def _content_bottom(page: PageContent) -> float:
+    """Lowest text on the page (furniture already stripped), 0 for a blank page."""
+    lines = page.body_lines + page.note_lines
+    return max((ln.y1 for ln in lines if ln.text.strip()), default=0.0)
+
+
+# A page whose text stops above this fraction of its height was cut short on
+# purpose: what follows starts on a fresh page.
+_SHORT_PAGE = 0.8
+
+
+def _opens_fresh_page(page: PageContent, bottoms: Dict[int, float], size: float,
+                      body_size: float) -> bool:
+    """Is a display-size heading at the top of *page* a chapter opening?
+
+    Back matter ("Vocabulary", "Morphology") is often set a step smaller than
+    the chapter titles, so size alone ranks it a sub-section of whatever
+    chapter came last. What betrays it is the page break printers force
+    before a new division: the previous page stops short (or is blank). A
+    section heading that merely happens to land at the top of a page follows
+    a full one.
+    """
+    if not body_size or size / body_size < 1.4:
+        return False
+    prev = bottoms.get(page.number - 1)
+    if prev is None:
+        return False
+    return prev < page.height * _SHORT_PAGE
+
+
 def _build_flow(
     analyzed: Analyzed,
     page_images: Dict[int, List[ImageBlock]],
@@ -488,25 +581,36 @@ def _build_flow(
     flat: List[Tuple[int, Element]] = []
     notes_by_page: Dict[int, List[Element]] = {}
 
+    bottoms = {page.number: _content_bottom(page) for page in analyzed.pages}
     for page in analyzed.pages:
         if not keep_print_nav and _is_headless_toc_page(page):
             continue
         note_prefix = f"n{page.number}-"
+        page_start = len(flat)
 
         page_notes = parse_page_notes(page.note_lines, analyzed.body_size)
         known_labels = {nb.label for nb in page_notes}
         if page_notes:
-            notes_by_page[page.number] = [
-                Element(
+            # Ids must stay unique even when a page repeats a label (two
+            # short readings, each numbering its glosses from 1): markers
+            # bind to the first, a repeat gets a suffixed id of its own.
+            seen_ids: Dict[str, int] = {}
+            notes_by_page[page.number] = []
+            for nb in page_notes:
+                nid = f"{note_prefix}{nb.label}"
+                seen_ids[nid] = seen_ids.get(nid, 0) + 1
+                if seen_ids[nid] > 1:
+                    nid = f"{nid}-{seen_ids[nid]}"
+                notes_by_page[page.number].append(Element(
                     kind=ElementKind.FOOTNOTE,
                     runs=[InlineRun(text=nb.text)],
-                    note_id=f"{note_prefix}{nb.label}",
+                    note_id=nid,
                     note_label=nb.label,
-                )
-                for nb in page_notes
-            ]
+                ))
 
-        for group in _group_paragraphs(page, analyzed.body_size, analyzed.line_height):
+        hanging_starts: set = set()
+        for group in _group_paragraphs(page, analyzed.body_size, analyzed.line_height,
+                                       hanging_starts):
             if academic:
                 table_rows = _table_from_group(group)
                 if table_rows is not None:
@@ -521,6 +625,11 @@ def _build_flow(
             else:
                 level = _is_wrapped_heading(group, analyzed.body_size)
                 size = group[0].dominant_size if level else 0.0
+            if level == 4 and id(group[0]) in hanging_starts and "," in group[0].text:
+                level = None  # a bold head-word entry of a glossary, not a heading
+            if (level == 2 and len(flat) == page_start
+                    and _opens_fresh_page(page, bottoms, size, analyzed.body_size)):
+                level = 1
             if level:
                 runs = _paragraph_runs(group, note_prefix, analyzed.body_size, known_labels)
                 flat.append((page.number, Element(kind=ElementKind.HEADING, runs=runs,
@@ -532,7 +641,9 @@ def _build_flow(
                 continue
 
             kind = ElementKind.PARAGRAPH
-            if academic:
+            if id(group[0]) in hanging_starts:
+                kind = ElementKind.REFERENCE  # an entry of a hanging-indent list
+            elif academic:
                 if _CAPTION_RE.match(group[0].text):
                     kind = ElementKind.CAPTION
                 elif _is_blockquote(group, analyzed.body_left, analyzed.body_size, page.width):
@@ -697,10 +808,20 @@ def _resolve_notes(chapter: Chapter) -> None:
                 run.noteref = None
                 run.sup = True
 
-    # Present the notes in reading order rather than page-discovery order.
-    chapter.footnotes.sort(
-        key=lambda f: int(f.note_label) if (f.note_label or "").isdigit() else 10 ** 9
-    )
+    # Present the notes in reading order rather than page-discovery order:
+    # page by page for footnotes (whose ids carry their page, so a chapter
+    # of several readings doesn't interleave every reading's note 1), and by
+    # number within a page or a chapter-end endnote run.
+    def order(f: Element) -> tuple:
+        m = _PAGE_NOTE_ID_RE.match(f.note_id or "")
+        page = int(m.group(1)) if m else -1
+        num = int(f.note_label) if (f.note_label or "").isdigit() else 10 ** 9
+        return (page, num)
+
+    chapter.footnotes.sort(key=order)
+
+
+_PAGE_NOTE_ID_RE = re.compile(r"^n(\d+)-")
 
 
 def _drop_classified_print_nav(
