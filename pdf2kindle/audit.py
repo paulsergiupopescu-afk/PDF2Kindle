@@ -1,27 +1,23 @@
-"""Audit a produced EPUB and report objective quality signals.
+"""Audit an EPUB package for structural and navigation defects.
 
-Conversion fails quietly: a stylesheet that is packaged but never linked, a
-footnote marker pointing at an id that does not exist, a running head left in
-the text. None of these raise. This module measures them so the converter can
-report its own quality instead of assuming it.
+Read the OPF manifest and spine rather than assuming that every EPUB uses
+ebooklib's ``EPUB/chap_###.xhtml`` naming convention. Cross-document note links
+are resolved too, including books that store endnotes in a separate XHTML file.
 """
 
 from __future__ import annotations
 
+import posixpath
 import re
 import zipfile
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Set
+from urllib.parse import unquote, urlsplit
 
 from lxml import etree
 
-_CHAP_RE = re.compile(r"^EPUB/chap_\d+\.xhtml$")
-_NOTEREF_RE = re.compile(r'epub:type="noteref"[^>]*href="#([^"]+)"')
-_NOTE_RE = re.compile(r'epub:type="footnote" id="([^"]+)"')
-_PARA_RE = re.compile(r"<p[^>]*>(.*?)</p>", re.S)
-_TAG_RE = re.compile(r"<[^>]+>")
 _FOLIO_RE = re.compile(r"^[\divxlcIVXLC]{1,6}$")
-_YEAR_RE = re.compile(r"^(1[0-9]|20)\d{2}$")  # a year is content, not a folio
+_YEAR_RE = re.compile(r"^(1[0-9]|20)\d{2}$")
 
 
 @dataclass
@@ -44,95 +40,63 @@ class Audit:
 
     @property
     def ok(self) -> bool:
-        return (
-            not self.dead_links
-            and not self.malformed
-            and not self.missing_images
-            and self.stylesheet_linked
-            and self.has_cover
+        return not (
+            self.dead_links
+            or self.dead_internal_links
+            or self.malformed
+            or self.missing_images
+            or not self.stylesheet_linked
+            or not self.has_cover
         )
 
     def as_dict(self) -> Dict:
         return {
-            "chapters": self.chapters, "words": self.words,
-            "noterefs": self.noterefs, "notes": self.notes, "tables": self.tables,
-            "dead_links": self.dead_links, "unlinked_markers": self.unlinked_markers,
-            "stylesheet_linked": self.stylesheet_linked, "has_cover": self.has_cover,
-            "malformed": self.malformed, "missing_images": self.missing_images,
-            "furniture": self.furniture, "ok": self.ok,
+            "chapters": self.chapters,
+            "words": self.words,
+            "noterefs": self.noterefs,
+            "notes": self.notes,
+            "tables": self.tables,
+            "dead_links": self.dead_links,
+            "unlinked_markers": self.unlinked_markers,
+            "stylesheet_linked": self.stylesheet_linked,
+            "has_cover": self.has_cover,
+            "malformed": self.malformed,
+            "missing_images": self.missing_images,
+            "furniture": self.furniture,
+            "pagebreaks": self.pagebreaks,
+            "internal_links": self.internal_links,
+            "dead_internal_links": self.dead_internal_links,
+            "ok": self.ok,
         }
+
+
+def _local_name(node: etree._Element) -> str:
+    return etree.QName(node).localname
+
+
+def _resolve(source: str, href: str) -> tuple[str, str]:
+    """Return (package path, fragment) for a relative EPUB reference."""
+    parts = urlsplit(href)
+    target = unquote(parts.path)
+    fragment = unquote(parts.fragment)
+    if not target:
+        return source, fragment
+    return posixpath.normpath(posixpath.join(posixpath.dirname(source), target)), fragment
+
+
+def _epub_type(element: etree._Element) -> Set[str]:
+    """Return epub:type tokens independent of the namespace prefix."""
+    for key, value in element.attrib.items():
+        qname = etree.QName(key)
+        if qname.localname == "type" and qname.namespace:
+            return set(value.split())
+    return set()
 
 
 def audit_epub(path: str) -> Audit:
     a = Audit()
-    with zipfile.ZipFile(path) as z:
-        names = z.namelist()
-        a.has_cover = any("cover" in n.lower() for n in names)
-        chapters = [n for n in names if _CHAP_RE.match(n)]
-        a.chapters = len(chapters)
-        linked = True
+    with zipfile.ZiFile(path) as z:
+        names_list = z.namelist()
+        names = set(names_list)
+        parsed: Dict[str, etree._Element] = {}
 
-        for n in names:
-            if n.endswith((".xhtml", ".opf", ".ncx", ".xml")):
-                try:
-                    etree.fromstring(z.read(n))
-                except Exception as exc:
-                    a.malformed.append(f"{n}: {exc}")
-
-        for n in sorted(chapters):
-            c = z.read(n).decode("utf-8", "replace")
-            if "style.css" not in c:
-                linked = False
-            refs = set(_NOTEREF_RE.findall(c))
-            notes = set(_NOTE_RE.findall(c))
-            a.noterefs += len(refs)
-            a.notes += len(notes)
-            a.tables += len(re.findall(r"<table(?:\\s|>)", c, re.IGNORECASE))
-            a.dead_links += [f"{n}#{r}" for r in sorted(refs - notes)]
-            a.unlinked_markers += len(re.findall(r"<sup>(?!<a)", c))
-            a.pagebreaks += len(re.findall(r'epub:type="pagebreak"', c))
-            links = re.findall(r'<a[^>]+href="#([^"]+)"', c)
-            a.internal_links += len(links)
-            ids = set(re.findall(r'\bid="([^"]+)"', c))
-            a.dead_internal_links += [f"{n}#{target}" for target in links if target not in ids and target not in notes]
-
-            body = c[: c.find("<section")] if "<section" in c else c
-            for p in _PARA_RE.findall(body):
-                t = _TAG_RE.sub("", p).strip()
-                a.words += len(t.split())
-                if t and _FOLIO_RE.match(t) and not _YEAR_RE.match(t):
-                    a.furniture.append(f"{n}: {t!r}")
-
-            for src in re.findall(r'<img[^>]*src="([^"]+)"', c):
-                target = "EPUB/" + src.lstrip("./")
-                if target not in names:
-                    a.missing_images.append(f"{n} -> {src}")
-
-        a.stylesheet_linked = linked and any(n.endswith("style.css") for n in names)
-    return a
-
-
-def format_audit(a: Audit) -> str:
-    lines = [
-        f"  chapters   {a.chapters}",
-        f"  words      {a.words:,}",
-        f"  tables     {a.tables}",
-        f"  pagebreaks {a.pagebreaks}",
-        f"  int. links {a.internal_links}",
-        f"  notes      {a.notes} bodies / {a.noterefs} linked markers"
-        + (f", {a.unlinked_markers} unlinked" if a.unlinked_markers else ""),
-        f"  stylesheet {'linked' if a.stylesheet_linked else 'MISSING'}",
-        f"  cover      {'present' if a.has_cover else 'MISSING'}",
-    ]
-    for label, items in (
-        ("dead note links", a.dead_links),
-        ("malformed XML", a.malformed),
-        ("missing images", a.missing_images),
-        ("page furniture left in text", a.furniture),
-        ("dead internal links", a.dead_internal_links),
-    ):
-        if items:
-            lines.append(f"  ! {len(items)} {label}: {', '.join(items[:3])}"
-                         + (" ..." if len(items) > 3 else ""))
-    lines.append(f"  status     {'OK' if a.ok else 'ISSUES FOUND'}")
-    return "\n".join(lines)
